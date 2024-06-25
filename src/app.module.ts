@@ -9,10 +9,6 @@ import { WhatsAppModule } from "@modules/whatsapp/whatsapp.module";
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-    }),
     WhatsAppModule,
   ],
 })
