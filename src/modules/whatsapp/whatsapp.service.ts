@@ -15,7 +15,8 @@ export class WhatsAppService {
     this.apiTokenInstance = process.env.GREEN_API_TOKEN_INSTANCE || '';
   }
 
-  async handleIncomingMessage(phoneNumber: string, message: string): Promise<void> {
+  async handleIncomingMessage(input: any): Promise<void> {
+    const { phoneNumber, message } = input
     const userInfo = {
       name: 'User', // You can extract the user's name from the message or metadata if available
       number: phoneNumber,
