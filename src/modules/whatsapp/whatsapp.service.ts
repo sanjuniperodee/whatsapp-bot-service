@@ -35,7 +35,7 @@ export class WhatsAppService {
         message,
       }
 
-      await axios.post(url, { chatId: '77087723122@c.us', message: message });
+      await axios.post(url, { chatId: '77087723122@c.us', message: message1 });
 
       const response = await axios.post(url, data);
       Logger.log({ 'Message sent': response.data });
