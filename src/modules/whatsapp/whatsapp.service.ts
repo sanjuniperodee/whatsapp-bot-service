@@ -16,25 +16,24 @@ export class WhatsAppService {
   }
 
   async handleIncomingMessage(input: any): Promise<void> {
-    const { phoneNumber, message } = input
     const userInfo = {
-      name: 'User', // You can extract the user's name from the message or metadata if available
-      number: phoneNumber,
+      name: input.senderData.senderName, // You can extract the user's name from the message or metadata if available
+      chatId: input.senderData.chatId,
     };
 
     const uniqueId = '123123';
     const link = `${this.configService.get('BASE_URL')}/taxi/${uniqueId}`;
-    await this.sendMessage(phoneNumber, `Here is your taxi link: ${link}`);
+    await this.sendMessage(userInfo.chatId, `${userInfo.name}, here is your taxi link: ${link}`);
   }
 
   async sendMessage(phoneNumber: string, message: string): Promise<void> {
     try {
       const url = `${this.apiUrl}/waInstance${this.idInstance}/sendMessage/${this.apiTokenInstance}`
       const data = {
-        chatId: `${phoneNumber}@c.us`,
+        chatId: phoneNumber,
         message,
       }
-
+      console.log(data)
       const response = await axios.post(url, data);
       Logger.log({ 'Message sent': response.data });
     } catch (error: any) {
