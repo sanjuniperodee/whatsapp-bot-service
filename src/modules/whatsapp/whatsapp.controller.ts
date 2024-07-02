@@ -7,6 +7,7 @@ export class WhatsAppController {
 
   @Post('handle-message')
   async handleIncomingMessage(@Body() input: any){
+    console.log(input)
     return this.whatsappService.handleIncomingMessage(input)
   }
 
