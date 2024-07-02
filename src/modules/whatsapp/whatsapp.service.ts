@@ -38,7 +38,7 @@ export class WhatsAppService {
       Logger.log({ 'Message sent': response.data });
     } catch (error: any) {
       console.error('Error sending message:', error.response?.data || error.message);
-      throw new Error('Failed to send message');
+      return
     }
   }
 }
