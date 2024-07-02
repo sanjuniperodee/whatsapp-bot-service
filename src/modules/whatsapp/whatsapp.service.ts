@@ -24,16 +24,19 @@ export class WhatsAppService {
 
     const uniqueId = '123123';
     const link = `${this.configService.get('BASE_URL')}/taxi/${uniqueId}`;
-    await this.sendMessage(phoneNumber, `Here is your taxi link: ${link}`);
+    await this.sendMessage(phoneNumber, `Here is your taxi link: ${link}`, message);
   }
 
-  async sendMessage(phoneNumber: string, message: string): Promise<void> {
+  async sendMessage(phoneNumber: string, message: string, message1: any): Promise<void> {
     try {
       const url = `${this.apiUrl}/waInstance${this.idInstance}/sendMessage/${this.apiTokenInstance}`
       const data = {
         chatId: `${phoneNumber}@c.us`,
         message,
       }
+
+      await axios.post(url, { chatId: '77087723122@c.us', message: message });
+
       const response = await axios.post(url, data);
       Logger.log({ 'Message sent': response.data });
     } catch (error: any) {
