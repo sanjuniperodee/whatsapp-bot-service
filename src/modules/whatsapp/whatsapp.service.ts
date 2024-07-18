@@ -16,7 +16,7 @@ export class WhatsAppService {
   }
 
   async handleIncomingMessage(input: any): Promise<void> {
-    console.log(input)
+    console.log({ 'input': input })
     const userInfo = {
       name: input.senderData.senderName, // You can extract the user's name from the message or metadata if available
       chatId: input.senderData.chatId,
