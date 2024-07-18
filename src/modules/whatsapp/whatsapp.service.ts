@@ -17,14 +17,14 @@ export class WhatsAppService {
 
   async handleIncomingMessage(input: any): Promise<void> {
     console.log({ 'input': input })
-    // const userInfo = {
-    //   name: input.senderData.senderName, // You can extract the user's name from the message or metadata if available
-    //   chatId: input.senderData.chatId,
-    // };
-    //
-    // const uniqueId = '123123';
-    // const link = `${this.configService.get('BASE_URL')}/taxi/${uniqueId}`;
-    // await this.sendMessage(userInfo.chatId, `${userInfo.name}, here is your taxi link: ${link}`);
+    const userInfo = {
+      name: input.senderData.senderName, // You can extract the user's name from the message or metadata if available
+      chatId: input.senderData.chatId,
+    };
+
+    const uniqueId = '123123';
+    const link = `${this.configService.get('BASE_URL')}/taxi/${uniqueId}`;
+    await this.sendMessage(userInfo.chatId, `${userInfo.name}, here is your taxi link: ${link}`);
   }
 
   async sendMessage(phoneNumber: string, message: string): Promise<void> {
