@@ -6,6 +6,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
+    "strictPropertyInitialization": false,
     "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -14,14 +15,12 @@
     "baseUrl": "./",
     "paths": {
       "@modules/*": ["src/modules/*"],
-      "@domain/*": ["src/domain/*"],
-      "@infrastructure/*": ["src/infrastructure/*"]
+      "@domain/*": ["src/taxi-context/domains/*"],
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@libs/*": ["src/libs/*"],
+      "@domain-value-objects/*": ["src/taxi-context/domain-value-objects/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "node_modules/@types/node/globals.d.ts",
-    "node_modules/@types/node/globals.d.ts"
-  ],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
