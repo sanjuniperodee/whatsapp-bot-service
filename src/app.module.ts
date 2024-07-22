@@ -9,17 +9,22 @@ import { DatabaseModule } from '@infrastructure/database/database.module';
 import {
   TaxiContextDomainRepositoriesModule
 } from './taxi-context/domain-repositories/taxi-context-domain-repositories.module';
+import { AuthModule } from '@modules/auth/auth.module';
+import { loadConfiguration, validationSchema } from '@infrastructure/configs/environment.config';
 
 @Module({
   imports: [
+    AuthModule,
     TaxiContextDomainRepositoriesModule,
     TaxiContextModule,
     DatabaseModule,
+    WhatsAppModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      load: [loadConfiguration],
+      validationSchema: validationSchema,
+      validationOptions: { abortEarly: true },
     }),
-    WhatsAppModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -35,6 +40,7 @@ import {
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService]

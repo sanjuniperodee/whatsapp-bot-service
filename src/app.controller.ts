@@ -7,10 +7,10 @@ import { UserRepository } from './taxi-context/domain-repositories/user/user.rep
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService,
+              private readonly userRepository: UserRepository,
   ) {}
   @Get('/')
-  async getHello(): Promise<any> {
-    const users = await UserOrmEntity.query().where({})
-    return users;
+  async getHello(): Promise<UserEntity[]> {
+    return await this.userRepository.findMany({})
   }
 }
