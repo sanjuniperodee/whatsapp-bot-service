@@ -30,9 +30,9 @@ export class OrderRequestController {
 
 
   @Get('taxi-order-requests')
-  // @ApiBearerAuth() // This decorator is for JWT authorization
+  @ApiBearerAuth() // This decorator is for JWT authorization
   @ApiResponse({ status: 200, description: 'Returns all order requests.', type: [OrderRequestDto] })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async getMe() {
     const orderRequests =  await this.orderRequestRepository.findMany({orderType: 'TAXI', startTime: undefined})
 
