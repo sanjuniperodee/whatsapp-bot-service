@@ -16,7 +16,6 @@ export class WhatsAppService {
   }
 
   async handleIncomingMessage(input: any): Promise<void> {
-    console.log({ 'input': input })
     const userInfo = {
       name: input.senderData.senderName, // You can extract the user's name from the message or metadata if available
       chatId: input.senderData.chatId,
@@ -34,7 +33,6 @@ export class WhatsAppService {
         chatId: phoneNumber,
         message,
       }
-      console.log(data)
       const response = await axios.post(url, data);
       Logger.log({ 'Message sent': response.data });
     } catch (error: any) {

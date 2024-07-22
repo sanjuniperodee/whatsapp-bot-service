@@ -37,7 +37,6 @@ export class SignInByPhoneConfirmCodeService {
     }
 
     const codeRecord = user.getPropsCopy().lastSms;
-    console.log(user)
     if (!codeRecord || codeRecord !== smscode) {
       throw new Error("Invalid code")
     }

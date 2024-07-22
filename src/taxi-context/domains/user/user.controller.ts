@@ -59,7 +59,6 @@ export class UserController {
   async createUser(
     @Body() input: SignUpByPhoneCreateUserRequest,
   ): Promise<SignUpByPhoneCreateUserResponse> {
-    console.log(input)
       const result = await this.signUpByPhoneCreateUserService.handle(input);
 
       const { userId, token, refreshToken } = result;
@@ -110,7 +109,6 @@ export class UserController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMe(@IAM() user: UserOrmEntity) {
-    console.log(user)
     return await this.userRepository.findOneById(user.id);
   }
 }

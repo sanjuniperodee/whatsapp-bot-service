@@ -5,7 +5,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   static create(data: Omit<OrderRequestOrmEntity, keyof Model>) {
     return OrderRequestOrmEntity.fromJson(data);
   }
-  static tableName = 'users';
+  static tableName = 'order_request';
 
   driverId: string;
   orderType: string;

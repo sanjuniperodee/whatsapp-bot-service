@@ -42,14 +42,14 @@ export class OrderRequestRepository
       : [await OrderRequestOrmEntity.startTransaction(), true];
 
     try {
-      const user = await OrderRequestOrmEntity.query(trx).findById(id);
+      const orderRequest = await OrderRequestOrmEntity.query(trx).findById(id);
 
       if (isOwnTrx) {
         await trx.commit();
         await trx.executionPromise;
       }
 
-      return user ? this.mapper.toDomainEntity(user, trxId) : undefined;
+      return orderRequest ? this.mapper.toDomainEntity(orderRequest, trxId) : undefined;
     } catch (err) {
       if (isOwnTrx) {
         await trx.rollback();
