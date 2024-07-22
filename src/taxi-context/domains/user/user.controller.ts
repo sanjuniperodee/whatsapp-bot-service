@@ -9,7 +9,7 @@ import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
 import { IAM } from '@infrastructure/decorators/iam.decorator';
 import { AuthNService } from '@modules/auth/services/authn.service';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
   SignInByPhoneSendCodeResponse
 } from '@domain/user/commands/sign-in-by-phone-send-code/sign-in-by-phone-send-code.response.dto';
@@ -55,6 +55,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
   })
+  @ApiParam(SignUpByPhoneCreateUserRequest)
   async createUser(
     @Body() input: SignUpByPhoneCreateUserRequest,
   ): Promise<SignUpByPhoneCreateUserResponse> {
@@ -78,6 +79,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
   })
+  @ApiParam(SignInByPhoneSendCodeRequest)
   @ApiBody({ type: SignInByPhoneSendCodeRequest })
   async sendCodeToPhone(@Body() input: SignInByPhoneSendCodeRequest): Promise<SignInByPhoneSendCodeResponse> {
     const result = await this.signInByPhoneSendCodeService.handle(input);
@@ -89,6 +91,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Confirming sign-in code and get tokens',
   })
+  @ApiParam(SignInByPhoneConfirmCodeRequest)
   @ApiBody({ type: SignInByPhoneConfirmCodeRequest })
   async confirmCodeByPhone(
     @Body() input: SignInByPhoneConfirmCodeRequest,
