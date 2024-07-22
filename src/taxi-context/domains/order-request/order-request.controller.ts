@@ -36,6 +36,8 @@ export class OrderRequestController {
   async getMe() {
     const orderRequests =  await this.orderRequestRepository.findMany({orderType: 'TAXI', startTime: undefined})
 
-    return orderRequests;
+    return orderRequests.map(orderRequest => {
+      return {...orderRequest.getPropsCopy()}
+    });
   }
 }
