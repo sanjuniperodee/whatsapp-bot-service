@@ -55,7 +55,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
   })
-  @ApiParam(SignUpByPhoneCreateUserRequest)
+  @ApiBody({ type: SignUpByPhoneCreateUserRequest }) // Document request body for Swagger
   async createUser(
     @Body() input: SignUpByPhoneCreateUserRequest,
   ): Promise<SignUpByPhoneCreateUserResponse> {
@@ -79,7 +79,6 @@ export class UserController {
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
   })
-  @ApiParam(SignInByPhoneSendCodeRequest)
   @ApiBody({ type: SignInByPhoneSendCodeRequest })
   async sendCodeToPhone(@Body() input: SignInByPhoneSendCodeRequest): Promise<SignInByPhoneSendCodeResponse> {
     const result = await this.signInByPhoneSendCodeService.handle(input);
@@ -91,7 +90,6 @@ export class UserController {
   @ApiOperation({
     summary: 'Confirming sign-in code and get tokens',
   })
-  @ApiParam(SignInByPhoneConfirmCodeRequest)
   @ApiBody({ type: SignInByPhoneConfirmCodeRequest })
   async confirmCodeByPhone(
     @Body() input: SignInByPhoneConfirmCodeRequest,
