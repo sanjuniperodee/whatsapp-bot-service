@@ -12,7 +12,11 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   ) {}
 
   async handleConnection(client: Socket) {
+    const orderRequests = await this.orderRequestRepository.findMany({ orderType: 'TAXI', startTime: undefined });
 
+    for(const orderRequest of orderRequests){
+      await this.handleOrderCreated(orderRequest)
+    }
   }
 
   async handleDisconnect(client: Socket) {

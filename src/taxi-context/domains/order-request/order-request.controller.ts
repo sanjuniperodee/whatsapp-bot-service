@@ -16,6 +16,8 @@ export class OrderRequestController {
   // async function1(){
   //   const orderRequests = await this.orderRequestRepository.findMany({ orderType: 'TAXI', startTime: undefined });
   //
-  //   await this.orderRequestGateway.handleOrderCreated(orderRequests[0])
+  //   for(const orderRequest of orderRequests){
+  //     await this.orderRequestGateway.handleOrderCreated(orderRequest)
+  //   }
   // }
 }
