@@ -23,14 +23,13 @@ export class SignUpByPhoneCreateUserService {
 
   async handle(
     dto: SignUpByPhoneCreateUserRequest,
-    phone: string,
-  ): Promise<CreateUserResult | UnprocessableEntityException> {
-    const { firstName, lastName } = dto;
+  ): Promise<CreateUserResult> {
+    const { firstName, lastName, phone } = dto;
 
     const existUserWithPhone = await this.userRepository.existsByPhone(phone);
 
     if (existUserWithPhone) {
-      return new UnprocessableEntityException('User already registered');
+      throw new UnprocessableEntityException('User already registered');
     }
 
 

@@ -28,7 +28,16 @@ import {
 import {
   SignInByPhoneConfirmCodeService
 } from '@domain/user/commands/sign-in-by-phone-confirm-code/sign-in-by-phone-confirm-code.service';
-import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import {
+  SignUpByPhoneCreateUserRequest
+} from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.request.dto';
+import {
+  SignUpByPhoneCreateUserResponse
+} from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.response.dto';
+import {
+  SignUpByPhoneCreateUserService
+} from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.service';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -39,7 +48,31 @@ export class UserController {
     private readonly userRepository: UserRepository,
     private readonly signInByPhoneSendCodeService: SignInByPhoneSendCodeService,
     private readonly signInByPhoneConfirmCodeService: SignInByPhoneConfirmCodeService,
+    private readonly signUpByPhoneCreateUserService: SignUpByPhoneCreateUserService
   ) {}
+
+  @Post('sing-up-by-phone')
+  @ApiOperation({
+    summary: 'Getting sms code to phone to sign in',
+  })
+  async createUser(
+    @Body() input: SignUpByPhoneCreateUserRequest,
+  ): Promise<SignUpByPhoneCreateUserResponse> {
+    console.log(input)
+      const result = await this.signUpByPhoneCreateUserService.handle(input);
+
+      const { userId, token, refreshToken } = result;
+
+
+      const user = userId ? await this.userRepository.findOneById(userId?.value) : undefined
+
+      return {
+        user: user,
+        token,
+        refreshToken,
+      }
+  }
+
 
   @Post('sing-in-by-phone')
   @ApiOperation({
@@ -75,7 +108,8 @@ export class UserController {
   }
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMe(@IAM() user: any) {
+  async getMe(@IAM() user: UserOrmEntity) {
+    console.log(user)
     return await this.userRepository.findOneById(user.id);
   }
 }
