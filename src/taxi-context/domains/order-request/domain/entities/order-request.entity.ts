@@ -59,9 +59,9 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
   }
 
   validate(): void {
-    const { driverId, orderType } = this.props;
+    const { user_phone, orderType } = this.props;
 
-    const fields = [driverId, orderType];
+    const fields = [user_phone, orderType];
 
     if (fields.some((f) => f == null)) {
       throw new ArgumentInvalidException('Order must have all required fields');
