@@ -10,6 +10,8 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   driverId?: string;
   user_phone?: string;
   orderType: string;
+  from: string;
+  to: string;
   startTime?: Date;
   arrivalTime?: Date;
   lat?: number;

@@ -23,16 +23,9 @@ export class WhatsAppService {
   }
 
   async handleIncomingMessage(input: any): Promise<void> {
-    const chatId = input.instanceData.wid.split('@')[0];
-    const name = 'Новый Пользователь'
+    const chatId = input.instanceData.wid;
+    const name = 'Новый Пользователь';
 
-    const orderRequest = OrderRequestEntity.create({
-      user_phone: input.instanceData.wid.split('@')[0],
-      orderType: 'TAXI'
-    })
-
-    await this.orderRequestRepository.save(orderRequest)
-    await this.orderRequestGateway.handleOrderCreated(orderRequest)
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
     await this.sendMessage(chatId, `${name}, here is your taxi link: ${link}`);

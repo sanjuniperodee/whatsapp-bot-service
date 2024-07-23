@@ -23,14 +23,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleDisconnect(client: Socket) {
   }
   async handleOrderCreated(order: OrderRequestEntity) {
-    const newOrder = await this.orderRequestRepository.findOneById(order.id.value);
 
-    if(!newOrder){
-      throw new Error('Something went wrong, the order is not found')
-    }
-
-    console.log(newOrder)
-    // Emit the new order to all connected clients
-    this.server.emit('newOrder', newOrder.getPropsCopy);
+    this.server.emit('newOrder', order.getPropsCopy());
   }
 }

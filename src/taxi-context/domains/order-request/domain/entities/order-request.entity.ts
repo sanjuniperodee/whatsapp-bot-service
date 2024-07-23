@@ -6,6 +6,8 @@ export interface CreateOrderRequestProps {
   driverId?: UUID;
   user_phone?: string;
   orderType: string;
+  from: string,
+  to: string,
   startTime?: Date;
   arrivalTime?: Date;
   lat?: number;
@@ -28,6 +30,8 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
                   orderType,
                   startTime,
                   arrivalTime,
+                  from,
+                  to,
                   lat,
                   lng,
                   comment,
@@ -38,6 +42,8 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       driverId,
       user_phone,
       orderType,
+      from,
+      to,
       startTime,
       arrivalTime,
       lat,
