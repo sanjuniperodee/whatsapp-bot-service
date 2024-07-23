@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Render } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post, Render } from '@nestjs/common';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 
 @Controller('whatsapp')
@@ -7,6 +7,7 @@ export class WhatsAppController {
 
   @Post('handle-message')
   async handleIncomingMessage(@Body() input: any){
+    Logger.log(input)
     return this.whatsappService.handleIncomingMessage(input)
   }
 
