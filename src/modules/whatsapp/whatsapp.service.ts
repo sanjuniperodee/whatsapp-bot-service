@@ -23,8 +23,8 @@ export class WhatsAppService {
   }
 
   async handleIncomingMessage(input: any): Promise<boolean> {
-    const chatId = input.instanceData.wid;
-    const name = 'Новый Пользователь';
+    const chatId = input.senderData.chatId;
+    const name = input.senderData.senderName;
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
     await this.sendMessage(chatId, `${name}, here is your taxi link: ${link}`);
