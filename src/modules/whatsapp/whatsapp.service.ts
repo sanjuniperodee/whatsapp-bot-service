@@ -25,6 +25,7 @@ export class WhatsAppService {
   async handleIncomingMessage(input: any): Promise<void> {
     const chatId = input.instanceData.wid;
     const name = 'Новый Пользователь';
+    Logger.log(chatId)
 
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
@@ -32,17 +33,11 @@ export class WhatsAppService {
   }
 
   async sendMessage(chatId: string, message: string): Promise<void> {
-    try {
-      const url = `${this.apiUrl}/waInstance${this.idInstance}/sendMessage/${this.apiTokenInstance}`
-      const data = {
-        chatId: chatId,
-        message,
-      }
-      const response = await axios.post(url, data);
-      Logger.log({ 'Message sent': response.data });
-    } catch (error: any) {
-      console.error('Error sending message:', error.response?.data || error.message);
-      return
-    }
+    const url = `${this.apiUrl}/waInstance${this.idInstance}/sendMessage/${this.apiTokenInstance}`
+    const response = await axios.post(url, {
+      chatId: chatId,
+      message,
+    });
+    Logger.log({ 'Message sent': response.data });
   }
 }
