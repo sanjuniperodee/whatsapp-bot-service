@@ -7,7 +7,8 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   }
   static tableName = 'order_request';
 
-  driverId: string;
+  driverId?: string;
+  user_phone?: string;
   orderType: string;
   startTime?: Date;
   arrivalTime?: Date;

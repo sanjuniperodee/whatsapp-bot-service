@@ -8,8 +8,9 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
     const props = entity.getPropsCopy();
 
     return {
-      driverId: props.driverId.value,
+      driverId: props.driverId?.value || undefined,
       orderType: props.orderType,
+      user_phone: props.user_phone,
       startTime: props.startTime,
       arrivalTime: props.arrivalTime,
       lat: props.lat,
@@ -24,7 +25,8 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
     const props: OrderRequestProps = {
       createdAt: ormEntity.createdAt,
       updatedAt: ormEntity.updatedAt,
-      driverId: new UUID(ormEntity.driverId),
+      driverId: ormEntity.driverId ? new UUID(ormEntity.driverId) : undefined,
+      user_phone: ormEntity.user_phone,
       orderType: ormEntity.orderType,
       startTime: ormEntity.startTime,
       arrivalTime: ormEntity.arrivalTime,

@@ -15,5 +15,6 @@ const controllers = [OrderRequestController];
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule],
   providers: [OrderRequestGateway],
   controllers: [...controllers],
+  exports: [OrderRequestGateway]
 })
 export class OrderRequestModule {}

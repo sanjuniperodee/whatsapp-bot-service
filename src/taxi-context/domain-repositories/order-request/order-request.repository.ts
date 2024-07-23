@@ -81,6 +81,26 @@ export class OrderRequestRepository
     }
   }
 
+  // async existsByPhone(phone: string): Promise<boolean> {
+  //   const found = await OrderRequestOrmEntity.query().findOne('phone', phone);
+  //
+  //   if (found) {
+  //     return true;
+  //   }
+  //
+  //   return false;
+  // }
+  //
+  // async findOneByPhone(phone: string) {
+  //   const found = await OrderRequestOrmEntity.query().findOne('phone', phone);
+  //
+  //   if (!found) {
+  //     return found;
+  //   }
+  //
+  //   return this.mapper.toDomainEntity(found);
+  // }
+
   async delete(entity: OrderRequestEntity, trxId?: TransactionId): Promise<OrderRequestEntity> {
     entity.validate();
 

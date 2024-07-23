@@ -1,6 +1,7 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
+import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 
 @WebSocketGateway()
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -21,10 +22,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   async handleDisconnect(client: Socket) {
   }
-  async handleOrderCreated(order: any) {
+  async handleOrderCreated(order: OrderRequestEntity) {
     const newOrder = await this.orderRequestRepository.findOneById(order.id.value);
+
+    if(!newOrder){
+      throw new Error('Something went wrong, the order is not found')
+    }
+
     console.log(newOrder)
     // Emit the new order to all connected clients
-    this.server.emit('newOrder', newOrder?.getPropsCopy());
+    this.server.emit('newOrder', newOrder.getPropsCopy);
   }
 }

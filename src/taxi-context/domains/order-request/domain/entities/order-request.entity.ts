@@ -3,19 +3,20 @@ import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base
 import { ArgumentInvalidException } from '@libs/exceptions';
 
 export interface CreateOrderRequestProps {
-  driverId: UUID;
+  driverId?: UUID;
+  user_phone?: string;
   orderType: string;
   startTime?: Date;
   arrivalTime?: Date;
   lat?: number;
   lng?: number;
   comment?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export type OrderRequestProps = CreateOrderRequestProps & {
   rejectReason?: string
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
@@ -23,27 +24,27 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
   static create({
                   driverId,
+                  user_phone,
                   orderType,
                   startTime,
                   arrivalTime,
                   lat,
                   lng,
                   comment,
-                  createdAt,
-                  updatedAt,
                 }: CreateOrderRequestProps): OrderRequestEntity {
     const id = UUID.generate();
 
     const props: OrderRequestProps = {
       driverId,
+      user_phone,
       orderType,
       startTime,
       arrivalTime,
       lat,
       lng,
       comment,
-      createdAt,
-      updatedAt,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     return new OrderRequestEntity({ id, props });
