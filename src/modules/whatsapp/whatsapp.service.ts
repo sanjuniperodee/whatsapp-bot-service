@@ -22,12 +22,13 @@ export class WhatsAppService {
     this.apiTokenInstance = process.env.GREEN_API_TOKEN_INSTANCE || '';
   }
 
-  async handleIncomingMessage(input: any): Promise<void> {
+  async handleIncomingMessage(input: any): Promise<boolean> {
     const chatId = input.instanceData.wid;
     const name = 'Новый Пользователь';
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
     await this.sendMessage(chatId, `${name}, here is your taxi link: ${link}`);
+    return true;
   }
 
   async sendMessage(chatId: string, message: string): Promise<void> {
