@@ -25,7 +25,7 @@ export class WhatsAppService {
   async handleIncomingMessage(input: any): Promise<void> {
     const chatId = input.instanceData.wid;
     const name = 'Новый Пользователь';
-    Logger.log(chatId)
+    console.log(chatId)
 
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
@@ -38,6 +38,6 @@ export class WhatsAppService {
       chatId: chatId,
       message,
     });
-    Logger.log({ 'Message sent': response.data });
+    console.log({ 'Message sent': response.data });
   }
 }
