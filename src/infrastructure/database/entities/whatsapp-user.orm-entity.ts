@@ -5,7 +5,7 @@ export class WhatsappUserOrmEntity extends ObjectionEntityBase {
   static create(data: Omit<WhatsappUserOrmEntity, keyof Model>) {
     return WhatsappUserOrmEntity.fromJson(data);
   }
-  static tableName = 'users';
+  static tableName = 'whatsapp_users';
 
   phone: string;
   name: string;
