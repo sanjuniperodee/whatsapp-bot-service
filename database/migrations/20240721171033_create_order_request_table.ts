@@ -9,7 +9,7 @@ export async function up(knex: Knex) {
     t.uuid('id').defaultTo(knex.raw('uuid_generate_v4()')).primary();
     t.uuid('driverId').index().notNullable().references('id').inTable('users').onDelete('cascade').onUpdate('cascade');
     t.enum('orderType', orderType).notNullable();
-    t.string('user_phone', 16).index();
+    t.string('sessionId', 16).index();
     t.string('from', 255).notNullable();
     t.string('to', 255).notNullable();
     t.timestamp('startTime');

@@ -4,7 +4,7 @@ import type { Knex } from 'knex';
 dotEnvConfig();
 
 const config: { [key: string]: Knex.Config } = {
-  development: {
+  production: {
     client: 'pg',
     connection: {
       host: process.env.DATABASE_HOST,

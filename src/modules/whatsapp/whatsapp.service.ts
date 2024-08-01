@@ -4,6 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { OrderRequestRepository } from '../../taxi-context/domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { WhatsappUserRepository } from '../../taxi-context/domain-repositories/whatsapp-user/whatsapp-user.repository';
+import { UserEntity } from '@domain/user/domain/entities/user.entity';
+import { WhatsappUserEntity } from '@domain/whatsapp-users/domain/entities/whatsapp-user.entity';
 
 @Injectable()
 export class WhatsAppService {
@@ -14,6 +17,7 @@ export class WhatsAppService {
   constructor(
     private readonly configService: ConfigService,
     private readonly orderRequestRepository: OrderRequestRepository,
+    private readonly whatsAppUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
 
 ) {
@@ -25,6 +29,19 @@ export class WhatsAppService {
   async handleIncomingMessage(input: any): Promise<boolean> {
     const chatId = input.senderData.chatId;
     const name = input.senderData.senderName;
+
+    const phone = chatId.split('@')[0]
+
+    const userExists = this.whatsAppUserRepository.existsByPhone(phone);
+
+    const user = userExists ?
+      await this.whatsAppUserRepository.findOneByPhone(phone) :
+      await this.whatsAppUserRepository.save(await WhatsappUserEntity.create({
+      phone: phone,
+      name: name
+    }));
+
+
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${123}`;
     await this.sendMessage(chatId, `${name}, here is your taxi link: ${link}`);
