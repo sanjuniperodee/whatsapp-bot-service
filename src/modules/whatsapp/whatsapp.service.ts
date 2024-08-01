@@ -32,7 +32,7 @@ export class WhatsAppService {
 
     const phone = chatId.split('@')[0]
 
-    const userExists = this.whatsAppUserRepository.existsByPhone(phone);
+    const userExists = await this.whatsAppUserRepository.existsByPhone(phone);
 
     const user = userExists ?
       await this.whatsAppUserRepository.findOneByPhone(phone) :
