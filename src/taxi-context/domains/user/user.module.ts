@@ -11,6 +11,9 @@ import {
 import {
   SignUpByPhoneCreateUserService
 } from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.service';
+import { CloudCacheStorageModule } from '../../../third-parties/cloud-cache-storage/src';
+import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
+import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module';
 
 const thirdPartyServices = [
   CqrsModule,
@@ -22,7 +25,7 @@ const services = [SignInByPhoneSendCodeService, SignInByPhoneConfirmCodeService,
 const controllers = [UserController];
 
 @Module({
-  imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule],
+  imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule,   CloudCacheStorageModule.forRootAsync(redisConfigFactory), WhatsAppModule],
   providers: [...services],
   controllers: [...controllers],
 })

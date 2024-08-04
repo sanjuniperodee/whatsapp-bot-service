@@ -35,9 +35,11 @@
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "class-validator": "^0.14.1",
+    "ioredis": "^5.4.1",
     "joi": "^17.13.3",
     "knex": "^3.1.0",
     "libphonenumber-js": "^1.11.4",
+    "moment": "^2.30.1",
     "objection": "^3.1.4",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -58,5 +60,59 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "src"
+    ],
+    "moduleNameMapper": {
+      "@libs/(.*)": "<rootDir>/libs/$1",
+      "@modules/(.*)": "<rootDir>/modules/$1",
+      "@infrastructure/(.*)": "<rootDir>/infrastructure/$1",
+      "@domains/(.*)": "<rootDir>/rental-context/domains/$1",
+      "@domain-value-objects/(.*)": "<rootDir>/rental-context/domain-value-objects/$1",
+      "@third-parties/(.*)": "<rootDir>/third-parties/$1",
+      "src/(.*)": "<rootDir>/$1"
+    },
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  },
+  "importSort": {
+    ".js, .ts": {
+      "style": "module",
+      "parser": "typescript"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog-for-jira-smart-commits"
+    }
+  },
+  "validate-branch-name": {
+    "pattern": "^LIV-\\d{1,5}-(feature|fix|chore|hotfix|refactor)/.+$|^(feature|fix|chore|hotfix|refactor)/.+$",
+    "errorMsg": "Invalid branch name"
+  },
+  "release": {
+    "branches": [
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator"
+    ]
   }
 }

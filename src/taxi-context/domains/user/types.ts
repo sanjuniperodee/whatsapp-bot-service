@@ -3,3 +3,4 @@ export type SMSCodeRecord = {
   expDate: string;
   senderUserId?: string;
 };
+

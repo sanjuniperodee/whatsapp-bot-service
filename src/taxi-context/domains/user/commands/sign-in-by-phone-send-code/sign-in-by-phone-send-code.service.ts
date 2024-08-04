@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { SignInByPhoneSendCodeRequest } from './sign-in-by-phone-send-code.request.dto';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
+import { CloudCacheStorageService } from '../../../../../third-parties/cloud-cache-storage/src';
+import { SMSCodeRecord } from '@domain/user/types';
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+import moment from 'moment';
 
 @Injectable()
 export class SignInByPhoneSendCodeService {
@@ -12,38 +16,58 @@ export class SignInByPhoneSendCodeService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
+    private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly whatsAppService: WhatsAppService,
   ) {
     this.smsCodeExpiresIn = configService.get<number>('smsCode.expiresInSeconds') as number;
     this.smsCodeLength = configService.get<number>('smsCode.codeLength') as number;
   }
 
   async handle(dto: SignInByPhoneSendCodeRequest) {
-    const { phone } = dto;
+    const phone = dto.phone.replace(/ /g, '');
 
-    const user = await this.userRepository.findOneByPhone(phone)
+    let codeRecord: SMSCodeRecord | null = await this.getSMScode(phone);
 
-    if(!user){
-      throw new Error("User does not exist!")
-    }
-
-    const expirationResult = this.checkExpiration(phone);
+    const expirationResult = this.checkExpiration(codeRecord);
 
     if (!expirationResult) {
-      throw new Error('You can require 1 sms in 1 minute');
+      throw new Error("Code Expired")
     }
 
-    let smscode = this.generateSms();
+    let smscode: string | null = this.generateSmsCode();
 
-    await UserOrmEntity.query().updateAndFetchById(user.id.value, {lastSms: smscode.toString()})
+    codeRecord = this.saveSMSCode(smscode, phone);
 
-    return smscode;
+    await this.whatsAppService.sendMessage(phone + "@c.us", smscode);
+
+    return smscode
   }
 
-  generateSms(): number {
-    return Math.floor(1000 + Math.random() * 9000);
+  generateSmsCode(): string {
+    return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
-  checkExpiration(phone: string): boolean {
-    return true;
+
+  private saveSMSCode(smsCode: string, phone: string): SMSCodeRecord {
+    const { expDate } = this.cacheStorageService.setValueWithExp(phone, { smsCode }, this.smsCodeExpiresIn);
+
+    return {
+      smsCode,
+      expDate,
+    };
+  }
+
+  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
+    return this.cacheStorageService.getValue(phone);
+  }
+
+  private checkExpiration(codeRecord: SMSCodeRecord | null): boolean {
+    if (!codeRecord) {
+      return true;
+    }
+
+    const dateDiff = moment.duration(moment(codeRecord.expDate).diff(moment()));
+
+    return dateDiff.get('seconds') > 60;
   }
 }

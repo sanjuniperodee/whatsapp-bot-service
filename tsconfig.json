@@ -18,7 +18,8 @@
       "@domain/*": ["src/taxi-context/domains/*"],
       "@infrastructure/*": ["src/infrastructure/*"],
       "@libs/*": ["src/libs/*"],
-      "@domain-value-objects/*": ["src/taxi-context/domain-value-objects/*"]
+      "@domain-value-objects/*": ["src/taxi-context/domain-value-objects/*"],
+      "@third-parties/*": ["src/third-parties/*"]
     }
   },
   "include": ["src/**/*"],

@@ -38,6 +38,7 @@ import {
   SignUpByPhoneCreateUserService
 } from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.service';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { JwtSignUpAuthGuard } from '@infrastructure/guards/jwt-sign-up-auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -51,9 +52,11 @@ export class UserController {
     private readonly signUpByPhoneCreateUserService: SignUpByPhoneCreateUserService
   ) {}
 
+
+  @UseGuards(JwtSignUpAuthGuard)
   @Post('sing-up-by-phone')
   @ApiOperation({
-    summary: 'Getting sms code to phone to sign in',
+    summary: 'Creating user',
   })
   @ApiBody({ type: SignUpByPhoneCreateUserRequest }) // Document request body for Swagger
   async createUser(
@@ -73,7 +76,6 @@ export class UserController {
       }
   }
 
-
   @Post('sing-in-by-phone')
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
@@ -82,7 +84,7 @@ export class UserController {
   async sendCodeToPhone(@Body() input: SignInByPhoneSendCodeRequest): Promise<SignInByPhoneSendCodeResponse> {
     const result = await this.signInByPhoneSendCodeService.handle(input);
 
-    return { smscode: result };
+    return SignInByPhoneSendCodeResponse.create({ smscode: result });
   }
 
   @Post('sing-in-by-phone-confirm-code')

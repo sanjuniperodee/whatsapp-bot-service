@@ -5,6 +5,8 @@ import { TokenType } from '@modules/auth/types';
 import { Injectable } from '@nestjs/common';
 import { SignInByPhoneConfirmCodeRequest } from './sign-in-by-phone-confirm-code.request.dto';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
+import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
+import { SMSCodeRecord } from '@domain/user/types';
 
 type ConfirmCodeResult = {
   token: string;
@@ -17,12 +19,23 @@ export class SignInByPhoneConfirmCodeService {
   constructor(
     private readonly authService: AuthNService,
     private readonly userRepository: UserRepository,
-  ) {}
+    private readonly cacheStorageService: CloudCacheStorageService,
+  ) {
+  }
 
   async handle(
     dto: SignInByPhoneConfirmCodeRequest,
   ): Promise<ConfirmCodeResult> {
-    const { phone, smscode } = dto;
+    const { smscode } = dto;
+    const phone = dto.phone.replace(/ /g, '');
+
+    const codeRecord = await this.getSMScode(phone);
+
+    if (!codeRecord || codeRecord.smsCode !== smscode) {
+      throw new Error("Invalid code")
+    }
+
+    await this.deleteSMScode(phone);
 
     const user = await this.userRepository.findOneByPhone(phone);
 
@@ -33,15 +46,10 @@ export class SignInByPhoneConfirmCodeService {
         token: signUpToken,
         userId: undefined,
         refreshToken: undefined,
-      }
+      };
     }
 
-    const codeRecord = user.getPropsCopy().lastSms;
-    if (!codeRecord || codeRecord !== smscode) {
-      throw new Error("Invalid code")
-    }
-
-    const userId = user.id.value;
+    const userId = await UserOrmEntity.query().findOne({ phone });
 
     if (!userId) {
       throw new Error('User not found');
@@ -54,5 +62,13 @@ export class SignInByPhoneConfirmCodeService {
       token,
       refreshToken,
     }
+  }
+
+  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
+    return this.cacheStorageService.getValue(phone);
+  }
+
+  private deleteSMScode(phone: string): Promise<boolean> {
+    return this.cacheStorageService.deleteValue(phone);
   }
 }
