@@ -108,9 +108,10 @@ export class UserController {
       refreshToken,
     };
   }
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @Get('GetMe')
+  @UseGuards(JwtAuthGuard())
   async getMe(@IAM() user: UserOrmEntity) {
+    console.log(user)
     return await this.userRepository.findOneById(user.id);
   }
 }

@@ -28,17 +28,17 @@ export const loadConfiguration = (): Record<string, unknown> => {
       signUpSecret: process.env.JWT_SIGN_UP_SECRET,
       signUpExpiresIn: parseInt(process.env.JWT_SIGN_UP_EXPIRES_IN as string),
     },
-    // redis: {
-    //   pubSub: {
-    //     host: process.env.REDIS_PUBSUB_HOST,
-    //     port: process.env.REDIS_PUBSUB_PORT,
-    //   },
-    //   common: {
-    //     host: process.env.REDIS_HOST,
-    //     port: process.env.REDIS_PORT,
-    //   },
-    //   expiresIn: process.env.REDIS_EXPIRES_IN,
-    // },
+    redis: {
+      pubSub: {
+        host: process.env.REDIS_PUBSUB_HOST,
+        port: process.env.REDIS_PUBSUB_PORT,
+      },
+      common: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+      },
+      expiresIn: process.env.REDIS_EXPIRES_IN,
+    },
     // aws: {
     //   accessKey: process.env.AWS_ACCESS_KEY,
     //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -158,11 +158,11 @@ export const validationSchema = Joi.object({
   JWT_SIGN_UP_EXPIRES_IN: Joi.number().required(),
 
   // REDIS
-  // REDIS_PUBSUB_HOST: Joi.string().required(),
-  // REDIS_PUBSUB_PORT: Joi.number().required(),
-  // REDIS_HOST: Joi.string().required(),
-  // REDIS_PORT: Joi.number().required(),
-  // REDIS_EXPIRES_IN: Joi.string().required(),
+  REDIS_PUBSUB_HOST: Joi.string().required(),
+  REDIS_PUBSUB_PORT: Joi.number().required(),
+  REDIS_HOST: Joi.string().required(),
+  REDIS_PORT: Joi.number().required(),
+  REDIS_EXPIRES_IN: Joi.string().required(),
   //
   // // #AWS
   // AWS_ACCESS_KEY: Joi.string().required(),
