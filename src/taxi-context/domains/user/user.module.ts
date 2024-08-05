@@ -25,7 +25,7 @@ const services = [SignInByPhoneSendCodeService, SignInByPhoneConfirmCodeService,
 const controllers = [UserController];
 
 @Module({
-  imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule,   CloudCacheStorageModule.forRootAsync(redisConfigFactory), WhatsAppModule],
+  imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory), WhatsAppModule],
   providers: [...services],
   controllers: [...controllers],
 })
