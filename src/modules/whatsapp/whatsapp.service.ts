@@ -38,16 +38,19 @@ export class WhatsAppService {
 
     const phone = chatId.split('@')[0]
 
-    const userExists = await this.whatsAppUserRepository.existsByPhone(phone);
+    const userExists = await this.whatsAppUserRepository.findOneByPhone(phone);
 
     const user = userExists ?
-      await this.whatsAppUserRepository.findOneByPhone(phone) :
+      userExists :
       await this.whatsAppUserRepository.save(WhatsappUserEntity.create({
         phone: phone,
         name: name,
       }));
 
-    const session = this.generateId()
+    const sessionExists = await this.getSMScode(phone)
+
+    const session = sessionExists ? sessionExists.smsCode : this.generateId()
+
 
     this.saveSMSCode(session, phone);
 
@@ -73,6 +76,10 @@ export class WhatsAppService {
       smsCode,
       expDate,
     };
+  }
+
+  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
+    return this.cacheStorageService.getValue(phone);
   }
 
   generateId(length = 6) {
