@@ -10,6 +10,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
     return {
       driverId: props.driverId?.value || undefined,
       orderType: props.orderType,
+      orderStatus: props.orderStatus,
       user_phone: props.user_phone,
       from: props.from,
       to: props.to,
@@ -30,6 +31,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       driverId: ormEntity.driverId ? new UUID(ormEntity.driverId) : undefined,
       user_phone: ormEntity.user_phone,
       orderType: ormEntity.orderType,
+      orderStatus: ormEntity.orderStatus,
       from: ormEntity.from,
       to: ormEntity.to,
       startTime: ormEntity.startTime,

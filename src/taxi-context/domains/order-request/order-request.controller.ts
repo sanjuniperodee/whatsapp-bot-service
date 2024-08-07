@@ -4,13 +4,10 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
-import { JwtSignUpAuthGuard } from '@infrastructure/guards/jwt-sign-up-auth.guard';
-import {
-  SignUpByPhoneCreateUserRequest
-} from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.request.dto';
 import { SMSCodeRecord } from '@domain/user/types';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { NotFoundError } from 'rxjs';
+import { OrderStatus } from '@infrastructure/enums';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -39,6 +36,7 @@ export class OrderRequestController {
 
     const orderRequest = OrderRequestEntity.create({
       orderType,
+      orderStatus: OrderStatus.CREATED,
       from,
       to,
       comment: session.smsCode,
@@ -53,7 +51,7 @@ export class OrderRequestController {
   }
 
 
-  @Get('cancel/:session')
+  @Get('status/:session')
   @ApiOperation({
     summary: 'Get order status',
   })
@@ -77,7 +75,7 @@ export class OrderRequestController {
 
   @Get('cancel/:session')
   @ApiOperation({
-    summary: 'Get order status',
+    summary: 'Cancel order',
   })
   async getOrderRequest(@Param('session') session: string){
     const orderRequest = await this.orderRequestRepository.findOne({comment: session})
@@ -91,6 +89,10 @@ export class OrderRequestController {
     if(!flag || flag.smsCode != session){
       throw new Error('Session is expired')
     }
+
+    orderRequest.reject('')
+
+    await this.orderRequestRepository.save(orderRequest)
 
     return orderRequest.getPropsCopy()
   }

@@ -1,11 +1,13 @@
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base';
 import { ArgumentInvalidException } from '@libs/exceptions';
+import { OrderStatus, OrderType } from '@infrastructure/enums';
 
 export interface CreateOrderRequestProps {
   driverId?: UUID;
   user_phone?: string;
-  orderType: string;
+  orderType: OrderType;
+  orderStatus: OrderStatus,
   from: string,
   to: string,
   startTime?: Date;
@@ -25,23 +27,25 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
   protected readonly _id: UUID;
 
   static create({
-                  driverId,
-                  user_phone,
-                  orderType,
-                  startTime,
-                  arrivalTime,
-                  from,
-                  to,
-                  lat,
-                  lng,
-                  comment,
-                }: CreateOrderRequestProps): OrderRequestEntity {
+      driverId,
+      user_phone,
+      orderType,
+      orderStatus,
+      startTime,
+      arrivalTime,
+      from,
+      to,
+      lat,
+      lng,
+      comment,
+    }: CreateOrderRequestProps): OrderRequestEntity {
     const id = UUID.generate();
 
     const props: OrderRequestProps = {
       driverId,
       user_phone,
       orderType,
+      orderStatus,
       from,
       to,
       startTime,
@@ -62,6 +66,13 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
   get comment() {
     return this.props.comment;
+  }
+
+  reject(reason: string) {
+    this.props.orderStatus = OrderStatus.REJECTED;
+    this.props.rejectReason = reason;
+
+    this.validate();
   }
 
   validate(): void {

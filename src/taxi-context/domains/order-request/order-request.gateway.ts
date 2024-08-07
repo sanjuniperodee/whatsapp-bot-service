@@ -2,6 +2,7 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
+import { OrderType } from '@infrastructure/enums';
 
 @WebSocketGateway()
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -13,7 +14,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   ) {}
 
   async handleConnection(client: Socket) {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderType: 'TAXI', startTime: undefined });
+    const orderRequests = await this.orderRequestRepository.findMany({});
 
     for(const orderRequest of orderRequests){
       await this.handleOrderCreated(orderRequest)

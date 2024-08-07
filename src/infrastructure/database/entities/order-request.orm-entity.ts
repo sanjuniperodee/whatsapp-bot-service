@@ -1,5 +1,6 @@
 import { ObjectionEntityBase } from '@libs/ddd/infrastructure/database/objection.entity.base';
 import { Model } from 'objection';
+import { OrderStatus, OrderType } from '@infrastructure/enums';
 
 export class OrderRequestOrmEntity extends ObjectionEntityBase {
   static create(data: Omit<OrderRequestOrmEntity, keyof Model>) {
@@ -9,7 +10,8 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
 
   driverId?: string;
   user_phone?: string;
-  orderType: string;
+  orderType: OrderType;
+  orderStatus: OrderStatus;
   from: string;
   to: string;
   startTime?: Date;

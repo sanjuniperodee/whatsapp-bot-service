@@ -4,3 +4,11 @@ export enum OrderType {
   INTERCITY_TAXI = 'INTERCITY_TAXI',
   CARGO = 'CARGO'
 }
+
+export enum OrderStatus {
+  CREATED = 'CREATED',
+  STARTED = 'STARTED',
+  ONGOING = 'ONGOING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED'
+}
