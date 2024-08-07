@@ -58,7 +58,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Creating user',
   })
-  @ApiBody({ type: SignUpByPhoneCreateUserRequest }) // Document request body for Swagger
+  @ApiBody({ type: SignUpByPhoneCreateUserRequest })
   async createUser(
     @Body() input: SignUpByPhoneCreateUserRequest,
   ): Promise<SignUpByPhoneCreateUserResponse> {

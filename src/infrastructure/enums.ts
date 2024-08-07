@@ -1,0 +1,6 @@
+export enum OrderType {
+  TAXI = 'TAXI',
+  DELIVERY = 'DELIVERY',
+  INTERCITY_TAXI = 'INTERCITY_TAXI',
+  CARGO = 'CARGO'
+}

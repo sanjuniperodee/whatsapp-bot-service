@@ -23,7 +23,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleDisconnect(client: Socket) {
   }
   async handleOrderCreated(order: OrderRequestEntity) {
-
     this.server.emit('newOrder', order.getPropsCopy());
+  }
+
+  async orderCanceled(order: OrderRequestEntity) {
+    this.server.emit('orderCanceled', order.getPropsCopy());
   }
 }

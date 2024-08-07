@@ -54,6 +54,7 @@ export class WhatsAppService {
     if(!sessionExists)
       this.saveSMSCode(session, phone);
 
+
     const link = `${this.configService.get('BASE_URL')}/taxi/${session}`;
     await this.sendMessage(chatId, `${name}, here is your taxi link: ${link}`);
     return true;
