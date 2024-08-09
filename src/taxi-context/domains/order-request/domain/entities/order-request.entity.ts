@@ -7,7 +7,7 @@ export interface CreateOrderRequestProps {
   driverId?: UUID;
   user_phone?: string;
   orderType: OrderType;
-  orderStatus: OrderStatus,
+  orderstatus: OrderStatus,
   from: string,
   to: string,
   startTime?: Date;
@@ -30,7 +30,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       driverId,
       user_phone,
       orderType,
-      orderStatus,
+      orderstatus,
       startTime,
       arrivalTime,
       from,
@@ -45,7 +45,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       driverId,
       user_phone,
       orderType,
-      orderStatus,
+      orderstatus,
       from,
       to,
       startTime,
@@ -69,7 +69,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
   }
 
   reject(reason: string) {
-    this.props.orderStatus = OrderStatus.REJECTED;
+    this.props.orderstatus = OrderStatus.REJECTED;
     this.props.rejectReason = reason;
 
     this.validate();
@@ -77,18 +77,18 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
   accept(driverId: UUID) {
     this.props.driverId = driverId;
-    this.props.orderStatus = OrderStatus.STARTED;
+    this.props.orderstatus = OrderStatus.STARTED;
 
     this.validate();
   }
 
   driverArrived() {
-    this.props.orderStatus = OrderStatus.WAITING;
+    this.props.orderstatus = OrderStatus.WAITING;
     this.props.updatedAt = new Date();
   }
 
   rideEnded() {
-    this.props.orderStatus = OrderStatus.COMPLETED;
+    this.props.orderstatus = OrderStatus.COMPLETED;
     this.props.updatedAt = new Date();
   }
 

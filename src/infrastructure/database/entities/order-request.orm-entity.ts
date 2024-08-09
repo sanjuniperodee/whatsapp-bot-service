@@ -11,7 +11,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   driverId?: string;
   user_phone?: string;
   orderType: OrderType;
-  orderStatus: OrderStatus;
+  orderstatus: OrderStatus;
   from: string;
   to: string;
   startTime?: Date;

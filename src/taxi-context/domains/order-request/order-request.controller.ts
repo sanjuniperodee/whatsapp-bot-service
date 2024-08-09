@@ -47,7 +47,7 @@ export class OrderRequestController {
   @Post('create-order')
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
-  async createOrder(@Body() input: CreateOrderRequest, @IAM() user: UserEntity) {
+  async createOrder(@Body() input: CreateOrderRequest) {
     const { phone, orderType, from, to, lat, lng, socketId } = input;
     const session = await this.getSMScode(phone);
 
@@ -59,7 +59,7 @@ export class OrderRequestController {
 
     const orderRequest = OrderRequestEntity.create({
       orderType,
-      orderStatus: OrderStatus.CREATED,
+      orderstatus: OrderStatus.CREATED,
       from,
       to,
       lat,
@@ -68,8 +68,12 @@ export class OrderRequestController {
       user_phone: phone
     });
 
+    const user = await this.whatsappUserRepository.findOneByPhone(phone)
+
+    console.log(user)
+
     await this.orderRequestRepository.save(orderRequest);
-    await this.cacheStorageService.setValue(user.id.value, { socketId: socketId } );
+    await this.cacheStorageService.setValue(user?.id.value || '', { socketId: socketId } );
     await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
     return orderRequest.getPropsCopy();
@@ -80,7 +84,7 @@ export class OrderRequestController {
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
   async getActiveOrders() {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderStatus: OrderStatus.CREATED })
+    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
     return orderRequests.map(async orderRequest => {
       const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
       return {
