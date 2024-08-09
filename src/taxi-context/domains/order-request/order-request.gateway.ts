@@ -35,6 +35,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   @SubscribeMessage('updateLocation')
   async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number }) {
     const { driverId, latitude, longitude } = data;
+    console.log(data)
     await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
   }
 
