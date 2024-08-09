@@ -50,7 +50,10 @@ export class OrderRequestController {
   async createOrder(@Body() input: CreateOrderRequest, @IAM() user: UserEntity) {
     const { phone, orderType, from, to, lat, lng, socketId } = input;
     const session = await this.getSMScode(phone);
-    if (!session) {
+
+    console.log(session)
+
+    if (!session?.smsCode) {
       throw new NotFoundError("Session is not found");
     }
 
