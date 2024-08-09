@@ -75,6 +75,23 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
     this.validate();
   }
 
+  accept(driverId: UUID) {
+    this.props.driverId = driverId;
+    this.props.orderStatus = OrderStatus.STARTED;
+
+    this.validate();
+  }
+
+  driverArrived() {
+    this.props.orderStatus = OrderStatus.WAITING;
+    this.props.updatedAt = new Date();
+  }
+
+  rideEnded() {
+    this.props.orderStatus = OrderStatus.COMPLETED;
+    this.props.updatedAt = new Date();
+  }
+
   validate(): void {
     const { user_phone, orderType } = this.props;
 

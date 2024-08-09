@@ -38,4 +38,12 @@ export class CloudCacheStorageService {
     const res = await this.redisService.client.del(key);
     return Boolean(res);
   }
+
+  async updateDriverLocation(driverId: string, latitude: number, longitude: number): Promise<void> {
+    await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
+  }
+
+  async findNearestDrivers(latitude: number, longitude: number, radius = 5000): Promise<string[]> {
+    return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
+  }
 }

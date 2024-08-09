@@ -8,6 +8,7 @@ export enum OrderType {
 export enum OrderStatus {
   CREATED = 'CREATED',
   STARTED = 'STARTED',
+  WAITING = 'WAITING',
   ONGOING = 'ONGOING',
   COMPLETED = 'COMPLETED',
   REJECTED = 'REJECTED'

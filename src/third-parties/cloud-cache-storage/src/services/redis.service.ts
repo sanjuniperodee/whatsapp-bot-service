@@ -28,4 +28,13 @@ export class RedisService {
   get clientForSubscriberMode(): IoRedis.Redis {
     return this._clientForSubscriberMode;
   }
+
+  async geoAdd(key: string, longitude: number, latitude: number, member: string): Promise<void> {
+    await this._client.geoadd(key, longitude, latitude, member);
+  }
+
+  async geoRadius(key: string, longitude: number, latitude: number, radius: number, unit: 'm' | 'km' | 'mi' | 'ft', count: number, sort: 'ASC' | 'DESC'): Promise<string[]> {
+    const result = await this._client.georadius(key, longitude, latitude, radius, unit, 'WITHDIST', 'COUNT', count, sort);
+    return result.map((item: any) => item[0]); // Extracting member names from the result
+  }
 }

@@ -27,10 +27,14 @@ export class CreateOrderRequest {
   @IsLatitude()
   readonly lat: number;
 
-
   @IsString()
   @IsDefined()
   @IsNotEmpty()
   @IsEnum(OrderType)
   readonly orderType: OrderType;
+
+  @IsNotEmpty()
+  @IsDefined()
+  @IsString()
+  readonly socketId: string;
 }
