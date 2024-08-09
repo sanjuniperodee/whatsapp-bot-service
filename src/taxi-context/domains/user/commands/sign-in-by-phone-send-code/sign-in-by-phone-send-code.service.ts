@@ -30,7 +30,7 @@ export class SignInByPhoneSendCodeService {
 
     const expirationResult = this.checkExpiration(codeRecord);
 
-    if (!expirationResult) {
+    if (expirationResult) {
       throw new Error("Code Expired")
     }
 
