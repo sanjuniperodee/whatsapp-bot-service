@@ -57,7 +57,7 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
   async createOrder(@Body() input: CreateOrderRequest) {
-    const { phone, orderType, from, to, lat, lng, socketId } = input;
+    const { phone, orderType, from, to, lat, lng, socketId, price } = input;
     const session = await this.getSMScode(phone);
 
     console.log(session)
@@ -73,6 +73,7 @@ export class OrderRequestController {
       to,
       lat,
       lng,
+      price,
       comment: session.smsCode,
       user_phone: phone
     });

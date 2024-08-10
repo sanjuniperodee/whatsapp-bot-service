@@ -1,5 +1,15 @@
-import { IsDefined, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDefined,
+  IsEnum,
+  IsLatitude,
+  IsLongitude,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { OrderType } from '@infrastructure/enums';
+import { IsNull } from 'typeorm';
 
 export class CreateOrderRequest {
   @IsNotEmpty()
@@ -26,6 +36,11 @@ export class CreateOrderRequest {
   @IsDefined()
   @IsLatitude()
   readonly lat: number;
+
+  @IsNotEmpty()
+  @IsDefined()
+  @IsNumber()
+  readonly price: number;
 
   @IsString()
   @IsDefined()

@@ -18,6 +18,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       arrivalTime: props.arrivalTime,
       lat: props.lat,
       lng: props.lng,
+      price: props.price,
       comment: props.comment
     };
   }
@@ -38,6 +39,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       arrivalTime: ormEntity.arrivalTime,
       lat: ormEntity.lat,
       lng: ormEntity.lng,
+      price: ormEntity.price,
       comment: ormEntity.comment
     };
 

@@ -18,6 +18,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   arrivalTime?: Date;
   lat?: number;
   lng?: number;
+  price: number;
   comment?: string;
   rejectReason?: string;
 

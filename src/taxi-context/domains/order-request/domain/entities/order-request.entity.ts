@@ -14,6 +14,7 @@ export interface CreateOrderRequestProps {
   arrivalTime?: Date;
   lat?: number;
   lng?: number;
+  price: number,
   comment?: string;
 }
 
@@ -37,6 +38,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       to,
       lat,
       lng,
+    price,
       comment,
     }: CreateOrderRequestProps): OrderRequestEntity {
     const id = UUID.generate();
@@ -53,6 +55,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       lat,
       lng,
       comment,
+      price,
       createdAt: new Date(),
       updatedAt: new Date()
     };
