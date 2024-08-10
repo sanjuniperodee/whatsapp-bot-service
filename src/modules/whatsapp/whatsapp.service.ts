@@ -28,7 +28,7 @@ export class WhatsAppService {
     this.apiUrl = 'https://7103.api.greenapi.com';
     this.idInstance = process.env.GREEN_API_ID_INSTANCE as string || '';
     this.apiTokenInstance = process.env.GREEN_API_TOKEN_INSTANCE || '';
-    this.smsCodeExpiresIn = 72000000;
+    this.smsCodeExpiresIn = 7200000000;
     this.smsCodeLength = 6;
   }
 
