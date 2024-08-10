@@ -25,13 +25,31 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
+    const session = client.handshake.query.session as string;
+
     if (userId) {
       client.join(userId);
       await this.cacheStorageService.setSocketId(userId, client.id);
     }
-    console.log(userId, client.id)
-    const clientSocketId = await this.cacheStorageService.getSocketClientId(userId);
-    console.log(clientSocketId)
+    if(session){
+      const orderRequest = await this.orderRequestRepository.findOne({ comment: session });
+      if (!orderRequest) {
+        throw new Error('Session is expired');
+      }
+
+      const user_phone = orderRequest.getPropsCopy().user_phone
+      if(!user_phone){
+        throw new Error('Session is expired');
+      }
+
+      const user = await this.whatsappUserRepository.findOneByPhone(user_phone)
+      if(!user){
+        throw new Error("Session expired or user not found")
+      }
+
+      client.join(user.id.value);
+      await this.cacheStorageService.setSocketId(userId, client.id);
+    }
   }
 
   async handleDisconnect(client: Socket) {
