@@ -84,15 +84,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
-
+      console.log(userPhone)
       if (userPhone) {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone)
-
+        console.log(user)
         if(!user){
           throw new Error("SOMETHING WENT WRONG")
         }
         await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
-        console.log(await this.cacheStorageService.getSocketClientId(user.id.value), user.id.value)
+
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         console.log(clientSocketId)
         if (clientSocketId) {
