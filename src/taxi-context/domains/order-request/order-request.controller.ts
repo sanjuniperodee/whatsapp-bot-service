@@ -11,6 +11,7 @@ import { OrderStatus } from '@infrastructure/enums';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
+import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -124,12 +125,14 @@ export class OrderRequestController {
   @Get('user/:session')
   @ApiOperation({ summary: 'Get user by session id' })
   async getUserBySessionId(@Param('session') session: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ comment: session });
+    console.log(session)
+    const orderRequest = await OrderRequestOrmEntity.query().where({'comment': session}).first();
     if (!orderRequest) {
       throw new Error('Session is expired');
     }
 
-    const user_phone = orderRequest.getPropsCopy().user_phone
+    const user_phone = orderRequest.user_phone
+
     if(!user_phone){
       throw new Error('Session is expired');
     }
