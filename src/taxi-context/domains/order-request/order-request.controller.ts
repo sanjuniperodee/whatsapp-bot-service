@@ -111,6 +111,19 @@ export class OrderRequestController {
     return orderRequest.getPropsCopy();
   }
 
+  @Get('user/:session')
+  @ApiOperation({ summary: 'Get user by session id' })
+  async getUserBySessionId(@Param('session') session: string) {
+    const orderRequest = await this.orderRequestRepository.findOne({ comment: session });
+    if (!orderRequest) {
+      throw new Error('Session is expired');
+    }
+
+    const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone)
+
+    return user?.getPropsCopy()
+  }
+
   private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
     return this.cacheStorageService.getValue(phone);
   }
