@@ -94,7 +94,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-
+        console.log(clientSocketId)
         if (clientSocketId) {
           this.server.to(clientSocketId).emit('orderAccepted', { order: order.getPropsCopy(), status: 'ACCEPTED', driver: driver?.getPropsCopy() });
         }
