@@ -9,7 +9,14 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  path: '/socket.io/',  // Ensure this matches the client or change it
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }
+})
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer() server: Server;
