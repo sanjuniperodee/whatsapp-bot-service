@@ -5,6 +5,9 @@ import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+import { forwardRef, Inject } from '@nestjs/common';
+import { UserRepository } from '../../domain-repositories/user/user.repository';
 
 @WebSocketGateway()
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -14,15 +17,21 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   constructor(
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly userRepository: UserRepository,
     private readonly whatsappUserRepository: WhatsappUserRepository,
+    @Inject(forwardRef(() => WhatsAppService))
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
       client.join(userId);
+      await this.cacheStorageService.setSocketId(userId, client.id);
     }
     console.log(userId, client.id)
+    const clientSocketId = await this.cacheStorageService.getSocketClientId(userId);
+    console.log(clientSocketId)
   }
 
   async handleDisconnect(client: Socket) {
@@ -53,22 +62,30 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @SubscribeMessage('acceptOrder')
   async handleOrderAcceptance(client: Socket, data: { driverId: string, orderId: string }) {
-    const { driverId, orderId } = data;
+    const parsedData = JSON.parse(data.toString())
+    const { driverId, orderId } = parsedData;
     const order = await this.orderRequestRepository.findOneById(orderId);
+
     if (order) {
       order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);
-      this.server.to(driverId).emit('orderAccepted', { order: order.getPropsCopy(), driverId });
+
+      const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
+
       if (userPhone) {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone)
+
         if(!user){
           throw new Error("SOMETHING WENT WRONG")
         }
-        const clientSocketId = await this.cacheStorageService.getValue<string>(user.id.value);
+        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
+
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+
         if (clientSocketId) {
-          this.server.to(clientSocketId).emit('orderAccepted', { order: order.getPropsCopy(), status: 'ACCEPTED' });
+          this.server.to(clientSocketId).emit('orderAccepted', { order: order.getPropsCopy(), status: 'ACCEPTED', driver: driver?.getPropsCopy() });
         }
       }
     }
@@ -76,11 +93,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @SubscribeMessage('driverArrived')
   async handleDriverArrived(client: Socket, data: { driverId: string, orderId: string }) {
-    const { driverId, orderId } = data;
+    const parsedData = JSON.parse(data.toString())
+    const { driverId, orderId } = parsedData;
     const order = await this.orderRequestRepository.findOneById(orderId);
+
     if (order && order.getPropsCopy().driverId?.value == driverId) {
       order.driverArrived();
       await this.orderRequestRepository.save(order);
+
+      const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
       if (userPhone) {
@@ -88,9 +109,12 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         if (!user) {
           throw new Error("SOMETHING WENT WRONG");
         }
-        const clientSocketId = await this.cacheStorageService.getValue<string>(user.id.value);
+
+        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель приехал, вас ожидает золотой кабан')
+
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
-          this.server.to(clientSocketId).emit('driverArrived', { order: order.getPropsCopy(), status: 'DRIVER_ARRIVED' });
+          this.server.to(clientSocketId).emit('driverArrived', { order: order.getPropsCopy(), status: 'DRIVER_ARRIVED', driver: driver?.getPropsCopy() });
         }
       }
     }
@@ -98,11 +122,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @SubscribeMessage('rideEnded')
   async handleRideEnded(client: Socket, data: { driverId: string, orderId: string }) {
-    const { driverId, orderId } = data;
+    const parsedData = JSON.parse(data.toString())
+    const { driverId, orderId } = parsedData;
     const order = await this.orderRequestRepository.findOneById(orderId);
+
     if (order && order.getPropsCopy().driverId?.value == driverId) {
       order.rideEnded();
       await this.orderRequestRepository.save(order);
+
+      const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
       if (userPhone) {
@@ -110,9 +138,12 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         if (!user) {
           throw new Error("SOMETHING WENT WRONG");
         }
-        const clientSocketId = await this.cacheStorageService.getValue<string>(user.id.value);
+
+        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Заказ завершен, оцените пожалуйста поездку')
+
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
-          this.server.to(clientSocketId).emit('rideEnded', { order: order.getPropsCopy(), status: 'RIDE_ENDED' });
+          this.server.to(clientSocketId).emit('rideEnded', { order: order.getPropsCopy(), status: 'RIDE_ENDED', driver: driver });
         }
       }
     }

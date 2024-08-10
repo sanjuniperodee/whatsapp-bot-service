@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -15,8 +15,8 @@ import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
   imports: [
     ConfigModule,
     CqrsModule,
+    forwardRef(() => OrderRequestModule),
     TaxiContextDomainRepositoriesModule,
-    OrderRequestModule,
     CloudCacheStorageModule.forRootAsync(redisConfigFactory)
   ],
   controllers: [WhatsAppController],

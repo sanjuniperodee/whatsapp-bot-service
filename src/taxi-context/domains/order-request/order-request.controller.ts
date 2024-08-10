@@ -8,8 +8,6 @@ import { SMSCodeRecord } from '@domain/user/types';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { NotFoundError } from 'rxjs';
 import { OrderStatus } from '@infrastructure/enums';
-import { IAM } from '@infrastructure/decorators/iam.decorator';
-import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';

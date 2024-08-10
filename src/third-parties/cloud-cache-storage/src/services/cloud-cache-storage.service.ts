@@ -11,6 +11,10 @@ export class CloudCacheStorageService {
     this.redisService.client.set(key, JSON.stringify(value));
   }
 
+  setSocketId(key: string, value: string) {
+    this.redisService.client.set(key, value);
+  }
+
   setValueWithExp(key: string, value: Record<string, any>, expireInSec = 60) {
     const expDate = moment().add(expireInSec, 'seconds');
 
@@ -29,6 +33,15 @@ export class CloudCacheStorageService {
     const value = await this.redisService.client.get(key);
     if (value) {
       return JSON.parse(value);
+    } else {
+      return null;
+    }
+  }
+
+  async getSocketClientId(key: string){
+    const value = await this.redisService.client.get(key);
+    if (value) {
+      return value;
     } else {
       return null;
     }
