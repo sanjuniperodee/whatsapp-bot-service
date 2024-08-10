@@ -38,6 +38,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   async handleDisconnect(client: Socket) {
     const userId = client.handshake.query.userId as string;
+    console.log({ 'Disconnected': userId })
     if (userId) {
       client.leave(userId);
     }
