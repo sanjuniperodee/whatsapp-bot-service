@@ -24,6 +24,16 @@ export class OrderRequestController {
     private readonly whatsappUserRepository: WhatsappUserRepository,
   ) {}
 
+  @Get('menu/:id')
+  async getMenu(@Param('id') id: string){
+    const menu = await fetch('https://api.aktau-go.kz/getmenu/' + id, {
+      headers: {
+        'Authorization': 'c2F0ZmFybV9tZW51X2FwaTphOTU5MGYyMjNkM2Q4M2ExNDVjNmJiZWQyMGM1NTJjZmQyZTc1OWUwMWI0YmE4NTc0OWE2YmQwZWMxOGY0MmI2'
+      }
+    })
+    return menu.json();
+  }
+
   @Get('status/:session')
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@Param('session') session: string) {
