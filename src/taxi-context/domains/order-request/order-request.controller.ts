@@ -119,7 +119,13 @@ export class OrderRequestController {
       throw new Error('Session is expired');
     }
 
-    const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone)
+    const user_phone = orderRequest.getPropsCopy().user_phone
+    if(!user_phone){
+      throw new Error('Session is expired');
+    }
+
+
+    const user = await this.whatsappUserRepository.findOneByPhone(user_phone)
 
     return user?.getPropsCopy()
   }
