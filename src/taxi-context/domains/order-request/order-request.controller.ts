@@ -60,13 +60,20 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
   async createOrder(@Body() input: CreateOrderRequest) {
-    const { phone, orderType, from, to, lat, lng, socketId, price } = input;
+    const { phone, orderType, from, to, lat, lng, price } = input;
+
+    console.log(input)
+
     const session = await this.getSMScode(phone);
 
     console.log(session)
 
     if (!session?.smsCode) {
       throw new NotFoundError("Session is not found");
+    }
+
+    if (await this.orderRequestRepository.findOne({ comment: session })) {
+      throw new Error('Order request with this session already exists');
     }
 
     const orderRequest = OrderRequestEntity.create({
@@ -86,7 +93,6 @@ export class OrderRequestController {
     console.log(user)
 
     await this.orderRequestRepository.save(orderRequest);
-    await this.cacheStorageService.setValue(user?.id.value || '', { socketId: socketId } );
     await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
     return orderRequest.getPropsCopy();
