@@ -98,13 +98,14 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Get active orders' })
   async getActiveOrders() {
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
-    return orderRequests.map(async orderRequest => {
+
+    return await Promise.all(orderRequests.map(async orderRequest => {
       const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
       return {
         user,
         orderRequest
       }
-    });
+    }))
   }
 
   @UseGuards(JwtAuthGuard())
