@@ -1,6 +1,7 @@
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base';
 import { UserHasEmptyFieldsError } from '../errors/whatsapp-user.errors';
+import { OrderStatus } from '@infrastructure/enums';
 
 export interface CreateWhatsappUserProps {
   phone: string;
@@ -32,6 +33,11 @@ export class WhatsappUserEntity extends AggregateRoot<WhatsappUserProps> {
 
   get phone() {
     return this.props.phone;
+  }
+
+  setSession(session: string){
+    this.props.session = session;
+
   }
 
   validate(): void {

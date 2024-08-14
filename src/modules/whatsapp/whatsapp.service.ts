@@ -47,13 +47,18 @@ export class WhatsAppService {
 
     const userExists = await this.whatsAppUserRepository.findOneByPhone(phone);
 
-    const user = userExists ?
-      userExists :
+    if(!userExists){
       await this.whatsAppUserRepository.save(WhatsappUserEntity.create({
         phone: phone,
         name: name,
         session: session,
       }));
+    }
+    else{
+      userExists.setSession(session);
+      await this.whatsAppUserRepository.save(userExists)
+    }
+
 
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${session}`;
