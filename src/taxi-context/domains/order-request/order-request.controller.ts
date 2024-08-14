@@ -12,6 +12,9 @@ import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
+import { IAM } from '@infrastructure/decorators/iam.decorator';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -104,6 +107,21 @@ export class OrderRequestController {
     });
   }
 
+  @UseGuards(JwtAuthGuard())
+  @Get('my-active-order')
+  @ApiOperation({ summary: 'Get my current order' })
+  async getMyActiveOrder(@IAM() user: UserOrmEntity) {
+    const orderRequest = await this.orderRequestRepository.findOne({ driverId: new UUID(user.id), endedAt: undefined})
+    if(!orderRequest){
+      return 'You dont have active order'
+    }
+      const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+      return {
+        whatsappUser,
+        orderRequest
+      }
+  }
+
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('session') session: string) {
@@ -126,20 +144,7 @@ export class OrderRequestController {
   @Get('user/:session')
   @ApiOperation({ summary: 'Get user by session id' })
   async getUserBySessionId(@Param('session') session: string) {
-    console.log(session)
-    const orderRequest = await OrderRequestOrmEntity.query().where({'comment': session}).first();
-    if (!orderRequest) {
-      throw new Error('Session is expired');
-    }
-
-    const user_phone = orderRequest.user_phone
-
-    if(!user_phone){
-      throw new Error('Session is expired');
-    }
-
-
-    const user = await this.whatsappUserRepository.findOneByPhone(user_phone)
+    const user = await this.whatsappUserRepository.findOneBySession(session)
 
     return user?.getPropsCopy()
   }

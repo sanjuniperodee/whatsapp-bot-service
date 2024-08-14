@@ -5,6 +5,7 @@ import { UserHasEmptyFieldsError } from '../errors/whatsapp-user.errors';
 export interface CreateWhatsappUserProps {
   phone: string;
   name: string;
+  session?: string;
 }
 
 // All properties that a User has

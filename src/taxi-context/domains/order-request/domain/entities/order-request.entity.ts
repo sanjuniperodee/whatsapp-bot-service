@@ -22,6 +22,7 @@ export type OrderRequestProps = CreateOrderRequestProps & {
   rejectReason?: string
   createdAt: Date;
   updatedAt: Date;
+  endedAt?: Date;
 };
 
 export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {

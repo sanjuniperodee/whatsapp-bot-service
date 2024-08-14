@@ -9,6 +9,7 @@ export class WhatsappUserOrmEntity extends ObjectionEntityBase {
 
   phone: string;
   name: string;
+  session?: string
 
   static get jsonSchema() {
     return {

@@ -78,6 +78,16 @@ export class WhatsappUserRepository
     return this.mapper.toDomainEntity(found);
   }
 
+  async findOneBySession(session: string) {
+    const found = await WhatsappUserOrmEntity.query().findOne('session', session);
+
+    if (!found) {
+      return found;
+    }
+
+    return this.mapper.toDomainEntity(found);
+  }
+
   async save(entity: WhatsappUserEntity, trxId?: TransactionId): Promise<UUID> {
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]

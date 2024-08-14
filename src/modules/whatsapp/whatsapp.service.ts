@@ -38,6 +38,13 @@ export class WhatsAppService {
 
     const phone = chatId.split('@')[0]
 
+    const sessionExists = await this.getSMScode(phone)
+
+    const session = sessionExists ? sessionExists.smsCode : this.generateId()
+
+    if(!sessionExists)
+      this.saveSMSCode(session, phone);
+
     const userExists = await this.whatsAppUserRepository.findOneByPhone(phone);
 
     const user = userExists ?
@@ -45,14 +52,8 @@ export class WhatsAppService {
       await this.whatsAppUserRepository.save(WhatsappUserEntity.create({
         phone: phone,
         name: name,
+        session: session,
       }));
-
-    const sessionExists = await this.getSMScode(phone)
-
-    const session = sessionExists ? sessionExists.smsCode : this.generateId()
-
-    if(!sessionExists)
-      this.saveSMSCode(session, phone);
 
 
     const link = `${this.configService.get('BASE_URL')}/taxi/${session}`;

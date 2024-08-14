@@ -11,6 +11,7 @@ export class WhatsappUserOrmMapper extends OrmMapper<WhatsappUserEntity, Whatsap
     return {
       name: props.name,
       phone: props.phone,
+      session: props.session,
     };
   }
 
@@ -19,7 +20,8 @@ export class WhatsappUserOrmMapper extends OrmMapper<WhatsappUserEntity, Whatsap
 
     const props: WhatsappUserProps = {
       phone: ormEntity.phone,
-      name: ormEntity.name
+      name: ormEntity.name,
+      session: ormEntity.session,
     };
 
     return { id, props };

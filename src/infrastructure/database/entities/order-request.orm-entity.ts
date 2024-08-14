@@ -21,6 +21,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   price: number;
   comment?: string;
   rejectReason?: string;
+  endedAt?: Date
 
   static get jsonSchema() {
     return {
