@@ -72,7 +72,7 @@ export class OrderRequestController {
       throw new NotFoundError("Session is not found");
     }
 
-    if (await this.orderRequestRepository.findOne({ comment: session })) {
+    if (await this.orderRequestRepository.findOne({ comment: session.smsCode })) {
       throw new Error('Order request with this session already exists');
     }
 
