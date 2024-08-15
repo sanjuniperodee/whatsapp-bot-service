@@ -53,7 +53,7 @@ export class OrderRequestController {
 
     const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
 
-    return {order: orderRequest.getPropsCopy(), driver: driver, status: orderRequest.getPropsCopy().orderstatus}
+    return {order: orderRequest.getPropsCopy(), driver: driver?.getPropsCopy(), status: orderRequest.getPropsCopy().orderstatus}
   }
 
   @Post('create-order')
