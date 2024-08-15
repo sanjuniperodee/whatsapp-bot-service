@@ -42,11 +42,11 @@ export class OrderRequestController {
   @Get('status/:session')
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@Param('session') session: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ comment: session });
+    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: session });
     if (!orderRequest) {
-      throw new Error('Session is expired');
+      throw new Error('Session is expired!');
     }
-
+    console.log(orderRequest.getPropsCopy().rating)
     const flag = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
     if (!flag || flag.smsCode !== session) {
       throw new Error('Session is expired');
@@ -88,7 +88,7 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
   async createOrder(@Body() input: CreateOrderRequest) {
-    const { phone, orderType, from, to, lat, lng, price } = input;
+    const { phone, orderType, from, to, lat, lng, price, comment} = input;
 
     console.log(input)
 
@@ -112,7 +112,8 @@ export class OrderRequestController {
       lat,
       lng,
       price,
-      comment: session.smsCode,
+      comment: comment,
+      sessionid: session.smsCode,
       user_phone: phone
     });
 

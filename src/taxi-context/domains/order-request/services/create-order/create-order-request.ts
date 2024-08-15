@@ -57,8 +57,7 @@ export class CreateOrderRequest {
   readonly orderType: OrderType;
 
   @ApiProperty()
-  @IsNotEmpty()
   @IsDefined()
   @IsString()
-  readonly socketId: string;
+  readonly comment: string;
 }

@@ -23,6 +23,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   rejectReason?: string;
   endedAt?: Date;
   rating?: number;
+  sessionid: string
 
   static get jsonSchema() {
     return {

@@ -16,6 +16,7 @@ export interface CreateOrderRequestProps {
   lng?: number;
   price: number,
   comment?: string;
+  sessionid: string;
 }
 
 export type OrderRequestProps = CreateOrderRequestProps & {
@@ -40,6 +41,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       to,
       lat,
       lng,
+    sessionid,
     price,
       comment,
     }: CreateOrderRequestProps): OrderRequestEntity {
@@ -58,6 +60,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       lng,
       comment,
       price,
+      sessionid,
       createdAt: new Date(),
       updatedAt: new Date()
     };
