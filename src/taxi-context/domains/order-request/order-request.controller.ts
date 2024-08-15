@@ -52,7 +52,7 @@ export class OrderRequestController {
     }
 
     const driver = await this.userRepository.findOneById(orderRequest.id.value);
-
+    console.log(driver)
     return {order: orderRequest.getPropsCopy(), driver: driver, status: orderRequest.getPropsCopy().orderstatus}
   }
 
