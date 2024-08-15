@@ -54,7 +54,14 @@ export class OrderRequestController {
 
     const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
 
-    return {order: orderRequest.getPropsCopy(), driver: driver?.getPropsCopy(), status: orderRequest.getPropsCopy().orderstatus}
+    const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
+
+    return {
+      order: orderRequest.getPropsCopy(),
+      driver: driver?.getPropsCopy(),
+      status: orderRequest.getPropsCopy().orderstatus,
+      reviews: orderRequests.length
+    }
   }
 
   @Post('make-review')
