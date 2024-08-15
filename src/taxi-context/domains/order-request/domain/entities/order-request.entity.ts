@@ -19,7 +19,8 @@ export interface CreateOrderRequestProps {
 }
 
 export type OrderRequestProps = CreateOrderRequestProps & {
-  rejectReason?: string
+  rejectReason?: string;
+  rating?: number;
   createdAt: Date;
   updatedAt: Date;
   endedAt?: Date;
@@ -77,6 +78,10 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
     this.props.rejectReason = reason;
 
     this.validate();
+  }
+
+  rate(rating: number){
+    this.props.rating = rating;
   }
 
   accept(driverId: UUID) {

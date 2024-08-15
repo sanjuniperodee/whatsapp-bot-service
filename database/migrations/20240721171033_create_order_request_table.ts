@@ -18,6 +18,7 @@ export async function up(knex: Knex) {
     t.timestamp('arrivalTime');
     t.float('lat', 14, 10);
     t.float('lng', 14, 10);
+    t.integer('price', 10);
     t.string('comment');
     t.timestamp('createdAt').defaultTo(knex.fn.now());
     t.timestamp('updatedAt').defaultTo(knex.fn.now());

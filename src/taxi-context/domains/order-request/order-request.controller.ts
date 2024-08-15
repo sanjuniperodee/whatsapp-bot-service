@@ -15,6 +15,7 @@ import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-r
 import { IAM } from '@infrastructure/decorators/iam.decorator';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { MakeReviewRequest } from '@domain/order-request/services/make-review/create-order-request';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -54,6 +55,18 @@ export class OrderRequestController {
     const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
 
     return {order: orderRequest.getPropsCopy(), driver: driver?.getPropsCopy(), status: orderRequest.getPropsCopy().orderstatus}
+  }
+
+  @Post('make-review')
+  @ApiOperation({ summary: 'Make Review' })
+  @ApiBody({ type: MakeReviewRequest })
+  async makeReview(@Body() input: MakeReviewRequest) {
+    const { orderRequestId, comment, rating } = input;
+
+    const orderRequest = await this.orderRequestRepository.findOneById(orderRequestId)
+
+    orderRequest?.rate(rating)
+
   }
 
   @Post('create-order')
