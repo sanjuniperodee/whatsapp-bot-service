@@ -51,8 +51,8 @@ export class OrderRequestController {
       throw new Error('Session is expired');
     }
 
-    const driver = await this.userRepository.findOneById(orderRequest.id.value);
-    console.log(driver)
+    const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
+
     return {order: orderRequest.getPropsCopy(), driver: driver, status: orderRequest.getPropsCopy().orderstatus}
   }
 
