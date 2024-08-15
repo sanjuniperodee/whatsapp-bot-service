@@ -72,8 +72,16 @@ export class OrderRequestController {
 
     const orderRequest = await this.orderRequestRepository.findOneById(orderRequestId)
 
+    if(!orderRequest){
+      throw new Error("Order request doesn't exist")
+    }
+    await OrderRequestOrmEntity.query().updateAndFetchById(orderRequestId, {
+      'rating': rating
+    })
+
     orderRequest?.rate(rating)
 
+    await this.orderRequestRepository.save(orderRequest)
   }
 
   @Post('create-order')
