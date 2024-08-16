@@ -8,6 +8,7 @@ import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
+import { SMSCodeRecord } from '@domain/user/types';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -141,7 +142,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       order.rideEnded();
       await this.orderRequestRepository.save(order);
 
-      await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
+      const session = await this.getSMScode(order.getPropsCopy().user_phone || '')
+      if(session?.smsCode == order.getPropsCopy().sessionid)
+        await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
 
       const driver = await this.userRepository.findOneById(driverId)
 
@@ -171,4 +174,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   //     this.server.emit('orderStatusUpdated', { order: order.getPropsCopy(), status });
   //   }
   // }
+
+  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
+    return this.cacheStorageService.getValue(phone);
+  }
 }
