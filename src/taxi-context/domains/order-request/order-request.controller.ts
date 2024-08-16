@@ -46,11 +46,6 @@ export class OrderRequestController {
     if (!orderRequest) {
       throw new Error('Session is expired!');
     }
-    console.log(orderRequest.getPropsCopy().rating)
-    const flag = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!flag || flag.smsCode !== session) {
-      throw new Error('Session is expired');
-    }
 
     const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
 
