@@ -156,7 +156,7 @@ export class OrderRequestController {
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('session') session: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ comment: session });
+    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: session });
     if (!orderRequest) {
       throw new Error('Session is expired');
     }

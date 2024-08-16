@@ -25,6 +25,8 @@ export class OrderRequestRepository
 
     const found = await OrderRequestOrmEntity.query().findOne(where);
 
+    console.log(params)
+
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
 
@@ -126,13 +128,22 @@ export class OrderRequestRepository
 
   protected prepareQuery(params: QueryParams<OrderRequestProps>) {
     const where: DeepPartial<Omit<OrderRequestOrmEntity, keyof Model>> = {};
-
     if (params.id) {
       where.id = params.id.value;
     }
     if (params.createdAt) {
       where.createdAt = params.createdAt.value;
     }
+    if (params.driverId) {
+      where.driverId = params.driverId.value;
+    }
+    if (params.sessionid) {
+      where.sessionid = params.sessionid;
+    }
+    if (params.user_phone) {
+      where.user_phone = params.user_phone;
+    }
+    console.log(where)
 
     return where;
   }
