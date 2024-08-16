@@ -47,7 +47,9 @@ export class OrderRequestController {
       throw new Error('Session is expired!');
     }
 
-    const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().driverId?.value || '');
+    const driverId = orderRequest.getPropsCopy().driverId?.value
+
+    const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
 
     const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
 
