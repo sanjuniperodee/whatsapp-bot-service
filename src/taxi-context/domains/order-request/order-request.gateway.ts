@@ -56,7 +56,6 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   @SubscribeMessage('updateLocation')
   async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number }) {
     const { driverId, latitude, longitude } = data;
-    console.log(data)
     await this.cacheStorageService.updateDriverLocation(driverId, 55, 55);
   }
 
@@ -85,17 +84,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
-      console.log(userPhone)
       if (userPhone) {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone)
-        console.log(user)
         if(!user){
           throw new Error("SOMETHING WENT WRONG")
         }
         await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        console.log(clientSocketId)
+        console.log(order.getPropsCopy().driverId)
         if (clientSocketId) {
           this.server.to(clientSocketId).emit('orderAccepted', { order: order.getPropsCopy(), status: 'ACCEPTED', driver: driver?.getPropsCopy() });
         }
@@ -127,6 +124,35 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
           this.server.to(clientSocketId).emit('driverArrived', { order: order.getPropsCopy(), status: 'DRIVER_ARRIVED', driver: driver?.getPropsCopy() });
+        }
+      }
+    }
+  }
+
+  @SubscribeMessage('rideStarted')
+  async handleOrderStarted(client: Socket, data: { driverId: string, orderId: string }) {
+    const parsedData = JSON.parse(data.toString())
+    const { driverId, orderId } = parsedData;
+    const order = await this.orderRequestRepository.findOneById(orderId);
+
+    if (order && order.getPropsCopy().driverId?.value == driverId) {
+      order.start();
+      await this.orderRequestRepository.save(order);
+
+      const driver = await this.userRepository.findOneById(driverId)
+
+      const userPhone = order.getPropsCopy().user_phone;
+      if (userPhone) {
+        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
+        if (!user) {
+          throw new Error("SOMETHING WENT WRONG");
+        }
+
+        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
+
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+        if (clientSocketId) {
+          this.server.to(clientSocketId).emit('rideStarted', { order: order.getPropsCopy(), status: 'ONGOING', driver: driver?.getPropsCopy() });
         }
       }
     }

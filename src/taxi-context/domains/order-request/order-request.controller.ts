@@ -87,11 +87,7 @@ export class OrderRequestController {
   async createOrder(@Body() input: CreateOrderRequest) {
     const { phone, orderType, from, to, lat, lng, price, comment} = input;
 
-    console.log(input)
-
     const session = await this.getSMScode(phone);
-
-    console.log(session)
 
     if (!session?.smsCode) {
       throw new NotFoundError("Session is not found");
@@ -115,8 +111,6 @@ export class OrderRequestController {
     });
 
     const user = await this.whatsappUserRepository.findOneByPhone(phone)
-
-    console.log(user)
 
     await this.orderRequestRepository.save(orderRequest);
     await this.orderRequestGateway.handleOrderCreated(orderRequest);

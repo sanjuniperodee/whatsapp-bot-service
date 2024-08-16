@@ -23,9 +23,7 @@ export class OrderRequestRepository
   async findOne(params: QueryParams<OrderRequestProps> = {}) {
     const where = this.prepareQuery(params);
 
-    const found = await OrderRequestOrmEntity.query().findOne(where);
-
-    console.log(params)
+    const found = await OrderRequestOrmEntity.query().findOne(where).whereNull('rejectReason');
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
@@ -143,7 +141,6 @@ export class OrderRequestRepository
     if (params.user_phone) {
       where.user_phone = params.user_phone;
     }
-    console.log(where)
 
     return where;
   }

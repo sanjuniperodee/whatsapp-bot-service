@@ -99,6 +99,11 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
     this.props.updatedAt = new Date();
   }
 
+  start(){
+    this.props.orderstatus = OrderStatus.ONGOING;
+    this.props.updatedAt = new Date();
+  }
+
   rideEnded() {
     this.props.orderstatus = OrderStatus.COMPLETED;
     this.props.updatedAt = new Date();
