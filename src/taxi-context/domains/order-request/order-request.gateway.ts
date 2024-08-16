@@ -141,6 +141,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       order.rideEnded();
       await this.orderRequestRepository.save(order);
 
+      await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
+
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
