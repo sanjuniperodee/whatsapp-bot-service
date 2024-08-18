@@ -30,8 +30,8 @@ export class SignInByPhoneSendCodeService {
 
     const expirationResult = this.checkExpiration(codeRecord);
 
-    if (expirationResult) {
-      throw new Error("Code Expired")
+    if (!expirationResult) {
+      throw new Error("Код можно отправить раз в 60 секунд")
     }
 
     let smscode: string | null = this.generateSmsCode();
