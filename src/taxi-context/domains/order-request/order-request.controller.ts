@@ -185,6 +185,7 @@ export class OrderRequestController {
 
   @UseGuards(JwtAuthGuard())
   @Post('accept')
+  @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Accept order' })
   async handleOrderAccepted(@Body() input: ChangeOrderStatus) {
     const { driverId, orderId } = input;
@@ -215,6 +216,7 @@ export class OrderRequestController {
 
   @UseGuards(JwtAuthGuard())
   @Post('driver-arrived')
+  @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Driver arriver to take up place' })
   async handleDriverArrived(@Body() input: ChangeOrderStatus) {
     const { driverId, orderId } = input;
@@ -245,6 +247,7 @@ export class OrderRequestController {
 
   @UseGuards(JwtAuthGuard())
   @Post('start')
+  @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'start' })
   async handleOrderStarted(@Body() input: ChangeOrderStatus) {
     const { driverId, orderId } = input;
@@ -275,6 +278,7 @@ export class OrderRequestController {
 
   @UseGuards(JwtAuthGuard())
   @Post('end')
+  @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'End Ride' })
   async handleRideEnded(@Body() input: ChangeOrderStatus) {
     const { driverId, orderId } = input;
