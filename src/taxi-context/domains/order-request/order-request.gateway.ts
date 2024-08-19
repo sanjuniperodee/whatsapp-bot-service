@@ -9,6 +9,7 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { SMSCodeRecord } from '@domain/user/types';
+import { UserEntity } from '@domain/user/domain/entities/user.entity';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -189,6 +190,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         }
       }
     }
+  }
+
+  async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
+    this.server.to(clientSocketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
   }
 
 
