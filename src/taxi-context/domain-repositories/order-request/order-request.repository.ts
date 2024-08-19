@@ -141,6 +141,9 @@ export class OrderRequestRepository
     if (params.user_phone) {
       where.user_phone = params.user_phone;
     }
+    if (params.orderstatus) {
+      where.orderstatus = params.orderstatus;
+    }
 
     return where;
   }
