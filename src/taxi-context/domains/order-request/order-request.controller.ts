@@ -141,15 +141,16 @@ export class OrderRequestController {
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
   async getMyActiveOrder(@IAM() user: UserOrmEntity) {
-    const orderRequest = await this.orderRequestRepository.findOne({ driverId: new UUID(user.id), endedAt: undefined})
-    if(!orderRequest){
-      return 'You dont have active order'
-    }
-      const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
-      return {
-        whatsappUser,
-        orderRequest
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
+
+    for (const orderRequest of orderRequests)
+      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED || orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
+        const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+        return { whatsappUser, orderRequest }
       }
+
+
+    return 'You dont have active order'
   }
 
   @Get('cancel/:session')
