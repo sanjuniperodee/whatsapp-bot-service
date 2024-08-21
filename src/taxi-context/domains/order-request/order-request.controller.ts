@@ -193,7 +193,7 @@ export class OrderRequestController {
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order && order.getPropsCopy().driverId?.value == undefined) {
-      order.driverArrived();
+      order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);
 
       const driver = await this.userRepository.findOneById(driverId)
@@ -256,7 +256,7 @@ export class OrderRequestController {
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.driverArrived();
+      order.start();
       await this.orderRequestRepository.save(order);
 
       const driver = await this.userRepository.findOneById(driverId)
@@ -287,7 +287,7 @@ export class OrderRequestController {
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.driverArrived();
+      order.rideEnded();
       await this.orderRequestRepository.save(order);
 
       const driver = await this.userRepository.findOneById(driverId)
