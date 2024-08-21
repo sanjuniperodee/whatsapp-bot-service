@@ -192,7 +192,7 @@ export class OrderRequestController {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == undefined) {
+    if (order) {
       order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);
 
