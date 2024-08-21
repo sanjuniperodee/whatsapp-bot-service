@@ -192,13 +192,14 @@ export class OrderRequestController {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
+    if (order && order.getPropsCopy().driverId?.value == undefined) {
       order.driverArrived();
       await this.orderRequestRepository.save(order);
 
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
+      console.log(userPhone, driver)
       if (userPhone && driver) {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
         if (!user) {
