@@ -290,6 +290,10 @@ export class OrderRequestController {
       order.rideEnded();
       await this.orderRequestRepository.save(order);
 
+      const session = await this.getSMScode(order.getPropsCopy().user_phone || '')
+      if(session?.smsCode == order.getPropsCopy().sessionid)
+        await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
+
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
