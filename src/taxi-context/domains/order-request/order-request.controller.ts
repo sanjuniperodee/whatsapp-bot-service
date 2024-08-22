@@ -144,11 +144,10 @@ export class OrderRequestController {
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
 
     for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED || orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
+      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
         return { whatsappUser, orderRequest }
       }
-
 
     return 'You dont have active order'
   }
