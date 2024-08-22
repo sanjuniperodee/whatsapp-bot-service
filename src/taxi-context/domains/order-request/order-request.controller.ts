@@ -152,6 +152,27 @@ export class OrderRequestController {
     return 'You dont have active order'
   }
 
+  @UseGuards(JwtAuthGuard())
+  @Get('history')
+  @ApiOperation({ summary: 'Get my order history' })
+  async getMyOrderHistory(@IAM() user: UserOrmEntity) {
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
+
+    return Promise.all(
+      orderRequests.map(async orderRequest => {
+        if (
+          orderRequest &&
+          orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED &&
+          orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED
+        ) {
+          const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+          return { whatsappUser, orderRequest };
+        }
+        return null;
+      })
+    ).then(results => results.filter(result => result !== null));
+  }
+
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('session') session: string) {
@@ -195,10 +216,7 @@ export class OrderRequestController {
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED))
         return 'You already have active order'
 
-
-
     const order = await this.orderRequestRepository.findOneById(orderId);
-
 
     if (order) {
       order.accept(new UUID(driverId));
