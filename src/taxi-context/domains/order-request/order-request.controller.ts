@@ -162,8 +162,8 @@ export class OrderRequestController {
       orderRequests.map(async orderRequest => {
         if (
           orderRequest &&
-          orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED &&
-          orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED
+          (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
+          orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
         ) {
           const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
           return { whatsappUser, orderRequest };
