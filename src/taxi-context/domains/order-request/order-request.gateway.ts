@@ -58,7 +58,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number }) {
     const parsedData = JSON.parse(data.toString())
     const { driverId, latitude, longitude } = parsedData;
-    await this.cacheStorageService.updateDriverLocation(driverId, 51.108097, 71.42593);
+    await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
   }
 
   async handleOrderCreated(order: OrderRequestEntity) {
