@@ -189,7 +189,16 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Accept order' })
   async handleOrderAccepted(@Body() input: ChangeOrderStatus) {
     const { driverId, orderId } = input;
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId)})
+
+    for (const orderRequest of orderRequests)
+      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED))
+        return 'You already have active order'
+
+
+
     const order = await this.orderRequestRepository.findOneById(orderId);
+
 
     if (order) {
       order.accept(new UUID(driverId));
