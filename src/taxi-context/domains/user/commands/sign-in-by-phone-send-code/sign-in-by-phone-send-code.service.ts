@@ -68,6 +68,6 @@ export class SignInByPhoneSendCodeService {
 
     const dateDiff = moment.duration(moment(codeRecord.expDate).diff(moment()));
 
-    return dateDiff.get('seconds') > 60;
+    return dateDiff.get('seconds') < 60;
   }
 }
