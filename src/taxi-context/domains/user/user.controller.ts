@@ -39,6 +39,8 @@ import {
 } from '@domain/user/commands/sign-up-by-phone-create-user/sign-up-by-phone-create-create-user.service';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { JwtSignUpAuthGuard } from '@infrastructure/guards/jwt-sign-up-auth.guard';
+import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
+import { OrderStatus } from '@infrastructure/enums';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -111,7 +113,40 @@ export class UserController {
   @Get('GetMe')
   @UseGuards(JwtAuthGuard())
   async getMe(@IAM() user: UserOrmEntity) {
-    console.log(user)
-    return await this.userRepository.findOneById(user.id);
+    const now = new Date();
+
+    const orderRequests = await OrderRequestOrmEntity.query()
+      .where({ 'driverId': user.id, 'orderstatus': OrderStatus.COMPLETED });
+
+    const totalRating = orderRequests.reduce((sum, order) => sum + (order.rating || 0), 0);
+    const rating = orderRequests.length > 0 ? totalRating / orderRequests.length : 0;
+
+    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+    const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+    const earningsToday = orderRequests
+      .filter(order => new Date(order.createdAt) >= startOfToday && new Date(order.createdAt) <= endOfToday)
+      .reduce((sum, order) => sum + (order.price || 0), 0);
+
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    const earningsThisWeek = orderRequests
+      .filter(order => new Date(order.createdAt) >= startOfWeek && new Date(order.createdAt) <= endOfToday)
+      .reduce((sum, order) => sum + (order.price || 0), 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const earningsThisMonth = orderRequests
+      .filter(order => new Date(order.createdAt) >= startOfMonth && new Date(order.createdAt) <= endOfToday)
+      .reduce((sum, order) => sum + (order.price || 0), 0);
+
+    return {
+      ...(await this.userRepository.findOneById(user.id)),
+      rating,
+      earnings: {
+        today: earningsToday,
+        thisWeek: earningsThisWeek,
+        thisMonth: earningsThisMonth,
+      },
+    };
   }
+
 }
