@@ -28,9 +28,7 @@ export class SignInByPhoneSendCodeService {
 
     let codeRecord: SMSCodeRecord | null = await this.getSMScode(phone);
 
-    const expirationResult = this.checkExpiration(codeRecord);
-
-    if (!expirationResult) {
+    if (codeRecord) {
       throw new Error("Код можно отправить раз в 60 секунд")
     }
 
@@ -59,15 +57,5 @@ export class SignInByPhoneSendCodeService {
 
   private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
     return this.cacheStorageService.getValue(phone);
-  }
-
-  private checkExpiration(codeRecord: SMSCodeRecord | null): boolean {
-    if (!codeRecord) {
-      return true;
-    }
-
-    const dateDiff = moment.duration(moment(codeRecord.expDate).diff(moment()));
-
-    return dateDiff.get('seconds') < 60;
   }
 }
