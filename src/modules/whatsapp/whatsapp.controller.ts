@@ -8,8 +8,13 @@ export class WhatsAppController {
   @Post('handle-message')
   async handleIncomingMessage(@Body() input: any){
     Logger.log(input)
-    if(input.typeWebhook == 'incomingMessageReceived')
-      return this.whatsappService.handleIncomingMessage(input)
+    try{
+      if(input.typeWebhook == 'incomingMessageReceived')
+        return this.whatsappService.handleIncomingMessage(input)
+    }
+    catch (error: any){
+
+    }
   }
 
 }
