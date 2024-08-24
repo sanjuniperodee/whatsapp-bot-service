@@ -18,6 +18,7 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { MakeReviewRequest } from '@domain/order-request/services/make-review/create-order-request';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
+import { CategoryRegisterRequest } from '@domain/order-request/services/category-register/category-register.request';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -82,6 +83,12 @@ export class OrderRequestController {
     orderRequest?.rate(rating)
 
     await this.orderRequestRepository.save(orderRequest)
+  }
+
+  @Post('category/register')
+  @ApiOperation({ summary: 'Register for category' })
+  @ApiBody({ type: CategoryRegisterRequest })
+  async categoryRegister(@Body() input: CategoryRegisterRequest) {
   }
 
   @Post('create-order')
