@@ -86,9 +86,22 @@ export class OrderRequestController {
   }
 
   @Post('category/register')
+  @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Register for category' })
   @ApiBody({ type: CategoryRegisterRequest })
   async categoryRegister(@Body() input: CategoryRegisterRequest) {
+  }
+
+  @Get('category/info/:type')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Info about registration by category' })
+  async categoryInfo(@Param('type') type: string) {
+    if(type == 'CARGO')
+    return {
+      governmentNumber: '017BBB02',
+      carModel: 'Toyota Camry 70',
+      iin: '020716550669'
+    }
   }
 
   @Post('create-order')
