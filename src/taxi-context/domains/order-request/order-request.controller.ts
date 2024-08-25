@@ -228,6 +228,7 @@ export class OrderRequestController {
     await this.orderRequestRepository.save(orderRequest);
 
     const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '')
+    console.log(session)
     if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
       await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
 
