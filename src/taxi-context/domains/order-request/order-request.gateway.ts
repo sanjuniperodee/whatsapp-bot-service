@@ -197,6 +197,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     this.server.to(clientSocketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
   }
 
+  // async emitEvent(clientSocketId: string, event: string, args: any){
+  //   this.server.to(clientSocketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
+  // }
+
 
   // async handleOrderStatusUpdate(orderId: string, status: string) {
   //   const order = await this.orderRequestRepository.findOneById(orderId);

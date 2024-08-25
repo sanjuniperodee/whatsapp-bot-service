@@ -19,6 +19,7 @@ import { MakeReviewRequest } from '@domain/order-request/services/make-review/cr
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { CategoryRegisterRequest } from '@domain/order-request/services/category-register/category-register.request';
+import { UpdateLocationRequest } from '@domain/order-request/services/update-location/update-location.request';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -42,9 +43,24 @@ export class OrderRequestController {
     })
     return menu.json();
   }
+  @Post()
+  @UseGuards(JwtAuthGuard())
+  async handleLocationUpdate(
+    @Body() input: UpdateLocationRequest,
+    @IAM() user: UserOrmEntity
+  ) {
+    const { lng, lat, clientId } = input;
+    await this.cacheStorageService.updateDriverLocation(user.id, lng, lat);
+
+    const clientSocketId = await this.cacheStorageService.getSocketClientId(clientId);
+    if (clientSocketId) {
+      // await this.orderRequestGateway.emitEvent(clientSocketId, 'driverLocation', { lng, lat })
+    }
+  }
 
   @Get('status/:session')
   @ApiOperation({ summary: 'Get order status' })
+  @ApiBody({ type: MakeReviewRequest })
   async getOrderStatus(@Param('session') session: string) {
     const orderRequest = await this.orderRequestRepository.findOne({ sessionid: session });
     if (!orderRequest) {
@@ -57,9 +73,11 @@ export class OrderRequestController {
 
     const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
 
+    const location = await this.cacheStorageService.getDriverLocation(driverId || '');
+
     return {
       order: orderRequest.getPropsCopy(),
-      driver: driver?.getPropsCopy(),
+      driver: { ...driver?.getPropsCopy(), location },
       status: orderRequest.getPropsCopy().orderstatus,
       reviews: orderRequests.length
     }
@@ -195,19 +213,24 @@ export class OrderRequestController {
 
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
-  async cancelOrderRequest(@Param('session') session: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: session });
+  async cancelOrderRequest(@Param('session') sessionId: string) {
+    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: sessionId });
     if (!orderRequest) {
       throw new Error('Session is expired');
     }
 
     const flag = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!flag || flag.smsCode !== session) {
+    if (!flag || flag.smsCode !== sessionId) {
       throw new Error('Session is expired');
     }
 
     orderRequest.reject('');
     await this.orderRequestRepository.save(orderRequest);
+
+    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '')
+    if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
+      await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
+
 
     return orderRequest.getPropsCopy();
   }

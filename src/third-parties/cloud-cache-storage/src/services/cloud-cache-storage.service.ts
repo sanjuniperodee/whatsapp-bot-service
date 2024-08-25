@@ -56,6 +56,15 @@ export class CloudCacheStorageService {
     await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
   }
 
+  async getDriverLocation(driverId: string): Promise<{ latitude: number; longitude: number } | null> {
+    const positions = await this.redisService.client.geopos('drivers', driverId);
+    if (positions && positions.length > 0 && positions[0]) {
+      const [longitude, latitude] = positions[0];
+      return { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+    }
+    return null;
+  }
+
   async findNearestDrivers(latitude: number, longitude: number, radius = 5000): Promise<string[]> {
     return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
   }
