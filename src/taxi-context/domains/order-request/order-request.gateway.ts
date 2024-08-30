@@ -84,7 +84,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng, 300000);
     nearestDrivers.forEach(driverId => {
-      this.server.to(driverId).emit('newOrder', { orderRequest, user });
+      this.server.to(driverId).emit('newOrder');
     });
   }
 
