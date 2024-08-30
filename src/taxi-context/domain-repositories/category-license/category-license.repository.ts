@@ -130,7 +130,7 @@ export class CategoryLicenseRepository
     if (params.SSN) {
       where.SSN = params.SSN;
     }
-
+    console.log(where)
     return where;
   }
 }
