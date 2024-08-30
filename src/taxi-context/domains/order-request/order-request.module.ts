@@ -6,6 +6,12 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 import { CloudCacheStorageModule } from '@third-parties/cloud-cache-storage/src';
 import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module';
+import { AcceptOrderService } from '@domain/order-request/services/accept-order/accept-order.service';
+import { DriverArrivedService } from '@domain/order-request/services/driver-arrived/driver-arrived.service';
+import { StartOrderService } from '@domain/order-request/services/start-order/start-order.service';
+import { CompleteOrderService } from '@domain/order-request/services/complete-order/complete-order.service';
+import { CancelOrderService } from '@domain/order-request/services/cancel-order/cancel-order.service';
+import { CreateOrderService } from '@domain/order-request/services/create-order/create-order.service';
 
 const thirdPartyServices = [
   CqrsModule,
@@ -17,7 +23,7 @@ const controllers = [OrderRequestController];
 
 @Module({
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory)],
-  providers: [OrderRequestGateway],
+  providers: [OrderRequestGateway, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService],
   controllers: [...controllers],
   exports: [OrderRequestGateway]
 })

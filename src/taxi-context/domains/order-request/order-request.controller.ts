@@ -20,6 +20,12 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { CategoryRegisterRequest } from '@domain/order-request/services/category-register/category-register.request';
 import { UpdateLocationRequest } from '@domain/order-request/services/update-location/update-location.request';
+import { AcceptOrderService } from '@domain/order-request/services/accept-order/accept-order.service';
+import { DriverArrivedService } from '@domain/order-request/services/driver-arrived/driver-arrived.service';
+import { StartOrderService } from '@domain/order-request/services/start-order/start-order.service';
+import { CompleteOrderService } from '@domain/order-request/services/complete-order/complete-order.service';
+import { CreateOrderService } from '@domain/order-request/services/create-order/create-order.service';
+import { CancelOrderService } from '@domain/order-request/services/cancel-order/cancel-order.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -32,6 +38,12 @@ export class OrderRequestController {
     private readonly userRepository: UserRepository,
     private readonly whatsAppService: WhatsAppService,
     private readonly whatsappUserRepository: WhatsappUserRepository,
+    private readonly acceptOrderService: AcceptOrderService,
+    private readonly driverArrivedService: DriverArrivedService,
+    private readonly startOrderService: StartOrderService,
+    private readonly completeOrderService: CompleteOrderService,
+    private readonly createOrderService: CreateOrderService,
+    private readonly cancelOrderService: CancelOrderService,
   ) {}
 
   @Get('menu/:id')
@@ -126,37 +138,7 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
   async createOrder(@Body() input: CreateOrderRequest) {
-    const { phone, orderType, from, to, lat, lng, price, comment} = input;
-
-    const session = await this.getSMScode(phone);
-
-    if (!session?.smsCode) {
-      throw new NotFoundError("Session is not found");
-    }
-
-    if (await this.orderRequestRepository.findOne({ sessionid: session.smsCode })) {
-      throw new Error('Order request with this session already exists');
-    }
-
-    const orderRequest = OrderRequestEntity.create({
-      orderType,
-      orderstatus: OrderStatus.CREATED,
-      from,
-      to,
-      lat,
-      lng,
-      price,
-      comment: comment,
-      sessionid: session.smsCode,
-      user_phone: phone
-    });
-
-    const user = await this.whatsappUserRepository.findOneByPhone(phone)
-
-    await this.orderRequestRepository.save(orderRequest);
-    await this.orderRequestGateway.handleOrderCreated(orderRequest);
-
-    return orderRequest.getPropsCopy();
+    return this.createOrderService.handle(input)
   }
 
 
@@ -214,26 +196,7 @@ export class OrderRequestController {
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('session') sessionId: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: sessionId });
-    if (!orderRequest) {
-      throw new Error('Session is expired');
-    }
-
-    const flag = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!flag || flag.smsCode !== sessionId) {
-      throw new Error('Session is expired');
-    }
-
-    orderRequest.reject('');
-    await this.orderRequestRepository.save(orderRequest);
-
-    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '')
-    console.log(session?.smsCode, orderRequest.getPropsCopy().sessionid)
-    if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
-      await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
-
-
-    return orderRequest.getPropsCopy();
+    return this.cancelOrderService.handle(sessionId)
   }
 
   @Get('user/:session')
@@ -253,37 +216,7 @@ export class OrderRequestController {
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Accept order' })
   async handleOrderAccepted(@Body() input: ChangeOrderStatus) {
-    const { driverId, orderId } = input;
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId)})
-
-    for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED))
-        return 'You already have active order'
-
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order) {
-      order.accept(new UUID(driverId));
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      console.log(userPhone, driver)
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'orderAccepted', order, driver)
-        }
-      }
-    }
+    await this.acceptOrderService.handle(input);
   }
 
   @UseGuards(JwtAuthGuard())
@@ -291,30 +224,8 @@ export class OrderRequestController {
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Driver arriver to take up place' })
   async handleDriverArrived(@Body() input: ChangeOrderStatus) {
-    const { driverId, orderId } = input;
-    const order = await this.orderRequestRepository.findOneById(orderId);
+    await this.driverArrivedService.handle(input);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.driverArrived();
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель приехал, вас ожидает золотой кабан')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'driverArrived', order, driver)
-        }
-      }
-    }
   }
 
   @UseGuards(JwtAuthGuard())
@@ -322,30 +233,7 @@ export class OrderRequestController {
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'start' })
   async handleOrderStarted(@Body() input: ChangeOrderStatus) {
-    const { driverId, orderId } = input;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.start();
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'rideStarted', order, driver)
-        }
-      }
-    }
+    await this.startOrderService.handle(input);
   }
 
   @UseGuards(JwtAuthGuard())
@@ -353,33 +241,6 @@ export class OrderRequestController {
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'End Ride' })
   async handleRideEnded(@Body() input: ChangeOrderStatus) {
-    const { driverId, orderId } = input;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.rideEnded();
-      await this.orderRequestRepository.save(order);
-
-      const session = await this.getSMScode(order.getPropsCopy().user_phone || '')
-      if(session?.smsCode == order.getPropsCopy().sessionid)
-        await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Заказ завершен, оцените пожалуйста поездку')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'rideEnded', order, driver)
-        }
-      }
-    }
+    await this.completeOrderService.handle(input);
   }
 }

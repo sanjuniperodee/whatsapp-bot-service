@@ -55,10 +55,22 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   @SubscribeMessage('updateLocation')
-  async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number }) {
+  async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number, orderId: string }) {
     const parsedData = JSON.parse(data.toString())
-    const { driverId, latitude, longitude } = parsedData;
+    const { driverId, latitude, longitude, orderId } = parsedData;
     await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
+
+    if(orderId){
+      const order = await this.orderRequestRepository.findOneById(orderId);
+      const user = await this.whatsappUserRepository.findOneByPhone(order?.getPropsCopy().user_phone || '')
+
+      if(user){
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+        if (clientSocketId) {
+          this.server.to(clientSocketId).emit('driverLocation', { lng: latitude, lat: longitude });
+        }
+      }
+    }
   }
 
   async handleOrderCreated(order: OrderRequestEntity) {
@@ -69,128 +81,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng, 3000);
     nearestDrivers.forEach(driverId => {
-      this.server.to(driverId).emit('newOrder', { order: order.getPropsCopy() });
+      this.server.to(driverId).emit('nenewOwOrder', { order: order.getPropsCopy() });
     });
-  }
-
-  @SubscribeMessage('acceptOrder')
-  async handleOrderAcceptance(client: Socket, data: { driverId: string, orderId: string }) {
-    const parsedData = JSON.parse(data.toString())
-    const { driverId, orderId } = parsedData;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order) {
-      order.accept(new UUID(driverId));
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone)
-        if(!user){
-          throw new Error("SOMETHING WENT WRONG")
-        }
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        console.log(order.getPropsCopy().driverId)
-        if (clientSocketId) {
-          this.server.to(clientSocketId).emit('orderAccepted', { order: order.getPropsCopy(), status: 'ACCEPTED', driver: driver?.getPropsCopy() });
-        }
-      }
-    }
-  }
-
-  @SubscribeMessage('driverArrived')
-  async handleDriverArrived(client: Socket, data: { driverId: string, orderId: string }) {
-    const parsedData = JSON.parse(data.toString())
-    const { driverId, orderId } = parsedData;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.driverArrived();
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель приехал, вас ожидает золотой кабан')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          this.server.to(clientSocketId).emit('driverArrived', { order: order.getPropsCopy(), status: 'DRIVER_ARRIVED', driver: driver?.getPropsCopy() });
-        }
-      }
-    }
-  }
-
-  @SubscribeMessage('rideStarted')
-  async handleOrderStarted(client: Socket, data: { driverId: string, orderId: string }) {
-    const parsedData = JSON.parse(data.toString())
-    const { driverId, orderId } = parsedData;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.start();
-      await this.orderRequestRepository.save(order);
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          this.server.to(clientSocketId).emit('rideStarted', { order: order.getPropsCopy(), status: 'ONGOING', driver: driver?.getPropsCopy() });
-        }
-      }
-    }
-  }
-
-  @SubscribeMessage('rideEnded')
-  async handleRideEnded(client: Socket, data: { driverId: string, orderId: string }) {
-    const parsedData = JSON.parse(data.toString())
-    const { driverId, orderId } = parsedData;
-    const order = await this.orderRequestRepository.findOneById(orderId);
-
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
-      order.rideEnded();
-      await this.orderRequestRepository.save(order);
-
-      const session = await this.getSMScode(order.getPropsCopy().user_phone || '')
-      if(session?.smsCode == order.getPropsCopy().sessionid)
-        await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
-
-      const driver = await this.userRepository.findOneById(driverId)
-
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
-
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Заказ завершен, оцените пожалуйста поездку')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          this.server.to(clientSocketId).emit('rideEnded', { order: order.getPropsCopy(), status: 'RIDE_ENDED', driver: driver });
-        }
-      }
-    }
   }
 
   async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
