@@ -23,11 +23,23 @@ export class CategoryRegisterRequest {
   @IsNotEmpty()
   @IsDefined()
   @IsString()
-  readonly carModel: string;
+  readonly model: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsDefined()
   @IsString()
-  readonly iin: string;
+  readonly brand: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsDefined()
+  @IsString()
+  readonly color: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsDefined()
+  @IsString()
+  readonly SSN: string;
 }

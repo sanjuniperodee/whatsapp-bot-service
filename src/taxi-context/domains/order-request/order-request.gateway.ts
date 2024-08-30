@@ -10,6 +10,7 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { SMSCodeRecord } from '@domain/user/types';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
+import { WhatsappUserEntity } from '@domain/whatsapp-users/domain/entities/whatsapp-user.entity';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -73,15 +74,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
   }
 
-  async handleOrderCreated(order: OrderRequestEntity) {
-    const lat = order.getPropsCopy().lat;
-    const lng = order.getPropsCopy().lng;
+  async handleOrderCreated(orderRequest: OrderRequestEntity, user?: WhatsappUserEntity) {
+    const lat = orderRequest.getPropsCopy().lat;
+    const lng = orderRequest.getPropsCopy().lng;
     if (!lat || !lng) {
       throw new Error('Latitude and Longitude are required');
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng, 3000);
     nearestDrivers.forEach(driverId => {
-      this.server.to(driverId).emit('nenewOwOrder', { order: order.getPropsCopy() });
+      this.server.to(driverId).emit('newOrder', { orderRequest, user });
     });
   }
 

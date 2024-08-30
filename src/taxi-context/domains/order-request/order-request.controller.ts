@@ -2,11 +2,9 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
 import { SMSCodeRecord } from '@domain/user/types';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { NotFoundError } from 'rxjs';
 import { OrderStatus } from '@infrastructure/enums';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
@@ -26,6 +24,9 @@ import { StartOrderService } from '@domain/order-request/services/start-order/st
 import { CompleteOrderService } from '@domain/order-request/services/complete-order/complete-order.service';
 import { CreateOrderService } from '@domain/order-request/services/create-order/create-order.service';
 import { CancelOrderService } from '@domain/order-request/services/cancel-order/cancel-order.service';
+import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
+import { CategoryLicenseRepository } from '../../domain-repositories/category-license/category-license.repository';
+import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -34,6 +35,7 @@ export class OrderRequestController {
   constructor(
     private readonly orderRequestGateway: OrderRequestGateway,
     private readonly orderRequestRepository: OrderRequestRepository,
+    private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
     private readonly whatsAppService: WhatsAppService,
@@ -119,19 +121,27 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Register for category' })
   @ApiBody({ type: CategoryRegisterRequest })
-  async categoryRegister(@Body() input: CategoryRegisterRequest) {
+  async categoryRegister(@Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
+    const {governmentNumber, model, SSN, type, color, brand} = input
+
+    const categoryLicenseEntity = CategoryLicenseEntity.create({
+      SSN: SSN,
+      brand: brand,
+      categoryType: type,
+      color: color,
+      driverId: new UUID(user.id),
+      model: model,
+      number: governmentNumber
+    })
+
+    await this.categoryLicenseRepository.save(categoryLicenseEntity)
   }
 
   @Get('category/info/:type')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Info about registration by category' })
-  async categoryInfo(@Param('type') type: string) {
-    if(type == 'CARGO')
-    return {
-      governmentNumber: '017BBB02',
-      carModel: 'Toyota Camry 70',
-      iin: '020716550669'
-    }
+  async categoryInfo(@Param('type') type: string, @IAM() user: UserOrmEntity) {
+    return await CategoryLicenseOrmEntity.query().where({ 'driverId': user.id });
   }
 
   @Post('create-order')
