@@ -25,21 +25,16 @@ export class CancelOrderService {
       throw new Error('Session is expired');
     }
 
-    const flag = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!flag || flag.smsCode !== sessionId) {
-      throw new Error('Session is expired');
-    }
-
     orderRequest.reject('');
     await this.orderRequestRepository.save(orderRequest);
 
-    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '')
-    console.log(session?.smsCode, orderRequest.getPropsCopy().sessionid)
+    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
+    if (!session || session.smsCode !== sessionId) {
+      return orderRequest.getPropsCopy();
+    }
+
     if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
       await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
-
-
-    return orderRequest.getPropsCopy();
   }
   private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
     return this.cacheStorageService.getValue(phone);
