@@ -128,7 +128,7 @@ export class OrderRequestController {
 
     const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type})
     console.log(isExists.length > 0)
-    if(isExists){
+    if(isExists.length > 0){
       throw new Error("You already registered to this category")
     }
 
