@@ -137,10 +137,10 @@ export class OrderRequestController {
     await this.categoryLicenseRepository.save(categoryLicenseEntity)
   }
 
-  @Get('category/info/:type')
+  @Get('category/info')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Info about registration by category' })
-  async categoryInfo(@Param('type') type: string, @IAM() user: UserOrmEntity) {
+  async categoryInfo(@IAM() user: UserOrmEntity) {
     return await CategoryLicenseOrmEntity.query().where({ 'driverId': user.id });
   }
 
