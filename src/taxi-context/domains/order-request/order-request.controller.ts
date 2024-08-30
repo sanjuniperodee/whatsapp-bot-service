@@ -124,6 +124,8 @@ export class OrderRequestController {
   async categoryRegister(@Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
+    console.log(type)
+
     const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type})
 
     if(isExists){
