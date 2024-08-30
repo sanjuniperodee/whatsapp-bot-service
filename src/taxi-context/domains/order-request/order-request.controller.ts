@@ -124,6 +124,12 @@ export class OrderRequestController {
   async categoryRegister(@Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
+    const isExists = this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type})
+
+    if(isExists){
+      throw new Error("You already registered to this category")
+    }
+
     const categoryLicenseEntity = CategoryLicenseEntity.create({
       SSN: SSN,
       brand: brand,
