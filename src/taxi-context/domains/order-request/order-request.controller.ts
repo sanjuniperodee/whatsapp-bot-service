@@ -166,7 +166,7 @@ export class OrderRequestController {
   async getActiveOrders() {
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
 
-    orderRequests.sort((a, b) => new Date(a.createdAt.value).getTime() - new Date(b.createdAt.value).getTime());
+    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
     return await Promise.all(orderRequests.map(async orderRequest => {
       const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
