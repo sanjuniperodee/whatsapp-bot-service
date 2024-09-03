@@ -145,6 +145,10 @@ export class OrderRequestRepository
       where.orderstatus = params.orderstatus;
     }
 
+    if (params.orderType) {
+      where.orderType = params.orderType;
+    }
+
     return where;
   }
 }
