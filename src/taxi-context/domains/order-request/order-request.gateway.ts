@@ -59,21 +59,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number, orderId: string }) {
     console.log(data)
     const parsedData = JSON.parse(data.toString())
-    const { driverId, latitude, longitude, orderId } = parsedData;
+    const { driverId, latitude, longitude } = parsedData;
     console.log(data)
-    await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
+    await this.cacheStorageService.updateDriverLocation(driverId, 76.93231, 43.23188);
 
-    if(orderId){
-      const order = await this.orderRequestRepository.findOneById(orderId);
-      const user = await this.whatsappUserRepository.findOneByPhone(order?.getPropsCopy().user_phone || '')
-
-      if(user){
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          this.server.to(clientSocketId).emit('driverLocation', { lng: latitude, lat: longitude });
-        }
-      }
-    }
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)
