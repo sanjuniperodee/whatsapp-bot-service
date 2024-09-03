@@ -27,6 +27,7 @@ import { CancelOrderService } from '@domain/order-request/services/cancel-order/
 import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
 import { CategoryLicenseRepository } from '../../domain-repositories/category-license/category-license.repository';
 import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
+import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -46,6 +47,7 @@ export class OrderRequestController {
     private readonly completeOrderService: CompleteOrderService,
     private readonly createOrderService: CreateOrderService,
     private readonly cancelOrderService: CancelOrderService,
+    private readonly rejectOrderService: RejectOrderService,
   ) {}
 
   @Get('menu/:id')
@@ -243,7 +245,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order by order id' })
   async cancelOrderRequestByOrderId(@Param('orderId') orderId: string) {
-    // return this.cancelOrderService.handle(sessionId)
+    return this.rejectOrderService.handle(orderId)
   }
 
   @Get('user/:session')

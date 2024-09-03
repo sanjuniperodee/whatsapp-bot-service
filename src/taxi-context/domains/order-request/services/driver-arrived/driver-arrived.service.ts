@@ -28,6 +28,12 @@ export class DriverArrivedService {
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order && order.getPropsCopy().driverId?.value == driverId) {
+      const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
+
+      if(!category){
+        throw new Error("You can not accept orders before registering into category");
+      }
+
       order.driverArrived();
       await this.orderRequestRepository.save(order);
 
@@ -38,12 +44,6 @@ export class DriverArrivedService {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
         if (!user) {
           throw new Error("SOMETHING WENT WRONG");
-        }
-
-        const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
-
-        if(!category){
-          throw new Error("You can not accept orders before registering into category");
         }
 
         await this.whatsAppService.sendMessage(

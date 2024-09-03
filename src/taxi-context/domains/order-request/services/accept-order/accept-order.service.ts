@@ -35,6 +35,11 @@ export class AcceptOrderService{
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order) {
+      const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
+
+      if(!category){
+        throw new Error("You can not accept orders before registering into category");
+      }
       order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);
 
@@ -48,11 +53,7 @@ export class AcceptOrderService{
           throw new Error("SOMETHING WENT WRONG");
         }
 
-        const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
-        if(!category){
-          throw new Error("You can not accept orders before registering into category");
-        }
 
         await this.whatsAppService.sendMessage(
           userPhone + "@c.us",

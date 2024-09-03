@@ -12,6 +12,7 @@ import { StartOrderService } from '@domain/order-request/services/start-order/st
 import { CompleteOrderService } from '@domain/order-request/services/complete-order/complete-order.service';
 import { CancelOrderService } from '@domain/order-request/services/cancel-order/cancel-order.service';
 import { CreateOrderService } from '@domain/order-request/services/create-order/create-order.service';
+import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
 
 const thirdPartyServices = [
   CqrsModule,
@@ -23,7 +24,7 @@ const controllers = [OrderRequestController];
 
 @Module({
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory)],
-  providers: [OrderRequestGateway, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService],
+  providers: [OrderRequestGateway, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService, RejectOrderService],
   controllers: [...controllers],
   exports: [OrderRequestGateway]
 })

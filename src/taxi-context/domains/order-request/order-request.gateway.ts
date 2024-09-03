@@ -88,10 +88,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     });
   }
 
-  async handleOrderRejected(orderRequest: OrderRequestEntity) {
-    const driverId = orderRequest?.getPropsCopy()?.driverId?.value
-    if(driverId)
-      this.server.to(driverId).emit('orderRejected');
+  async handleOrderRejected(userId: string) {
+      this.server.to(userId).emit('orderRejected');
   }
 
   async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){

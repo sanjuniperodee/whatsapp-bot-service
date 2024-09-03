@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
@@ -9,7 +8,7 @@ import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src
 import { SMSCodeRecord } from '@domain/user/types';
 
 @Injectable()
-export class CancelOrderService {
+export class RejectOrderService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
@@ -19,8 +18,8 @@ export class CancelOrderService {
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
-  async handle(sessionId: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: sessionId });
+  async handle(orderId: string) {
+    const orderRequest = await this.orderRequestRepository.findOneById(orderId);
     if (!orderRequest) {
       throw new Error('Session is expired');
     }
@@ -29,11 +28,13 @@ export class CancelOrderService {
     await this.orderRequestRepository.save(orderRequest);
 
     const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!session || session.smsCode !== sessionId) {
-      return orderRequest.getPropsCopy();
-    }
 
-    await this.orderRequestGateway.handleOrderRejected(orderRequest.getPropsCopy().driverId?.value || '');
+    const user = await  this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || "")
+
+    await this.orderRequestGateway.handleOrderRejected(user?.id.value || '');
+
+    if (!session || session.smsCode !== orderRequest.getPropsCopy().sessionid)
+      return orderRequest.getPropsCopy();
 
     if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
       await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
