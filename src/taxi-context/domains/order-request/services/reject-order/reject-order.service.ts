@@ -14,8 +14,6 @@ export class RejectOrderService {
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    private readonly whatsAppService: WhatsAppService,
-    private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
   async handle(orderId: string) {
@@ -23,23 +21,10 @@ export class RejectOrderService {
     if (!orderRequest) {
       throw new Error('Session is expired');
     }
-
-    orderRequest.reject('');
-    await this.orderRequestRepository.save(orderRequest);
-
-    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
+    await this.orderRequestRepository.delete(orderRequest);
 
     const user = await  this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || "")
 
     await this.orderRequestGateway.handleOrderRejected(user?.id.value || '');
-
-    if (!session || session.smsCode !== orderRequest.getPropsCopy().sessionid)
-      return orderRequest.getPropsCopy();
-
-    if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
-      await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
-  }
-  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
-    return this.cacheStorageService.getValue(phone);
   }
 }
