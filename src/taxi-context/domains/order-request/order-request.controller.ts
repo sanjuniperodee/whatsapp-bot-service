@@ -181,7 +181,7 @@ export class OrderRequestController {
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
   async getActiveOrders() {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
+    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: OrderType.TAXI })
 
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
