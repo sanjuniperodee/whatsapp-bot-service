@@ -161,8 +161,8 @@ export class OrderRequestController {
 
 
   @UseGuards(JwtAuthGuard())
-  @Get(':type')
-  @ApiOperation({ summary: 'Get active orders' })
+  @Get('active/:type')
+  @ApiOperation({ summary: 'Get active orders by type' })
   async getActiveOrdersByType(@Param('type') type: OrderType) {
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type })
 
@@ -181,7 +181,7 @@ export class OrderRequestController {
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
   async getActiveOrders() {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: OrderType.TAXI })
+    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
 
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
