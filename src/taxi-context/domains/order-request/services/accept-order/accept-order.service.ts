@@ -9,12 +9,17 @@ import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
+import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
+import {
+  CategoryLicenseRepository
+} from '../../../../domain-repositories/category-license/category-license.repository';
 
 @Injectable()
 export class AcceptOrderService{
   constructor(
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
+    private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
     private readonly whatsAppService: WhatsAppService,
@@ -45,7 +50,19 @@ export class AcceptOrderService{
           throw new Error("SOMETHING WENT WRONG");
         }
 
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель принял ваш заказ, приедет золотой кабан')
+        const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
+
+        if(!category){
+          throw new Error("You can not accept orders before registering into category");
+        }
+
+        await this.whatsAppService.sendMessage(
+          userPhone + "@c.us",
+          `Водитель принял ваш заказ, 
+          \nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.
+          \nЦвет: ${category.getPropsCopy().color}.
+          \nГос номер: ${category.getPropsCopy().number}`
+        )
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
