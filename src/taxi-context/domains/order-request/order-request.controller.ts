@@ -237,6 +237,13 @@ export class OrderRequestController {
     return this.cancelOrderService.handle(sessionId)
   }
 
+  @Get('cancel/:orderId')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Cancel order by order id' })
+  async cancelOrderRequestByOrderId(@Param('orderId') orderId: string) {
+    // return this.cancelOrderService.handle(sessionId)
+  }
+
   @Get('user/:session')
   @ApiOperation({ summary: 'Get user by session id' })
   async getUserBySessionId(@Param('session') session: string) {
