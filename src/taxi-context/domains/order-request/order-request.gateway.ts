@@ -61,7 +61,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const parsedData = JSON.parse(data.toString())
     const { driverId, latitude, longitude } = parsedData;
     console.log(data)
-    await this.cacheStorageService.updateDriverLocation(driverId, 76.93231, 43.23188);
+    await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
 
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
@@ -71,7 +71,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         if(user){
           const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
           if (clientSocketId) {
-            this.server.to(clientSocketId).emit('driverLocation', { lng: '43.23188', lat: '76.93231' });
+            this.server.to(clientSocketId).emit('driverLocation', { lat: latitude, lng: longitude });
           }
         }
       }
