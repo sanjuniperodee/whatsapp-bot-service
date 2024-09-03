@@ -34,7 +34,7 @@ export class AcceptOrderService{
 
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order) {
+    if (order && order.getPropsCopy().orderstatus == OrderStatus.CREATED) {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){

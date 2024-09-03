@@ -8,8 +8,9 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import {
-  CategoryLicenseRepository
+  CategoryLicenseRepository,
 } from '../../../../domain-repositories/category-license/category-license.repository';
+import { OrderStatus } from '@infrastructure/enums';
 
 @Injectable()
 export class DriverArrivedService {
@@ -27,7 +28,7 @@ export class DriverArrivedService {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
+    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderstatus == OrderStatus.STARTED) {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){

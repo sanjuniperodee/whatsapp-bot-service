@@ -7,6 +7,7 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { SMSCodeRecord } from '@domain/user/types';
+import { OrderStatus } from '@infrastructure/enums';
 
 @Injectable()
 export class CompleteOrderService {
@@ -23,7 +24,7 @@ export class CompleteOrderService {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId) {
+    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderstatus == OrderStatus.ONGOING) {
       order.rideEnded();
       await this.orderRequestRepository.save(order);
 
