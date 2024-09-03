@@ -163,8 +163,8 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get(':type')
   @ApiOperation({ summary: 'Get active orders' })
-  async getActiveOrders(@Param('type') type: string) {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type as OrderType })
+  async getActiveOrdersByType(@Param('type') type: OrderType) {
+    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type })
 
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
@@ -180,7 +180,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
-  async getActiveOrdersByType(@Param('type') type: string) {
+  async getActiveOrders() {
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
 
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
@@ -197,9 +197,10 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
-  async getMyActiveOrder(@IAM() user: UserOrmEntity) {
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
-
+  async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
+    console.log(123)
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user?.id || '')})
+    console.log(123)
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
