@@ -23,7 +23,7 @@ export class CategoryLicenseRepository
   async findOne(params: QueryParams<CategoryLicenseProps> = {}) {
     const where = this.prepareQuery(params);
 
-    const found = await CategoryLicenseOrmEntity.query().findOne(where).whereNull('rejectReason');
+    const found = await CategoryLicenseOrmEntity.query().findOne(where);
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
