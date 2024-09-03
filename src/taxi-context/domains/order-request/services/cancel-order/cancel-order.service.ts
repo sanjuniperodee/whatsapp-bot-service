@@ -25,20 +25,9 @@ export class CancelOrderService {
       throw new Error('Session is expired');
     }
 
-    orderRequest.reject('');
-    await this.orderRequestRepository.save(orderRequest);
-
-    const session = await this.getSMScode(orderRequest.getPropsCopy().user_phone || '');
-    if (!session || session.smsCode !== sessionId) {
-      return orderRequest.getPropsCopy();
-    }
+    await this.orderRequestRepository.delete(orderRequest);
 
     await this.orderRequestGateway.handleOrderRejected(orderRequest.getPropsCopy().driverId?.value || '');
 
-    if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
-      await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
-  }
-  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
-    return this.cacheStorageService.getValue(phone);
   }
 }
