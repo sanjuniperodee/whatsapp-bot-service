@@ -203,6 +203,7 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+        console.log({ whatsappUser, orderRequest })
         return { whatsappUser, orderRequest }
       }
 
