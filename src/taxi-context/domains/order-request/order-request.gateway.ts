@@ -82,7 +82,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         if(user){
           const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
           if (clientSocketId) {
-            this.server.to(clientSocketId).emit('driverLocation', { lng: 43.23188, lat: 76.83231 });
+            this.server.to(clientSocketId).emit('driverLocation', { lng: 43.23188, lat: 76.93231 });
           }
         }
       }
