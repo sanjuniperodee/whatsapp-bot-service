@@ -5,7 +5,7 @@ import { OrderRequestRepository } from '../../domain-repositories/order-request/
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
 import { SMSCodeRecord } from '@domain/user/types';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { OrderStatus } from '@infrastructure/enums';
+import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
@@ -161,9 +161,26 @@ export class OrderRequestController {
 
 
   @UseGuards(JwtAuthGuard())
+  @Get(':type')
+  @ApiOperation({ summary: 'Get active orders' })
+  async getActiveOrders(@Param('type') type: string) {
+    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type as OrderType })
+
+    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+
+    return await Promise.all(orderRequests.map(async orderRequest => {
+      const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+      return {
+        user,
+        orderRequest
+      }
+    }))
+  }
+
+  @UseGuards(JwtAuthGuard())
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
-  async getActiveOrders() {
+  async getActiveOrdersByType(@Param('type') type: string) {
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
 
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
