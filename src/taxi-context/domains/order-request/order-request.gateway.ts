@@ -3,14 +3,13 @@ import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { SMSCodeRecord } from '@domain/user/types';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
-import { WhatsappUserEntity } from '@domain/whatsapp-users/domain/entities/whatsapp-user.entity';
+import { OrderStatus } from '@infrastructure/enums';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -74,6 +73,18 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         }
       }
     }
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: driverId })
+
+    for (const orderRequest of orderRequests)
+      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
+        const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+        if(user){
+          const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+          if (clientSocketId) {
+            this.server.to(clientSocketId).emit('driverLocation', { lng: latitude, lat: longitude });
+          }
+        }
+      }
   }
 
   async handleOrderCreated(orderRequest: OrderRequestEntity) {
