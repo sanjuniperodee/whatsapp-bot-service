@@ -6,6 +6,10 @@ import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
+import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import {
+  CategoryLicenseRepository
+} from '../../../../domain-repositories/category-license/category-license.repository';
 
 @Injectable()
 export class DriverArrivedService {
@@ -13,6 +17,7 @@ export class DriverArrivedService {
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly whatsappUserRepository: WhatsappUserRepository,
+    private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
     private readonly whatsAppService: WhatsAppService,
     private readonly cacheStorageService: CloudCacheStorageService,
@@ -35,8 +40,16 @@ export class DriverArrivedService {
           throw new Error("SOMETHING WENT WRONG");
         }
 
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель приехал, вас ожидает золотой кабан')
+        const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
+        if(!category){
+          throw new Error("You can not accept orders before registering into category");
+        }
+
+        await this.whatsAppService.sendMessage(
+          userPhone + "@c.us",
+          `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
+        )
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
           await this.orderRequestGateway.emitEvent(clientSocketId, 'driverArrived', order, driver)

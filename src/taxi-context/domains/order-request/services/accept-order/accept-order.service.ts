@@ -2,14 +2,12 @@ import { Body, Injectable } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderStatus } from '@infrastructure/enums';
-import { async } from 'rxjs';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
 import {
   CategoryLicenseRepository
 } from '../../../../domain-repositories/category-license/category-license.repository';
@@ -58,10 +56,7 @@ export class AcceptOrderService{
 
         await this.whatsAppService.sendMessage(
           userPhone + "@c.us",
-          `Водитель принял ваш заказ, 
-          \nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.
-          \nЦвет: ${category.getPropsCopy().color}.
-          \nГос номер: ${category.getPropsCopy().number}`
+          `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         )
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
