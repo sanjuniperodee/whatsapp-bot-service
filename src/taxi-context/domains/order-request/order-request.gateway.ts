@@ -10,6 +10,7 @@ import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { SMSCodeRecord } from '@domain/user/types';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { OrderStatus } from '@infrastructure/enums';
+import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -73,7 +74,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         }
       }
     }
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: driverId })
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
