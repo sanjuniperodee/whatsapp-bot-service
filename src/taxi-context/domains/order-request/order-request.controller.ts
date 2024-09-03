@@ -197,6 +197,7 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistory(@IAM() user: UserOrmEntity) {
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
+    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
     return Promise.all(
       orderRequests.map(async orderRequest => {
