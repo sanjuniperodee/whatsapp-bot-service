@@ -256,10 +256,6 @@ export class OrderRequestController {
     return user?.getPropsCopy()
   }
 
-  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
-    return this.cacheStorageService.getValue(phone);
-  }
-
   @UseGuards(JwtAuthGuard())
   @Post('accept')
   @ApiBody({ type: ChangeOrderStatus })

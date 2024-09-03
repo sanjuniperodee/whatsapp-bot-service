@@ -115,38 +115,60 @@ export class UserController {
   async getMe(@IAM() user: UserOrmEntity) {
     const now = new Date();
 
+    // Fetch completed orders for the current user
     const orderRequests = await OrderRequestOrmEntity.query()
-      .where({ 'driverId': user.id, 'orderstatus': OrderStatus.COMPLETED });
+      .where({ driverId: user.id, orderstatus: OrderStatus.COMPLETED });
 
-    const totalRating = orderRequests.reduce((sum, order) => sum + (order.rating || 0), 0);
-    const rating = orderRequests.length > 0 ? totalRating / orderRequests.length : 0;
+    // Calculate the total rating and average rating
+    const ratedOrders = orderRequests.filter(order => !!order.rating);
 
+    const totalRating = ratedOrders.reduce((sum, order) => sum + (order.rating || 0), 0);
+    const rating = ratedOrders.length > 0 ? totalRating / ratedOrders.length : 0;
+
+    // Define the time ranges for today, this week, and this month
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     const endOfToday = new Date(now.setHours(23, 59, 59, 999));
-    const earningsToday = orderRequests
-      .filter(order => new Date(order.createdAt) >= startOfToday && new Date(order.createdAt) <= endOfToday)
-      .reduce((sum, order) => sum + (order.price || 0), 0);
 
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
     startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Calculate earnings and order counts for today
+    const earningsToday = orderRequests
+      .filter(order => new Date(order.createdAt) >= startOfToday && new Date(order.createdAt) <= endOfToday)
+      .reduce((sum, order) => sum + (order.price || 0), 0);
+    const ordersToday = orderRequests.filter(order => new Date(order.createdAt) >= startOfToday && new Date(order.createdAt) <= endOfToday).length;
+
+    // Calculate earnings and order counts for this week
     const earningsThisWeek = orderRequests
       .filter(order => new Date(order.createdAt) >= startOfWeek && new Date(order.createdAt) <= endOfToday)
       .reduce((sum, order) => sum + (order.price || 0), 0);
+    const ordersThisWeek = orderRequests.filter(order => new Date(order.createdAt) >= startOfWeek && new Date(order.createdAt) <= endOfToday).length;
 
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Calculate earnings and order counts for this month
     const earningsThisMonth = orderRequests
       .filter(order => new Date(order.createdAt) >= startOfMonth && new Date(order.createdAt) <= endOfToday)
       .reduce((sum, order) => sum + (order.price || 0), 0);
+    const ordersThisMonth = orderRequests.filter(order => new Date(order.createdAt) >= startOfMonth && new Date(order.createdAt) <= endOfToday).length;
 
+    // Return the response with rating, earnings, and order counts
     return {
       ...(await this.userRepository.findOneById(user.id)),
       rating,
+      ratedOrders,
       earnings: {
         today: earningsToday,
         thisWeek: earningsThisWeek,
         thisMonth: earningsThisMonth,
       },
+      orders: {
+        today: ordersToday,
+        thisWeek: ordersThisWeek,
+        thisMonth: ordersThisMonth,
+      },
     };
   }
+
 
 }

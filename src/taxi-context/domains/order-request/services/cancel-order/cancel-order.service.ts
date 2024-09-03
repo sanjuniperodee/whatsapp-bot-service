@@ -27,7 +27,10 @@ export class CancelOrderService {
 
     await this.orderRequestRepository.delete(orderRequest);
 
-    await this.orderRequestGateway.handleOrderRejected(orderRequest.getPropsCopy().driverId?.value || '');
+    const driveId = orderRequest.getPropsCopy().driverId?.value
+
+    if(driveId)
+      await this.orderRequestGateway.handleOrderRejected(driveId);
 
   }
 }
