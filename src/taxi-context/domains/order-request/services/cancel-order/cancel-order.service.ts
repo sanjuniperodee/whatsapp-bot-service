@@ -33,6 +33,8 @@ export class CancelOrderService {
       return orderRequest.getPropsCopy();
     }
 
+    await this.orderRequestGateway.handleOrderRejected(orderRequest);
+
     if(session?.smsCode == orderRequest.getPropsCopy().sessionid)
       await this.cacheStorageService.deleteValue(orderRequest.getPropsCopy().user_phone || '')
   }

@@ -49,10 +49,10 @@ export class CreateOrderService {
       user_phone: phone
     });
 
-    const user = await this.whatsappUserRepository.findOneByPhone(phone)
+    // const user = await this.whatsappUserRepository.findOneByPhone(phone)
 
     console.log(await this.orderRequestRepository.save(orderRequest))
-    await this.orderRequestGateway.handleOrderCreated(orderRequest, user);
+    await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
     return orderRequest.getPropsCopy();
   }

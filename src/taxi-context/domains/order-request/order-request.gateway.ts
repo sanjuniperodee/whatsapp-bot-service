@@ -76,7 +76,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
   }
 
-  async handleOrderCreated(orderRequest: OrderRequestEntity, user?: WhatsappUserEntity) {
+  async handleOrderCreated(orderRequest: OrderRequestEntity) {
     const lat = orderRequest.getPropsCopy().lat;
     const lng = orderRequest.getPropsCopy().lng;
     if (!lat || !lng) {
@@ -86,6 +86,12 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     nearestDrivers.forEach(driverId => {
       this.server.to(driverId).emit('newOrder');
     });
+  }
+
+  async handleOrderRejected(orderRequest: OrderRequestEntity) {
+    const driverId = orderRequest?.getPropsCopy()?.driverId?.value
+    if(driverId)
+      this.server.to(driverId).emit('orderRejected');
   }
 
   async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
