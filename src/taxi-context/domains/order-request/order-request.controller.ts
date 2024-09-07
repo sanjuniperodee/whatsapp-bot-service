@@ -235,6 +235,28 @@ export class OrderRequestController {
     ).then(results => results.filter(result => result !== null));
   }
 
+  @UseGuards(JwtAuthGuard())
+  @Get('history/:typey')
+  @ApiOperation({ summary: 'Get my order history' })
+  async getMyOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id), orderType: type})
+    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+
+    return Promise.all(
+      orderRequests.map(async orderRequest => {
+        if (
+          orderRequest &&
+          (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
+            orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
+        ) {
+          const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+          return { whatsappUser, orderRequest };
+        }
+        return null;
+      })
+    ).then(results => results.filter(result => result !== null));
+  }
+
   @Get('cancel/:session')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('session') sessionId: string) {
