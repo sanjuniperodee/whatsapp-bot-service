@@ -29,13 +29,13 @@ export class SignInByPhoneConfirmCodeService {
     const { smscode } = dto;
     const phone = dto.phone.replace(/ /g, '');
 
-    const codeRecord = await this.getSMScode(phone);
+    const codeRecord = await this.getSMScode('+' + phone);
 
     if (!codeRecord || codeRecord.smsCode !== smscode) {
       throw new Error("Invalid code")
     }
 
-    await this.deleteSMScode(phone);
+    await this.deleteSMScode('+' + phone);
 
     const user = await this.userRepository.findOneByPhone(phone);
 

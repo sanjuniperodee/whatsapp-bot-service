@@ -26,16 +26,16 @@ export class SignInByPhoneSendCodeService {
   async handle(dto: SignInByPhoneSendCodeRequest) {
     const phone = dto.phone.replace(/ /g, '');
 
-    let codeRecord: SMSCodeRecord | null = await this.getSMScode(phone);
+    let codeRecord: SMSCodeRecord | null = await this.getSMScode('+' + phone);
 
     if (codeRecord) {
-      return codeRecord.smsCode
-      // throw new Error("Код можно отправить раз в 60 секунд")
+      // return codeRecord.smsCode
+      throw new Error("Код можно отправить раз в 60 секунд")
     }
 
     let smscode: string | null = this.generateSmsCode();
 
-    codeRecord = this.saveSMSCode(smscode, phone);
+    codeRecord = this.saveSMSCode(smscode, '+' + phone);
 
     await this.whatsAppService.sendMessage(phone + "@c.us", smscode);
 
