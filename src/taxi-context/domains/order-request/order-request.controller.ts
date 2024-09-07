@@ -236,7 +236,7 @@ export class OrderRequestController {
   }
 
   @UseGuards(JwtAuthGuard())
-  @Get('history/:typey')
+  @Get('history/:type')
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id), orderType: type})
