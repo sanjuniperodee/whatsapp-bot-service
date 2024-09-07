@@ -29,7 +29,8 @@ export class SignInByPhoneSendCodeService {
     let codeRecord: SMSCodeRecord | null = await this.getSMScode(phone);
 
     if (codeRecord) {
-      throw new Error("Код можно отправить раз в 60 секунд")
+      return codeRecord.smsCode
+      // throw new Error("Код можно отправить раз в 60 секунд")
     }
 
     let smscode: string | null = this.generateSmsCode();
