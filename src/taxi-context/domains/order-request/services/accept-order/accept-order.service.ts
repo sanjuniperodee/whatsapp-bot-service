@@ -46,7 +46,7 @@ export class AcceptOrderService{
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
-      console.log(userPhone, driver)
+
       if (userPhone && driver) {
         const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
         if (!user) {

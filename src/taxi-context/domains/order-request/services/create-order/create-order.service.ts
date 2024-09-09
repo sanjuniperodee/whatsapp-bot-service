@@ -51,7 +51,6 @@ export class CreateOrderService {
 
     // const user = await this.whatsappUserRepository.findOneByPhone(phone)
 
-    console.log(await this.orderRequestRepository.save(orderRequest))
     await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
     return orderRequest.getPropsCopy();

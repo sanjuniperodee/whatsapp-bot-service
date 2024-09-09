@@ -126,10 +126,8 @@ export class OrderRequestController {
   async categoryRegister(@Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
-    console.log(type)
-
     const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type})
-    console.log(isExists.length > 0)
+
     if(isExists.length > 0){
       throw new Error("You already registered to this category")
     }
@@ -200,9 +198,7 @@ export class OrderRequestController {
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
   async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
-    console.log(123)
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user?.id || '')})
-    console.log(123)
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
