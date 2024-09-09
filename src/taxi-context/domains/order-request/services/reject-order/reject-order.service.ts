@@ -17,6 +17,7 @@ export class RejectOrderService {
 
   async handle(orderId: string) {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
+    console.log(123)
     if (!orderRequest) {
       throw new Error('Session is expired');
     }
