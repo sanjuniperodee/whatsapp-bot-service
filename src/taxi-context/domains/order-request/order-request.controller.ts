@@ -259,7 +259,7 @@ export class OrderRequestController {
     return this.cancelOrderService.handle(sessionId)
   }
 
-  @Get('reject/:orderId')
+  @Post('reject/:orderId')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order by order id' })
   async cancelOrderRequestByOrderId(@Param('orderId') orderId: string) {
