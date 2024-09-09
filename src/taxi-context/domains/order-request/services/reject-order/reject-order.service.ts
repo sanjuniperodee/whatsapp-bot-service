@@ -4,8 +4,6 @@ import { OrderRequestRepository } from '../../../../domain-repositories/order-re
 import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
-import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { SMSCodeRecord } from '@domain/user/types';
 
 @Injectable()
 export class RejectOrderService {
@@ -14,6 +12,7 @@ export class RejectOrderService {
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   async handle(orderId: string) {
@@ -26,5 +25,20 @@ export class RejectOrderService {
     const user = await  this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || "")
 
     await this.orderRequestGateway.handleOrderRejected(user?.id.value || '');
+
+    const userPhone = orderRequest.getPropsCopy().user_phone;
+
+    if (userPhone) {
+      const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
+
+      if (!user) {
+        throw new Error("SOMETHING WENT WRONG");
+      }
+
+      await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
+
+      await this.orderRequestGateway.handleOrderRejected(user.id.value);
+
+    }
   }
 }

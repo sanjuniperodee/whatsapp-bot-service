@@ -29,8 +29,6 @@ export class CancelOrderService {
 
     const driveId = orderRequest.getPropsCopy().driverId?.value
 
-    if(driveId)
-      await this.orderRequestGateway.handleOrderRejected(driveId);
-
+    if(driveId) await this.orderRequestGateway.handleOrderRejected(driveId);
   }
 }
