@@ -90,7 +90,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   async handleOrderRejected(userId: string) {
-      this.server.to(userId).emit('orderRejected');
+    const clientSocketId = await this.cacheStorageService.getSocketClientId(userId);
+    this.server.to(clientSocketId).emit('orderRejected');
   }
 
   async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
