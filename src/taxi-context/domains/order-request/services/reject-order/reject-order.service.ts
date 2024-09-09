@@ -4,6 +4,7 @@ import { OrderRequestRepository } from '../../../../domain-repositories/order-re
 import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 
 @Injectable()
 export class RejectOrderService {
@@ -13,6 +14,7 @@ export class RejectOrderService {
     private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
     private readonly whatsAppService: WhatsAppService,
+    private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
   async handle(orderId: string) {
@@ -38,8 +40,14 @@ export class RejectOrderService {
 
       await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
 
-      await this.orderRequestGateway.handleOrderRejected(user.id.value);
+      // await this.orderRequestGateway.handleOrderRejected(user.id.value);
 
+      const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+
+      const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId.value || '')
+
+      if (clientSocketId && driver)
+        await this.orderRequestGateway.emitEvent(clientSocketId, 'rideStarted', orderRequest, driver)
     }
   }
 }
