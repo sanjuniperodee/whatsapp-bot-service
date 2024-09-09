@@ -44,7 +44,7 @@ export class RejectOrderService {
 
       const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
 
-      const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId.value || '')
+      const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId?.value || '')
 
       if (clientSocketId && driver)
         await this.orderRequestGateway.emitEvent(clientSocketId, 'orderRejected', orderRequest, driver)
