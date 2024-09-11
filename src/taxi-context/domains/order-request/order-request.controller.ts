@@ -199,8 +199,8 @@ export class OrderRequestController {
     return await Promise.all(validOrderRequests.map(async orderRequest => {
       const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest!.getPropsCopy().user_phone || '');
       return {
-        user: orderUser?.getPropsCopy(),
-        orderRequest: orderRequest!.getPropsCopy()
+        user: orderUser,
+        orderRequest: orderRequest
       };
     }));
   }
