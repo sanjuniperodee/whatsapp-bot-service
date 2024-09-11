@@ -84,7 +84,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     if (!lat || !lng) {
       throw new Error('Latitude and Longitude are required');
     }
-    const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng, 300000);
+    const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
     for (const driverId of nearestDrivers) {
       const driverSocketIds = await this.cacheStorageService.getSocketIds(driverId);
       if (driverSocketIds) {
