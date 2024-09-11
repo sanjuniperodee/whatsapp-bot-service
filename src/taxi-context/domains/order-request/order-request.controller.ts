@@ -169,41 +169,7 @@ export class OrderRequestController {
       throw new Error('Driver location not found');
     }
 
-    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type });
-
-    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
-
-    orderRequests.forEach(orderRequest => {
-      const orderLocation = orderRequest.getPropsCopy();
-
-      if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
-        const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
-        console.log(`Расстояние до заказа ${orderRequest.id.value}: ${distance.toFixed(2)} км`);
-      } else {
-        console.log(`Координаты для заказа ${orderRequest.id.value} не определены.`);
-      }
-    });
-
-    // Возвращаем заказы с информацией о пользователе
-    return await Promise.all(orderRequests.map(async orderRequest => {
-      const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
-      return {
-        user: orderUser,
-        orderRequest: orderRequest
-      };
-    }));
-  }
-
-  @UseGuards(JwtAuthGuard())
-  @Get('active-orders')
-  @ApiOperation({ summary: 'Get active orders' })
-  async getActiveOrders(@IAM() user: UserOrmEntity) {
-    const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
-    if (!driverLocation) {
-      throw new Error('Driver location not found');
-    }
-
-    const nearbyOrders = await this.cacheStorageService.findNearestOrders(driverLocation.latitude, driverLocation.longitude, 20000);
+    const nearbyOrders = await this.cacheStorageService.findNearestOrdersByType(driverLocation.latitude, driverLocation.longitude, type, 20000);
 
     const orderRequests = await Promise.all(
       nearbyOrders.map(async orderId => {
@@ -212,15 +178,15 @@ export class OrderRequestController {
       })
     );
 
+    // Фильтрация null значений перед сортировкой
     const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null);
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
-    console.log(2213)
 
-    await validOrderRequests.forEach(orderRequest => {
+    // Вычисление расстояния и вывод в консоль
+    validOrderRequests.forEach(orderRequest => {
       const orderLocation = orderRequest!.getPropsCopy();
-      console.log(213)
-      // Проверяем, что координаты заказа определены
+
       if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
         const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
         console.log(`Расстояние до заказа ${orderRequest!.id.value}: ${distance.toFixed(2)} км`);

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import moment from 'moment';
 
 import { RedisService } from './redis.service';
+import { OrderType } from '../../../../infrastructure/enums';
 
 @Injectable()
 export class CloudCacheStorageService {
@@ -69,11 +70,11 @@ export class CloudCacheStorageService {
     return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
   }
 
-  async updateOrderLocation(orderId: string, latitude: number, longitude: number): Promise<void> {
-    await this.redisService.geoAdd('orders', longitude, latitude, orderId);
+  async updateOrderLocation(orderId: string, latitude: number, longitude: number, orderType: OrderType): Promise<void> {
+    await this.redisService.geoAdd(`orders:${orderType}`, longitude, latitude, orderId);
   }
 
-  async findNearestOrders(latitude: number, longitude: number, radius = 20000): Promise<string[]> {
-    return await this.redisService.geoRadius('orders', longitude, latitude, radius, 'm', 10, 'ASC');
+  async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 20000): Promise<string[]> {
+    return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
   }
 }

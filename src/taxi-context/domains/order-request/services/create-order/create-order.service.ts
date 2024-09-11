@@ -51,7 +51,7 @@ export class CreateOrderService {
 
     await this.orderRequestRepository.save(orderRequest)
 
-    await this.cacheStorageService.updateOrderLocation(orderRequest.id.value, lat, lng);
+    await this.cacheStorageService.updateOrderLocation(orderRequest.id.value, lat, lng, orderType);
 
     // const user = await this.whatsappUserRepository.findOneByPhone(phone)
 
