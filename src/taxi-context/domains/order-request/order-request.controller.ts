@@ -180,19 +180,37 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('active-orders')
   @ApiOperation({ summary: 'Get active orders' })
-  async getActiveOrders() {
-    const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED })
+  async getActiveOrders(@IAM() user: UserOrmEntity) {
+    const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
+    if (!driverLocation) {
+      throw new Error('Driver location not found');
+    }
 
-    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+    const nearbyOrders = await this.cacheStorageService.findNearestOrders(driverLocation.latitude, driverLocation.longitude, 20000);
 
-    return await Promise.all(orderRequests.map(async orderRequest => {
-      const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+    const orderRequests = await Promise.all(
+      nearbyOrders.map(async orderId => {
+        const orderRequest = await this.orderRequestRepository.findOneById(orderId);
+        return orderRequest || null;
+      })
+    );
+
+    // Фильтрация null значений перед сортировкой
+    const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null);
+
+    validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
+
+    // Возвращаем заказы с информацией о пользователе
+    return await Promise.all(validOrderRequests.map(async orderRequest => {
+      const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest!.getPropsCopy().user_phone || '');
       return {
-        user,
-        orderRequest
-      }
-    }))
+        user: orderUser?.getPropsCopy(),
+        orderRequest: orderRequest!.getPropsCopy()
+      };
+    }));
   }
+
+
 
   @UseGuards(JwtAuthGuard())
   @Get('my-active-order')
