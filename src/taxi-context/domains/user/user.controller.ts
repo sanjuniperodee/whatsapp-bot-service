@@ -175,5 +175,12 @@ export class UserController {
     };
   }
 
-
+  @UseGuards(JwtAuthGuard())
+  @Post('device')
+  async addDevice(@IAM() user: UserOrmEntity, @Body('token') token: string): Promise<any> {
+    const device =await UserOrmEntity.query().patchAndFetchById(user.id, {
+      deviceToken: token,
+    });
+    return device.deviceToken;
+  }
 }

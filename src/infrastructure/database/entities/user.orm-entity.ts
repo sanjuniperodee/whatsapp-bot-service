@@ -12,6 +12,7 @@ export class UserOrmEntity extends ObjectionEntityBase {
   lastName: string;
   middleName?: string;
   lastSms?: string;
+  deviceToken?: string;
 
   static get jsonSchema() {
     return {

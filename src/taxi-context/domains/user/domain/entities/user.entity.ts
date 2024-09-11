@@ -12,6 +12,7 @@ export interface CreateUserProps {
 export type UserProps = CreateUserProps & {
   middleName?: string;
   lastSms?: string;
+  deviceToken?: string;
 };
 
 export class UserEntity extends AggregateRoot<UserProps> {
@@ -23,7 +24,8 @@ export class UserEntity extends AggregateRoot<UserProps> {
     const props: UserProps = {
       ...create,
       lastSms: undefined,
-      middleName: undefined
+      middleName: undefined,
+      deviceToken: undefined
     };
 
     return new UserEntity({ id, props });

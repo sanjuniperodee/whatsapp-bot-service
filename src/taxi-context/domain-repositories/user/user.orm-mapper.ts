@@ -12,7 +12,8 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
       lastName: props.lastName,
       middleName: props.middleName,
       phone: props.phone,
-      lastSms: props.lastSms
+      lastSms: props.lastSms,
+      deviceToken: props.deviceToken,
     };
   }
 
@@ -24,7 +25,8 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
       firstName: ormEntity.firstName,
       lastName: ormEntity.lastName,
       middleName: ormEntity.middleName,
-      lastSms: ormEntity.lastSms
+      lastSms: ormEntity.lastSms,
+      deviceToken: ormEntity.deviceToken
     };
 
     return { id, props };
