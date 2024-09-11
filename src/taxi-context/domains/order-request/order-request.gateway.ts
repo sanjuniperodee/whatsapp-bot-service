@@ -37,20 +37,20 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const userId = client.handshake.query.userId as string;
 
     if (userId) {
+      await this.cacheStorageService.addSocketId(userId, client.id);
       client.join(userId);
-      await this.cacheStorageService.setSocketId(userId, client.id);
     }
 
-    console.log(userId, client.id)
-    const clientSocketId = await this.cacheStorageService.getSocketClientId(userId);
-    console.log(clientSocketId)
+    console.log(userId, client.id);
   }
 
   async handleDisconnect(client: Socket) {
-    console.log('DISCONECTED', client.id)
+    console.log('DISCONNECTED', client.id);
     const userId = client.handshake.query.userId as string;
-    console.log({ 'Disconnected': userId })
+
     if (userId) {
+      // Удаляем Socket ID из множества
+      await this.cacheStorageService.removeSocketId(userId, client.id);
       client.leave(userId);
     }
   }
@@ -63,16 +63,19 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
-    for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
+    for (const orderRequest of orderRequests) {
+      if (orderRequest && (orderRequest.getPropsCopy().orderstatus !== OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus !== OrderStatus.COMPLETED)) {
         const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
-        if(user){
-          const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-          if (clientSocketId) {
-            this.server.to(clientSocketId).emit('driverLocation', { lat: longitude, lng: latitude });
+        if (user) {
+          const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
+          if (clientSocketIds) {
+            clientSocketIds.forEach(socketId => {
+              this.server.to(socketId).emit('driverLocation', { lat: longitude, lng: latitude });
+            });
           }
         }
       }
+    }
   }
 
   async handleOrderCreated(orderRequest: OrderRequestEntity) {
@@ -82,36 +85,31 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       throw new Error('Latitude and Longitude are required');
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng, 300000);
-    nearestDrivers.forEach(driverId => {
-      this.server.to(driverId).emit('newOrder');
-    });
+    for (const driverId of nearestDrivers) {
+      const driverSocketIds = await this.cacheStorageService.getSocketIds(driverId);
+      if (driverSocketIds) {
+        driverSocketIds.forEach(socketId => {
+          this.server.to(socketId).emit('newOrder');
+        });
+      }    }
   }
 
   async handleOrderRejected(userId: string) {
-    const clientSocketId = await this.cacheStorageService.getSocketClientId(userId);
-    if (clientSocketId)
-    this.server.to(clientSocketId).emit('orderRejected');
+    const clientSocketIds = await this.cacheStorageService.getSocketIds(userId);
+    if (clientSocketIds) {
+      clientSocketIds.forEach(socketId => {
+        this.server.to(socketId).emit('orderRejected');
+      });
+    }
   }
 
-  async emitEvent(clientSocketId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
-    this.server.to(clientSocketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
-  }
+  async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
+    const socketIds = await this.cacheStorageService.getSocketIds(userId);
 
-  // async emitEvent(clientSocketId: string, event: string, args: any){
-  //   this.server.to(clientSocketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
-  // }
-
-
-  // async handleOrderStatusUpdate(orderId: string, status: string) {
-  //   const order = await this.orderRequestRepository.findOneById(orderId);
-  //   if (order) {
-  //     order.updateStatus(status);
-  //     await this.orderRequestRepository.save(order);
-  //     this.server.emit('orderStatusUpdated', { order: order.getPropsCopy(), status });
-  //   }
-  // }
-
-  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
-    return this.cacheStorageService.getValue(phone);
+    if (socketIds) {
+      socketIds.forEach(socketId => {
+        this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
+      });
+    }
   }
 }

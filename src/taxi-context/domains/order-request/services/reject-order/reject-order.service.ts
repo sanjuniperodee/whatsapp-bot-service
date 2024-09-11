@@ -40,16 +40,12 @@ export class RejectOrderService {
 
       await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
 
-      // await this.orderRequestGateway.handleOrderRejected(user.id.value);
-
-      const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-
       const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId?.value || '')
 
       orderRequest.reject('123')
 
-      if (clientSocketId && driver)
-        await this.orderRequestGateway.emitEvent(clientSocketId, 'orderRejected', orderRequest, driver)
+      if (driver)
+        await this.orderRequestGateway.emitEvent(user.id.value, 'orderRejected', orderRequest, driver)
     }
   }
 }

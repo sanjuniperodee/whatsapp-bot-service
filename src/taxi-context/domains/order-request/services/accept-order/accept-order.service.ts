@@ -53,17 +53,12 @@ export class AcceptOrderService{
           throw new Error("SOMETHING WENT WRONG");
         }
 
-
-
         await this.whatsAppService.sendMessage(
           userPhone + "@c.us",
           `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         )
 
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'orderAccepted', order, driver)
-        }
+        await this.orderRequestGateway.emitEvent(user.id.value, 'orderAccepted', order, driver)
       }
     }
   }

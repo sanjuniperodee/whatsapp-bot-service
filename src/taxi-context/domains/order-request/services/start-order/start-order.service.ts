@@ -40,7 +40,7 @@ export class StartOrderService {
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
         if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'rideStarted', order, driver)
+          await this.orderRequestGateway.emitEvent(user.id.value, 'rideStarted', order, driver)
         }
       }
     }

@@ -46,10 +46,7 @@ export class CompleteOrderService {
 
         await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Заказ завершен, оцените пожалуйста поездку')
 
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'rideEnded', order, driver)
-        }
+        await this.orderRequestGateway.emitEvent(user.id.value, 'rideEnded', order, driver)
       }
     }
   }

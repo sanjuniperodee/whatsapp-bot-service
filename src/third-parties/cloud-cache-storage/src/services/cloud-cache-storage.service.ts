@@ -8,6 +8,20 @@ import { OrderType } from '../../../../infrastructure/enums';
 export class CloudCacheStorageService {
   constructor(private readonly redisService: RedisService) {}
 
+  async addSocketId(userId: string, socketId: string) {
+    await this.redisService.client.sadd(`sockets:${userId}`, socketId);
+  }
+
+  // Удаляем Socket ID из множества для userId
+  async removeSocketId(userId: string, socketId: string) {
+    await this.redisService.client.srem(`sockets:${userId}`, socketId);
+  }
+
+  // Получаем все Socket ID для userId
+  async getSocketIds(userId: string): Promise<string[]> {
+    return await this.redisService.client.smembers(`sockets:${userId}`);
+  }
+
   setValue(key: string, value: Record<string, any>) {
     this.redisService.client.set(key, JSON.stringify(value));
   }

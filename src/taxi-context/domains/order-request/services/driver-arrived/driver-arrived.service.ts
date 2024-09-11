@@ -51,10 +51,8 @@ export class DriverArrivedService {
           userPhone + "@c.us",
           `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         )
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
-        if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(clientSocketId, 'driverArrived', order, driver)
-        }
+
+        await this.orderRequestGateway.emitEvent(user.id.value, 'driverArrived', order, driver)
       }
     }
   }
