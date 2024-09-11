@@ -75,6 +75,8 @@ export class CloudCacheStorageService {
   }
 
   async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 20000): Promise<string[]> {
+    if(orderType == OrderType.INTERCITY_TAXI)
+      radius = 300000
     return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
   }
 
