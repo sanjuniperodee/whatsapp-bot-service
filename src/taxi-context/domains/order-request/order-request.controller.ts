@@ -199,6 +199,7 @@ export class OrderRequestController {
     const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null);
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
+    console.log(2213)
 
     await validOrderRequests.forEach(orderRequest => {
       const orderLocation = orderRequest!.getPropsCopy();
