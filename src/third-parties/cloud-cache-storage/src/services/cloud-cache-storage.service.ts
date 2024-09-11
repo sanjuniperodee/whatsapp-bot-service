@@ -77,4 +77,9 @@ export class CloudCacheStorageService {
   async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 20000): Promise<string[]> {
     return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
   }
+
+  async removeOrderLocation(orderId: string, orderType: OrderType): Promise<void> {
+    // Удаляем заказ из набора геолокации по типу заказа
+    await this.redisService.client.zrem(`orders:${orderType}`, orderId);
+  }
 }

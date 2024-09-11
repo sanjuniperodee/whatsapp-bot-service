@@ -27,6 +27,8 @@ export class CancelOrderService {
 
     await this.orderRequestRepository.delete(orderRequest);
 
+    await this.cacheStorageService.removeOrderLocation(orderRequest.id.value, orderRequest.getPropsCopy().orderType);
+
     const driveId = orderRequest.getPropsCopy().driverId?.value
 
     if(driveId) await this.orderRequestGateway.handleOrderRejected(driveId);

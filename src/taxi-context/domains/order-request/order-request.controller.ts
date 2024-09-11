@@ -178,12 +178,10 @@ export class OrderRequestController {
       })
     );
 
-    // Фильтрация null значений перед сортировкой
     const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null);
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
 
-    // Вычисление расстояния и вывод в консоль
     validOrderRequests.forEach(orderRequest => {
       const orderLocation = orderRequest!.getPropsCopy();
 
@@ -195,7 +193,6 @@ export class OrderRequestController {
       }
     });
 
-    // Возвращаем заказы с информацией о пользователе
     return await Promise.all(validOrderRequests.map(async orderRequest => {
       const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest!.getPropsCopy().user_phone || '');
       return {

@@ -32,6 +32,9 @@ export class CompleteOrderService {
       if(session?.smsCode == order.getPropsCopy().sessionid)
         await this.cacheStorageService.deleteValue(order.getPropsCopy().user_phone || '')
 
+      await this.cacheStorageService.removeOrderLocation(order.id.value, order.getPropsCopy().orderType);
+
+
       const driver = await this.userRepository.findOneById(driverId)
 
       const userPhone = order.getPropsCopy().user_phone;
