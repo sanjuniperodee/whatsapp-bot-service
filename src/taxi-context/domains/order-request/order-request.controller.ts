@@ -171,14 +171,11 @@ export class OrderRequestController {
 
     const orderRequests = await this.orderRequestRepository.findMany({ orderstatus: OrderStatus.CREATED, orderType: type });
 
-    // Фильтрация и сортировка заказов
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
-    // Вычисление расстояния и вывод в консоль
     orderRequests.forEach(orderRequest => {
       const orderLocation = orderRequest.getPropsCopy();
 
-      // Проверяем, что координаты заказа определены
       if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
         const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
         console.log(`Расстояние до заказа ${orderRequest.id.value}: ${distance.toFixed(2)} км`);
@@ -191,8 +188,8 @@ export class OrderRequestController {
     return await Promise.all(orderRequests.map(async orderRequest => {
       const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
       return {
-        user: orderUser?.getPropsCopy(),
-        orderRequest: orderRequest.getPropsCopy()
+        user: orderUser,
+        orderRequest: orderRequest
       };
     }));
   }
