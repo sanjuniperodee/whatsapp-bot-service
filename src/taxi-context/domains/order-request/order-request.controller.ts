@@ -200,9 +200,9 @@ export class OrderRequestController {
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
 
-    validOrderRequests.forEach(orderRequest => {
+    await validOrderRequests.forEach(orderRequest => {
       const orderLocation = orderRequest!.getPropsCopy();
-
+      console.log(213)
       // Проверяем, что координаты заказа определены
       if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
         const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
