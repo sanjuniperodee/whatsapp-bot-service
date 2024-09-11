@@ -200,6 +200,18 @@ export class OrderRequestController {
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
 
+    validOrderRequests.forEach(orderRequest => {
+      const orderLocation = orderRequest!.getPropsCopy();
+
+      // Проверяем, что координаты заказа определены
+      if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
+        const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
+        console.log(`Расстояние до заказа ${orderRequest!.id.value}: ${distance.toFixed(2)} км`);
+      } else {
+        console.log(`Координаты для заказа ${orderRequest!.id.value} не определены.`);
+      }
+    });
+
     // Возвращаем заказы с информацией о пользователе
     return await Promise.all(validOrderRequests.map(async orderRequest => {
       const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest!.getPropsCopy().user_phone || '');
@@ -210,6 +222,22 @@ export class OrderRequestController {
     }));
   }
 
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Радиус Земли в километрах
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Расстояние в километрах
+    return distance;
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI/180);
+  }
 
 
   @UseGuards(JwtAuthGuard())
