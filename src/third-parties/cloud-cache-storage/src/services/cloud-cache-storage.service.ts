@@ -80,7 +80,7 @@ export class CloudCacheStorageService {
     return null;
   }
 
-  async findNearestDrivers(latitude: number, longitude: number, radius = 20000): Promise<string[]> {
+  async findNearestDrivers(latitude: number, longitude: number, radius = 2000000): Promise<string[]> {
     return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
   }
 
@@ -88,7 +88,7 @@ export class CloudCacheStorageService {
     await this.redisService.geoAdd(`orders:${orderType}`, longitude, latitude, orderId);
   }
 
-  async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 20000): Promise<string[]> {
+  async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 2000000): Promise<string[]> {
     if(orderType == OrderType.INTERCITY_TAXI)
       radius = 300000
     return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
