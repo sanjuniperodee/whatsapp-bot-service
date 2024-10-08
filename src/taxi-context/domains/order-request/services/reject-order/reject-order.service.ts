@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 
 @Injectable()
@@ -11,9 +9,7 @@ export class RejectOrderService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
-    private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    private readonly whatsAppService: WhatsAppService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -25,27 +21,19 @@ export class RejectOrderService {
     }
     await this.orderRequestRepository.delete(orderRequest);
 
-    const user = await  this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || "")
+    const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId?.value || '')
 
-    await this.orderRequestGateway.handleOrderRejected(user?.id.value || '');
+    await this.orderRequestGateway.handleOrderRejected(driver?.id.value || '');
 
-    const userPhone = orderRequest.getPropsCopy().user_phone;
+    const client = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value)
 
-    if (userPhone) {
-      const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-
-      if (!user) {
-        throw new Error("SOMETHING WENT WRONG");
-      }
-
-      await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
-
-      const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId?.value || '')
+    if (driver && client) {
+      // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
 
       orderRequest.reject('123')
 
       if (driver)
-        await this.orderRequestGateway.emitEvent(user.id.value, 'orderRejected', orderRequest, driver)
+        await this.orderRequestGateway.emitEvent(driver.id.value, 'orderRejected', orderRequest, driver)
     }
   }
 }

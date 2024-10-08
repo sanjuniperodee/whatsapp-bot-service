@@ -8,10 +8,10 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
     const props = entity.getPropsCopy();
 
     return {
+      clientId: props.clientId.value,
       driverId: props.driverId?.value || undefined,
       orderType: props.orderType,
       orderstatus: props.orderstatus,
-      user_phone: props.user_phone,
       from: props.from,
       to: props.to,
       startTime: props.startTime,
@@ -19,10 +19,9 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       lat: props.lat,
       lng: props.lng,
       price: props.price,
-      sessionid: props.sessionid,
       rating: props.rating,
       comment: props.comment,
-      endedAt: props.endedAt
+      endedAt: props.endedAt,
     };
   }
 
@@ -33,7 +32,6 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       createdAt: ormEntity.createdAt,
       updatedAt: ormEntity.updatedAt,
       driverId: ormEntity.driverId ? new UUID(ormEntity.driverId) : undefined,
-      user_phone: ormEntity.user_phone,
       orderType: ormEntity.orderType,
       orderstatus: ormEntity.orderstatus,
       from: ormEntity.from,
@@ -46,7 +44,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       comment: ormEntity.comment,
       endedAt: ormEntity.endedAt,
       rating: ormEntity.rating,
-      sessionid: ormEntity.sessionid
+      clientId: new UUID(ormEntity.clientId)
     };
 
     return { id, props };

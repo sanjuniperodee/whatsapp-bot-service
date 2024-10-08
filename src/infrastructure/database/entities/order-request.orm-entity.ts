@@ -9,7 +9,7 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   static tableName = 'order_request';
 
   driverId?: string;
-  user_phone?: string;
+  clientId: string;
   orderType: OrderType;
   orderstatus: OrderStatus;
   from: string;
@@ -23,7 +23,6 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   rejectReason?: string;
   endedAt?: Date;
   rating?: number;
-  sessionid: string
 
   static get jsonSchema() {
     return {

@@ -135,11 +135,8 @@ export class OrderRequestRepository
     if (params.driverId) {
       where.driverId = params.driverId.value;
     }
-    if (params.sessionid) {
-      where.sessionid = params.sessionid;
-    }
-    if (params.user_phone) {
-      where.user_phone = params.user_phone;
+    if (params.clientId) {
+      where.clientId = params.clientId.value;
     }
     if (params.orderstatus) {
       where.orderstatus = params.orderstatus;

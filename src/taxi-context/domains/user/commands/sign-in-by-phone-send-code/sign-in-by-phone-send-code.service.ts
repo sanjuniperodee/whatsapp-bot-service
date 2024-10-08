@@ -5,7 +5,7 @@ import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { CloudCacheStorageService } from '../../../../../third-parties/cloud-cache-storage/src';
 import { SMSCodeRecord } from '@domain/user/types';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import moment from 'moment';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class SignInByPhoneSendCodeService {
     private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
     private readonly cacheStorageService: CloudCacheStorageService,
-    private readonly whatsAppService: WhatsAppService,
+    // private readonly whatsAppService: WhatsAppService,
   ) {
     this.smsCodeExpiresIn = configService.get<number>('smsCode.expiresInSeconds') as number;
     this.smsCodeLength = configService.get<number>('smsCode.codeLength') as number;
@@ -37,7 +37,7 @@ export class SignInByPhoneSendCodeService {
 
     codeRecord = this.saveSMSCode(smscode, '+' + phone);
 
-    await this.whatsAppService.sendMessage(phone + "@c.us", smscode);
+    // await this.whatsAppService.sendsMessage(phone + "@c.us", smscode);
 
     return smscode
   }

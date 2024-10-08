@@ -2,9 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { OrderStatus } from '@infrastructure/enums';
 
@@ -13,9 +12,8 @@ export class StartOrderService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
-    private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    private readonly whatsAppService: WhatsAppService,
+    // private readonly whatsAppService: WhatsAppService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -29,18 +27,13 @@ export class StartOrderService {
 
       const driver = await this.userRepository.findOneById(driverId)
 
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
-        if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
-        }
+      const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
+      if (client && driver) {
+        // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
 
-        await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(user.id.value);
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(client.id.value);
         if (clientSocketId) {
-          await this.orderRequestGateway.emitEvent(user.id.value, 'rideStarted', order, driver)
+          await this.orderRequestGateway.emitEvent(client.id.value, 'rideStarted', order, driver)
         }
       }
     }

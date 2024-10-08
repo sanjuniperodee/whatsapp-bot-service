@@ -3,8 +3,6 @@ import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { SMSCodeRecord } from '@domain/user/types';
@@ -28,9 +26,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
-    private readonly whatsappUserRepository: WhatsappUserRepository,
-    @Inject(forwardRef(() => WhatsAppService))
-    private readonly whatsAppService: WhatsAppService,
+    // @Inject(forwardRef(() => WhatsAppService))
+    // private readonly whatsAppService: WhatsAppService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -65,7 +62,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
     for (const orderRequest of orderRequests) {
       if (orderRequest && (orderRequest.getPropsCopy().orderstatus !== OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus !== OrderStatus.COMPLETED)) {
-        const user = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+        const user = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
         if (user) {
           const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
           if (clientSocketIds) {

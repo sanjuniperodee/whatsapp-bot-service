@@ -8,13 +8,12 @@ import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src
 import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
-import { WhatsappUserRepository } from '../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { IAM } from '@infrastructure/decorators/iam.decorator';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { MakeReviewRequest } from '@domain/order-request/services/make-review/create-order-request';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { CategoryRegisterRequest } from '@domain/order-request/services/category-register/category-register.request';
 import { UpdateLocationRequest } from '@domain/order-request/services/update-location/update-location.request';
@@ -39,8 +38,6 @@ export class OrderRequestController {
     private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
-    private readonly whatsAppService: WhatsAppService,
-    private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly acceptOrderService: AcceptOrderService,
     private readonly driverArrivedService: DriverArrivedService,
     private readonly startOrderService: StartOrderService,
@@ -76,9 +73,8 @@ export class OrderRequestController {
 
   @Get('status/:session')
   @ApiOperation({ summary: 'Get order status' })
-  @ApiBody({ type: MakeReviewRequest })
-  async getOrderStatus(@Param('session') session: string) {
-    const orderRequest = await this.orderRequestRepository.findOne({ sessionid: session });
+  async getOrderStatus(@Param('orderId') orderId: string) {
+    const orderRequest = await this.orderRequestRepository.findOneById(orderId);
     if (!orderRequest) {
       throw new Error('Session is expired!');
     }
@@ -155,8 +151,9 @@ export class OrderRequestController {
   @Post('create-order')
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
-  async createOrder(@Body() input: CreateOrderRequest) {
-    return this.createOrderService.handle(input)
+  @UseGuards(JwtAuthGuard())
+  async createOrder(@Body() input: CreateOrderRequest, @IAM() user: UserOrmEntity) {
+    return this.createOrderService.handle(input, user)
   }
 
 
@@ -194,7 +191,7 @@ export class OrderRequestController {
     });
 
     return await Promise.all(validOrderRequests.map(async orderRequest => {
-      const orderUser = await this.whatsappUserRepository.findOneByPhone(orderRequest!.getPropsCopy().user_phone || '');
+      const orderUser = await this.userRepository.findOneById(orderRequest!.getPropsCopy().clientId.value);
       return {
         user: orderUser,
         orderRequest: orderRequest
@@ -227,7 +224,7 @@ export class OrderRequestController {
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
-        const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+        const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
         console.log({ whatsappUser, orderRequest })
         return { whatsappUser, orderRequest }
       }
@@ -249,7 +246,7 @@ export class OrderRequestController {
           (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
           orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
         ) {
-          const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+          const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
           return { whatsappUser, orderRequest };
         }
         return null;
@@ -271,7 +268,7 @@ export class OrderRequestController {
           (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
             orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
         ) {
-          const whatsappUser = await this.whatsappUserRepository.findOneByPhone(orderRequest.getPropsCopy().user_phone || '');
+          const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
           return { whatsappUser, orderRequest };
         }
         return null;
@@ -292,10 +289,10 @@ export class OrderRequestController {
     return this.rejectOrderService.handle(orderId)
   }
 
-  @Get('user/:session')
+  @Get('user/:id')
   @ApiOperation({ summary: 'Get user by session id' })
-  async getUserBySessionId(@Param('session') session: string) {
-    const user = await this.whatsappUserRepository.findOneBySession(session)
+  async getUserBySessionId(@Param('id') id: string) {
+    const user = await this.userRepository.findOneById(id)
 
     return user?.getPropsCopy()
   }

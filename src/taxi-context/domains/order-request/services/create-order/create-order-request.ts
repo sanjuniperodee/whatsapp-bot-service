@@ -17,12 +17,6 @@ export class CreateOrderRequest {
   @IsNotEmpty()
   @IsDefined()
   @IsString()
-  readonly phone: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsDefined()
-  @IsString()
   readonly from: string;
 
   @ApiProperty()

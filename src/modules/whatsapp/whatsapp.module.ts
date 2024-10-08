@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { WhatsAppController } from "@modules/whatsapp/whatsapp.controller";
-import { WhatsAppService } from "@modules/whatsapp/whatsapp.service";
+// import { WhatsAppService } from "@modules/whatsapp/whatsapp.service";
 import {
   TaxiContextDomainRepositoriesModule
 } from '../../taxi-context/domain-repositories/taxi-context-domain-repositories.module';
@@ -20,11 +20,11 @@ import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
     CloudCacheStorageModule.forRootAsync(redisConfigFactory)
   ],
   controllers: [WhatsAppController],
-  providers: [
-    WhatsAppService,
-  ],
-  exports: [
-    WhatsAppService,
-  ],
+  // providers: [
+  //   WhatsAppService,
+  // ],
+  // exports: [
+  //   WhatsAppService,
+  // ],
 })
 export class WhatsAppModule {}

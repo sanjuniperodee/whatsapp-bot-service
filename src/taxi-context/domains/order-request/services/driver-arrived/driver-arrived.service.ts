@@ -2,9 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/driver-arrived/driver-arrived.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { WhatsappUserRepository } from '../../../../domain-repositories/whatsapp-user/whatsapp-user.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import {
@@ -17,10 +16,9 @@ export class DriverArrivedService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
-    private readonly whatsappUserRepository: WhatsappUserRepository,
     private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    private readonly whatsAppService: WhatsAppService,
+    // private readonly whatsAppService: WhatsAppService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -40,17 +38,17 @@ export class DriverArrivedService {
 
       const driver = await this.userRepository.findOneById(driverId)
 
-      const userPhone = order.getPropsCopy().user_phone;
-      if (userPhone && driver) {
-        const user = await this.whatsappUserRepository.findOneByPhone(userPhone);
+      const userId = order.getPropsCopy().clientId;
+      if (userId && driver) {
+        const user = await this.userRepository.findOneById(userId.value);
         if (!user) {
           throw new Error("SOMETHING WENT WRONG");
         }
 
-        await this.whatsAppService.sendMessage(
-          userPhone + "@c.us",
-          `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
-        )
+        // await this.whatsAppService.sendMessage(
+        //   userPhone + "@c.us",
+        //   `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
+        // )
 
         await this.orderRequestGateway.emitEvent(user.id.value, 'driverArrived', order, driver)
       }

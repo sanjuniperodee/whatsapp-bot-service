@@ -5,7 +5,7 @@ import { OrderStatus, OrderType } from '@infrastructure/enums';
 
 export interface CreateOrderRequestProps {
   driverId?: UUID;
-  user_phone?: string;
+  clientId: UUID;
   orderType: OrderType;
   orderstatus: OrderStatus,
   from: string,
@@ -16,7 +16,6 @@ export interface CreateOrderRequestProps {
   lng?: number;
   price: number,
   comment?: string;
-  sessionid: string;
 }
 
 export type OrderRequestProps = CreateOrderRequestProps & {
@@ -32,7 +31,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
   static create({
       driverId,
-      user_phone,
+      clientId,
       orderType,
       orderstatus,
       startTime,
@@ -41,7 +40,6 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       to,
       lat,
       lng,
-    sessionid,
     price,
       comment,
     }: CreateOrderRequestProps): OrderRequestEntity {
@@ -49,7 +47,7 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
     const props: OrderRequestProps = {
       driverId,
-      user_phone,
+      clientId,
       orderType,
       orderstatus,
       from,
@@ -60,7 +58,6 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       lng,
       comment,
       price,
-      sessionid,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -110,9 +107,9 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
   }
 
   validate(): void {
-    const { user_phone, orderType } = this.props;
+    const { clientId, orderType } = this.props;
 
-    const fields = [user_phone, orderType];
+    const fields = [clientId, orderType];
 
     if (fields.some((f) => f == null)) {
       throw new ArgumentInvalidException('Order must have all required fields');
