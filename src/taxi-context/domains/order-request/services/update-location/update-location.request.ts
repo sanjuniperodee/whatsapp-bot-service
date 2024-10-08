@@ -11,7 +11,7 @@ export class UpdateLocationRequest {
   @IsNotEmpty()
   @IsDefined()
   @IsUUID('4')
-  readonly clientId: string;
+  readonly orderId: string;
 
   @ApiProperty()
   @IsNotEmpty()

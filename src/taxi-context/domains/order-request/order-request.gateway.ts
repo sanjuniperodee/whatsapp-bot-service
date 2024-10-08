@@ -61,7 +61,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests) {
-      if (orderRequest && (orderRequest.getPropsCopy().orderstatus !== OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus !== OrderStatus.COMPLETED)) {
+      if (orderRequest && (orderRequest.getPropsCopy().orderStatus !== OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus !== OrderStatus.COMPLETED)) {
         const user = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
         if (user) {
           const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
@@ -105,7 +105,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
     if (socketIds) {
       socketIds.forEach(socketId => {
-        this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderstatus, driver: driver.getPropsCopy() });
+        this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
       });
     }
   }

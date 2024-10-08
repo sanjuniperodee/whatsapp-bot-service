@@ -26,7 +26,7 @@ export class DriverArrivedService {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderstatus == OrderStatus.STARTED) {
+    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderStatus == OrderStatus.STARTED) {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){

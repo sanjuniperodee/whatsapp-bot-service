@@ -24,12 +24,12 @@ export class AcceptOrderService{
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)
-      if (orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED))
+      if (orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED))
         return 'You already have active order'
 
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().orderstatus == OrderStatus.CREATED) {
+    if (order && order.getPropsCopy().orderStatus == OrderStatus.CREATED) {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){

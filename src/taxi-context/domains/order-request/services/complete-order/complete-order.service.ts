@@ -22,7 +22,7 @@ export class CompleteOrderService {
     const { driverId, orderId } = input;
     const order = await this.orderRequestRepository.findOneById(orderId);
 
-    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderstatus == OrderStatus.ONGOING) {
+    if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderStatus == OrderStatus.ONGOING) {
       order.rideEnded();
       await this.orderRequestRepository.save(order);
 

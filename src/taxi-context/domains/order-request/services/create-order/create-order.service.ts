@@ -28,7 +28,7 @@ export class CreateOrderService {
     const orderRequest = OrderRequestEntity.create({
       orderType,
       clientId: new UUID(user.id),
-      orderstatus: OrderStatus.CREATED,
+      orderStatus: OrderStatus.CREATED,
       from,
       to,
       lat,

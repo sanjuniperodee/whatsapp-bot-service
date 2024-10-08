@@ -117,7 +117,7 @@ export class UserController {
 
     // Fetch completed orders for the current user
     const orderRequests = await OrderRequestOrmEntity.query()
-      .where({ driverId: user.id, orderstatus: OrderStatus.COMPLETED });
+      .where({ driverId: user.id, orderStatus: OrderStatus.COMPLETED });
 
     // Calculate the total rating and average rating
     const ratedOrders = orderRequests.filter(order => !!order.rating);

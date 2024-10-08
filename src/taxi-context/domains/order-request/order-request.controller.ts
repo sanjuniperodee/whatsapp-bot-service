@@ -56,22 +56,25 @@ export class OrderRequestController {
     })
     return menu.json();
   }
-  @Post()
+  @Post('/location/update')
   @UseGuards(JwtAuthGuard())
   async handleLocationUpdate(
     @Body() input: UpdateLocationRequest,
     @IAM() user: UserOrmEntity
   ) {
-    const { lng, lat, clientId } = input;
-    await this.cacheStorageService.updateDriverLocation(user.id, lng, lat);
+    const { lng, lat, orderId } = input;
 
-    const clientSocketId = await this.cacheStorageService.getSocketClientId(clientId);
+    const order = await this.orderRequestRepository.findOneById(orderId)
+
+    await this.cacheStorageService.updateDriverLocation(order?.getPropsCopy().driverId?.value || '', lng, lat);
+
+    const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
     if (clientSocketId) {
       // await this.orderRequestGateway.emitEvent(clientSocketId, 'driverLocation', { lng, lat })
     }
   }
 
-  @Get('status/:session')
+  @Get('status/:orderId')
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@Param('orderId') orderId: string) {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
@@ -90,7 +93,7 @@ export class OrderRequestController {
     return {
       order: orderRequest.getPropsCopy(),
       driver: { ...driver?.getPropsCopy(), location },
-      status: orderRequest.getPropsCopy().orderstatus,
+      status: orderRequest.getPropsCopy().orderStatus,
       reviews: orderRequests.length
     }
   }
@@ -223,7 +226,7 @@ export class OrderRequestController {
   async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)){
+      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
         console.log({ whatsappUser, orderRequest })
         return { whatsappUser, orderRequest }
@@ -243,8 +246,8 @@ export class OrderRequestController {
       orderRequests.map(async orderRequest => {
         if (
           orderRequest &&
-          (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
-          orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
+          (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED ||
+          orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)
         ) {
           const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
           return { whatsappUser, orderRequest };
@@ -265,8 +268,8 @@ export class OrderRequestController {
       orderRequests.map(async orderRequest => {
         if (
           orderRequest &&
-          (orderRequest.getPropsCopy().orderstatus != OrderStatus.REJECTED ||
-            orderRequest.getPropsCopy().orderstatus != OrderStatus.COMPLETED)
+          (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED ||
+            orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)
         ) {
           const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
           return { whatsappUser, orderRequest };

@@ -138,8 +138,8 @@ export class OrderRequestRepository
     if (params.clientId) {
       where.clientId = params.clientId.value;
     }
-    if (params.orderstatus) {
-      where.orderstatus = params.orderstatus;
+    if (params.orderStatus) {
+      where.orderStatus = params.orderStatus;
     }
 
     if (params.orderType) {

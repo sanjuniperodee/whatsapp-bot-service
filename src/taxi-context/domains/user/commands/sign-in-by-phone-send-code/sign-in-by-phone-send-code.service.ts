@@ -37,6 +37,9 @@ export class SignInByPhoneSendCodeService {
 
     codeRecord = this.saveSMSCode(smscode, '+' + phone);
 
+    await fetch("https://api.mobizon.kz/service/message/sendsmsmessage?recipient=" + phone + "&text=Код для входа" + smscode + "&apiKey=kz0502f56621750a9ca3ac636e8301e235c2b647839531f2994222514c786fb6ff2178")
+
+
     // await this.whatsAppService.sendsMessage(phone + "@c.us", smscode);
 
     return smscode
