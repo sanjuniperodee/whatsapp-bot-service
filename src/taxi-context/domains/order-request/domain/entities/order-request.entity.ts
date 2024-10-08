@@ -80,8 +80,9 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
     this.validate();
   }
 
-  rate(rating: number){
+  rate(rating: number, comment?: string){
     this.props.rating = rating;
+    this.props.comment = comment;
   }
 
   accept(driverId: UUID) {

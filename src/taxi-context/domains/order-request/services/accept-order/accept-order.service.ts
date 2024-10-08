@@ -7,6 +7,7 @@ import { OrderRequestRepository } from '../../../../domain-repositories/order-re
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { CategoryLicenseRepository } from '../../../../domain-repositories/category-license/category-license.repository';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 
 @Injectable()
 export class AcceptOrderService{
@@ -19,8 +20,10 @@ export class AcceptOrderService{
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
-  async handle(input: ChangeOrderStatus) {
-    const { driverId, orderId } = input;
+  async handle(input: ChangeOrderStatus, driver: UserOrmEntity) {
+    const { orderId } = input;
+    const driverId = driver.id
+
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)

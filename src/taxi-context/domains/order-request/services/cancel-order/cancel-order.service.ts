@@ -6,6 +6,7 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 // import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { SMSCodeRecord } from '@domain/user/types';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 
 @Injectable()
 export class CancelOrderService {
@@ -17,9 +18,9 @@ export class CancelOrderService {
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
-  async handle(orderId: string) {
+  async handle(orderId: string, client: UserOrmEntity) {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
-    if (!orderRequest) {
+    if (!orderRequest || orderRequest.getPropsCopy().clientId.value != client.id) {
       throw new Error('Session is expired');
     }
 

@@ -109,11 +109,8 @@ export class OrderRequestController {
     if(!orderRequest){
       throw new Error("Order request doesn't exist")
     }
-    await OrderRequestOrmEntity.query().updateAndFetchById(orderRequestId, {
-      'rating': rating
-    })
 
-    orderRequest?.rate(rating)
+    orderRequest?.rate(rating, comment)
 
     await this.orderRequestRepository.save(orderRequest)
   }
@@ -279,10 +276,11 @@ export class OrderRequestController {
     ).then(results => results.filter(result => result !== null));
   }
 
-  @Get('cancel/:session')
+  @Get('cancel/:orderId')
+  @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order' })
-  async cancelOrderRequest(@Param('session') sessionId: string) {
-    return this.cancelOrderService.handle(sessionId)
+  async cancelOrderRequest(@Param('orderId') orderId: string, @IAM() user: UserOrmEntity) {
+    return this.cancelOrderService.handle(orderId, user)
   }
 
   @Post('reject/:orderId')
@@ -304,8 +302,8 @@ export class OrderRequestController {
   @Post('accept')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Accept order' })
-  async handleOrderAccepted(@Body() input: ChangeOrderStatus) {
-    await this.acceptOrderService.handle(input);
+  async handleOrderAccepted(@Body() input: ChangeOrderStatus, @IAM() user: UserOrmEntity) {
+    await this.acceptOrderService.handle(input, user);
   }
 
   @UseGuards(JwtAuthGuard())
