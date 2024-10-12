@@ -233,6 +233,21 @@ export class OrderRequestController {
   }
 
   @UseGuards(JwtAuthGuard())
+  @Get('client-active-order')
+  @ApiOperation({ summary: 'Get my current order' })
+  async clientMyActiveOrder(@IAM() user?: UserOrmEntity) {
+    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
+    for (const orderRequest of orderRequests)
+      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
+        const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
+        console.log({ driver, orderRequest })
+        return { driver, orderRequest }
+      }
+
+    return 'You dont have active order'
+  }
+
+  @UseGuards(JwtAuthGuard())
   @Get('history')
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistory(@IAM() user: UserOrmEntity) {
