@@ -74,28 +74,29 @@ export class OrderRequestController {
     }
   }
 
-  @Get('status/:orderId')
+  @Get('client-active-order')
   @ApiOperation({ summary: 'Get order status' })
-  async getOrderStatus(@Param('orderId') orderId: string) {
-    const orderRequest = await this.orderRequestRepository.findOneById(orderId);
-    if (!orderRequest) {
-      throw new Error('Session is expired!');
-    }
+  async getOrderStatus(@IAM() user: UserOrmEntity) {
+    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
+    for (const orderRequest of orderRequests)
+      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
+        const driverId = orderRequest.getPropsCopy().driverId?.value
 
-    const driverId = orderRequest.getPropsCopy().driverId?.value
+        const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
 
-    const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+        const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
 
-    const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
+        const location = await this.cacheStorageService.getDriverLocation(driverId || '');
 
-    const location = await this.cacheStorageService.getDriverLocation(driverId || '');
+        return {
+          order: orderRequest.getPropsCopy(),
+          driver: { ...driver?.getPropsCopy(), location },
+          status: orderRequest.getPropsCopy().orderStatus,
+          reviews: orderRequests.length
+        }
+      }
+    return 'You dont have active order'
 
-    return {
-      order: orderRequest.getPropsCopy(),
-      driver: { ...driver?.getPropsCopy(), location },
-      status: orderRequest.getPropsCopy().orderStatus,
-      reviews: orderRequests.length
-    }
   }
 
   @Post('make-review')
@@ -232,20 +233,6 @@ export class OrderRequestController {
     return 'You dont have active order'
   }
 
-  @UseGuards(JwtAuthGuard())
-  @Get('client-active-order')
-  @ApiOperation({ summary: 'Get my current order' })
-  async clientMyActiveOrder(@IAM() user?: UserOrmEntity) {
-    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
-    for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
-        const driver = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-        console.log({ driver, orderRequest })
-        return { driver, orderRequest }
-      }
-
-    return 'You dont have active order'
-  }
 
   @UseGuards(JwtAuthGuard())
   @Get('history')
