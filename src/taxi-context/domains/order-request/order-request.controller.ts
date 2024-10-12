@@ -75,6 +75,7 @@ export class OrderRequestController {
   }
 
   @Get('client-active-order')
+  @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
