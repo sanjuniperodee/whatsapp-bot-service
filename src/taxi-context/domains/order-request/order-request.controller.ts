@@ -171,7 +171,7 @@ export class OrderRequestController {
     console.log(driverLocation)
 
     const nearbyOrders = await this.cacheStorageService.findNearestOrdersByType(driverLocation.longitude, driverLocation.latitude, type);
-
+    // const nearbyOrders = await this.cacheStorageService.findAllOrders(type);
     const orderRequests = await Promise.all(
       nearbyOrders.map(async orderId => {
         const orderRequest = await this.orderRequestRepository.findOneById(orderId);

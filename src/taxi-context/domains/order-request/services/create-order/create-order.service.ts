@@ -2,15 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
-import { NotFoundError } from 'rxjs';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { OrderStatus } from '@infrastructure/enums';
 import { SMSCodeRecord } from '@domain/user/types';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 
 @Injectable()
 export class CreateOrderService {
@@ -24,6 +23,14 @@ export class CreateOrderService {
 
   async handle(input: CreateOrderRequest, user: UserOrmEntity) {
     const { orderType, from, to, lat, lng, price, comment} = input;
+
+    const activeOrderRequests = await OrderRequestOrmEntity.query()
+      .where('clientId', user.id)
+      .whereNotIn('orderStatus', [OrderStatus.REJECTED, OrderStatus.COMPLETED]);
+
+    if (activeOrderRequests.length > 0) {
+      throw new Error("You already have an active order!");
+    }
 
     const orderRequest = OrderRequestEntity.create({
       orderType,
