@@ -168,6 +168,8 @@ export class OrderRequestController {
       throw new Error('Driver location not found');
     }
 
+    console.log(driverLocation)
+
     const nearbyOrders = await this.cacheStorageService.findNearestOrdersByType(driverLocation.latitude, driverLocation.longitude, type);
 
     const orderRequests = await Promise.all(
