@@ -281,7 +281,7 @@ export class OrderRequestController {
     ).then(results => results.filter(result => result !== null));
   }
 
-  @Get('cancel/:orderId')
+  @Post('cancel/:orderId')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrderRequest(@Param('orderId') orderId: string, @IAM() user: UserOrmEntity) {
