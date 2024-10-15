@@ -241,18 +241,34 @@ export class OrderRequestController {
   @Get('history')
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistory(@IAM() user: UserOrmEntity) {
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id)})
+    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id), orderStatus: OrderStatus.COMPLETED })
     orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
 
     return Promise.all(
       orderRequests.map(async orderRequest => {
-        if (
-          orderRequest &&
-          (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED ||
-          orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)
-        ) {
+        if (orderRequest) {
           const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
           return { whatsappUser, orderRequest };
+        }
+        return null;
+      })
+    ).then(results => results.filter(result => result !== null));
+  }
+
+
+  @UseGuards(JwtAuthGuard())
+  @Get('history/client')
+  @ApiOperation({ summary: 'Get my order history' })
+  async getClientOrderHistory(@IAM() user: UserOrmEntity) {
+    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user.id), orderStatus: OrderStatus.COMPLETED })
+    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+
+    return Promise.all(
+      orderRequests.map(async orderRequest => {
+        const driverId = orderRequest.getPropsCopy().driverId
+        if (orderRequest && driverId) {
+          const driver = await this.userRepository.findOneById(driverId.value);
+          return { driver, orderRequest };
         }
         return null;
       })
