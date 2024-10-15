@@ -79,7 +79,7 @@ export class OrderRequestController {
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED || (orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating))){
+      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && (orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
         console.log(orderRequest.getPropsCopy())
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
