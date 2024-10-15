@@ -41,6 +41,7 @@ import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity
 import { JwtSignUpAuthGuard } from '@infrastructure/guards/jwt-sign-up-auth.guard';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { OrderStatus } from '@infrastructure/enums';
+import { SetDeviceTokenRequest } from '@domain/order-request/services/set-device-token/set-device-token.request';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -177,9 +178,11 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard())
   @Post('device')
-  async addDevice(@IAM() user: UserOrmEntity, @Body('token') token?: string | undefined): Promise<any> {
+  @ApiOperation({ summary: 'Set device token' })
+  @ApiBody({ type: SetDeviceTokenRequest })
+  async addDevice(@IAM() user: UserOrmEntity, @Body() input: SetDeviceTokenRequest): Promise<any> {
     const device = await UserOrmEntity.query().patchAndFetchById(user.id, {
-      deviceToken: token,
+      deviceToken: input.device,
     });
     return device.deviceToken;
   }
