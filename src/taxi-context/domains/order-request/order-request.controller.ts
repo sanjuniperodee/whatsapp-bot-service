@@ -3,7 +3,6 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
-import { SMSCodeRecord } from '@domain/user/types';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
@@ -80,7 +79,7 @@ export class OrderRequestController {
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
+      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED || (orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
 
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
