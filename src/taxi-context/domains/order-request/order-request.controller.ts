@@ -81,7 +81,7 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED || (orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
-
+        console.log(orderRequest.getPropsCopy().rating)
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
 
         const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
