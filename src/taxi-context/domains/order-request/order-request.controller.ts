@@ -81,7 +81,7 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && ((orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating) || orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
-        console.log(orderRequest.getPropsCopy())
+
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
 
         const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
@@ -167,7 +167,6 @@ export class OrderRequestController {
       throw new Error('Driver location not found');
     }
 
-    console.log(driverLocation)
 
     const nearbyOrders = await this.cacheStorageService.findNearestOrdersByType(driverLocation.longitude, driverLocation.latitude, type);
     // const nearbyOrders = await this.cacheStorageService.findAllOrders(type);
@@ -228,7 +227,6 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED)){
         const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-        console.log({ whatsappUser, orderRequest })
         return { whatsappUser, orderRequest }
       }
 

@@ -153,11 +153,6 @@ export class UserController {
       .reduce((sum, order) => sum + (order.price || 0), 0);
     const ordersThisMonth = orderRequests.filter(order => new Date(order.createdAt) >= startOfMonth && new Date(order.createdAt) <= endOfToday).length;
 
-    console.log({
-      today: earningsToday,
-        thisWeek: earningsThisWeek,
-        thisMonth: earningsThisMonth,
-    })
     // Return the response with rating, earnings, and order counts
     return {
       ...(await this.userRepository.findOneById(user.id)),
@@ -185,7 +180,6 @@ export class UserController {
       deviceToken: input.device,
     });
 
-    console.log(device.deviceToken)
     return device.deviceToken;
   }
 }

@@ -24,7 +24,7 @@ export class AcceptOrderService{
   async handle(input: ChangeOrderStatus, driver: UserOrmEntity) {
     const { orderId } = input;
     const driverId = driver.id
-
+    console.log('Order Accepted')
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)
