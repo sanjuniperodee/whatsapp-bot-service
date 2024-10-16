@@ -64,7 +64,7 @@ export class NotificationService {
       };
 
       console.log(await admin.messaging().send(message))
-      console.log('Notification sent successfully by userId');
+      console.log('Notification sent successfully by userId', deviceToken);
     } catch (error) {
       console.error('Error sending notification by userId:', error);
     }
