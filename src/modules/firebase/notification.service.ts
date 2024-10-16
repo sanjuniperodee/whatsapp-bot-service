@@ -1,35 +1,48 @@
 import { Injectable } from '@nestjs/common';
-
 import admin from './firebase-admin.config';
 
 @Injectable()
 export class NotificationService {
-  async sendNotification(token: string, title: string, body: string, data: any): Promise<void> {
-    const message = {
-      notification: {
-        title,
-        body,
-      },
-      android: {
+  async sendNotification(token: string, title: string, body: string, data: Record<string, string> = {}): Promise<void> {
+    try {
+      if (!token || !title || !body) {
+        throw new Error('Invalid parameters. Token, title, and body are required.');
+      }
+
+      const message = {
         notification: {
-          sound: 'default',
+          title,
+          body,
         },
-      },
-      apns: {
-        payload: {
-          aps: {
+        android: {
+          notification: {
             sound: 'default',
           },
         },
-      },
-      data,
-      token,
-    };
-    await admin.messaging().send(message);
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+            },
+          },
+        },
+        data,
+        token,
+      };
+
+      await admin.messaging().send(message);
+      console.log('Notification sent successfully');
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    }
   }
 
   async sendNotificationByUserId(title: string, body: string, deviceToken: string): Promise<void> {
     try {
+      if (!deviceToken || !title || !body) {
+        throw new Error('Invalid parameters. Device token, title, and body are required.');
+      }
+
       const message = {
         notification: {
           title,
@@ -49,10 +62,11 @@ export class NotificationService {
         },
         token: deviceToken,
       };
+
       await admin.messaging().send(message);
-      console.log("MESSAGE SEND")
+      console.log('Notification sent successfully by userId');
     } catch (error) {
-      console.log(error)
+      console.error('Error sending notification by userId:', error);
     }
   }
 }
