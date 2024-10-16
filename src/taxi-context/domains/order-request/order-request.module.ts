@@ -13,6 +13,7 @@ import { CompleteOrderService } from '@domain/order-request/services/complete-or
 import { CancelOrderService } from '@domain/order-request/services/cancel-order/cancel-order.service';
 import { CreateOrderService } from '@domain/order-request/services/create-order/create-order.service';
 import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 const thirdPartyServices = [
   CqrsModule,
@@ -24,7 +25,7 @@ const controllers = [OrderRequestController];
 
 @Module({
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory)],
-  providers: [OrderRequestGateway, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService, RejectOrderService],
+  providers: [OrderRequestGateway, NotificationService, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService, RejectOrderService],
   controllers: [...controllers],
   exports: [OrderRequestGateway]
 })

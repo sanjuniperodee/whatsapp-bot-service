@@ -8,6 +8,7 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { CategoryLicenseRepository } from '../../../../domain-repositories/category-license/category-license.repository';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @Injectable()
 export class AcceptOrderService{
@@ -16,7 +17,7 @@ export class AcceptOrderService{
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    // private readonly whatsAppService: WhatsAppService,
+    private readonly notificationService: NotificationService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -46,10 +47,16 @@ export class AcceptOrderService{
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
 
       if (client && driver) {
+
+        await this.notificationService.sendNotificationByUserId(
+          'Водитель принял ваш заказ',
+          `К вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`,
+          client.getPropsCopy().deviceToken || ''
+        )
         // await this.whatsAppService.sendMessage(
         //   userPhone + "@c.us",
         //   `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
-        // )
+        // )w
 
         await this.orderRequestGateway.emitEvent(client.id.value, 'orderAccepted', order, driver)
       }

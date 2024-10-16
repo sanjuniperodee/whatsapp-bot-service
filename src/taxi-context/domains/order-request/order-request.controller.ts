@@ -315,8 +315,8 @@ export class OrderRequestController {
   @Post('start')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'start' })
-  async handleOrderStarted(@Body() input: ChangeOrderStatus) {
-    await this.startOrderService.handle(input);
+  async handleOrderStarted(@Body() input: ChangeOrderStatus, @IAM() user: UserOrmEntity) {
+    await this.startOrderService.handle(input, user);
   }
 
   @UseGuards(JwtAuthGuard())
