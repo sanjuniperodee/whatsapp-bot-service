@@ -184,6 +184,8 @@ export class UserController {
     const device = await UserOrmEntity.query().patchAndFetchById(user.id, {
       deviceToken: input.device,
     });
+
+    console.log(device.deviceToken)
     return device.deviceToken;
   }
 }
