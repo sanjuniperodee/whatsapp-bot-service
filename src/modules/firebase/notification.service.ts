@@ -1,4 +1,3 @@
-import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { Injectable } from '@nestjs/common';
 
 import admin from './firebase-admin.config';
