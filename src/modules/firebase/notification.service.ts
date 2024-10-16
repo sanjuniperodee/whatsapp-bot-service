@@ -50,6 +50,9 @@ export class NotificationService {
         token: deviceToken,
       };
       await admin.messaging().send(message);
-    } catch (error) {}
+      console.log("MESSAGE SEND")
+    } catch (error) {
+      console.log(error)
+    }
   }
 }
