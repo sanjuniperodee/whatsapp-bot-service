@@ -3,13 +3,11 @@ import { ChangeOrderStatus } from '@domain/order-request/services/driver-arrived
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
-import {
-  CategoryLicenseRepository,
-} from '../../../../domain-repositories/category-license/category-license.repository';
+import { CategoryLicenseRepository, } from '../../../../domain-repositories/category-license/category-license.repository';
 import { OrderStatus } from '@infrastructure/enums';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @Injectable()
 export class DriverArrivedService {
@@ -18,8 +16,7 @@ export class DriverArrivedService {
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly categoryLicenseRepository: CategoryLicenseRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    // private readonly whatsAppService: WhatsAppService,
-    private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async handle(input: ChangeOrderStatus) {
@@ -44,7 +41,11 @@ export class DriverArrivedService {
         if (!user) {
           throw new Error("SOMETHING WENT WRONG");
         }
-
+        await this.notificationService.sendNotificationByUserId(
+          'Водитель на месте',
+          `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`,
+          user.getPropsCopy().deviceToken || ''
+        )
         // await this.whatsAppService.sendMessage(
         //   userPhone + "@c.us",
         //   `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`

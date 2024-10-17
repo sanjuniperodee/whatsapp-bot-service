@@ -3,6 +3,7 @@ import { UserRepository } from '../../../../domain-repositories/user/user.reposi
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @Injectable()
 export class RejectOrderService {
@@ -10,7 +11,7 @@ export class RejectOrderService {
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async handle(orderId: string) {
@@ -28,7 +29,11 @@ export class RejectOrderService {
 
     if (driver && client) {
       // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
-
+      await this.notificationService.sendNotificationByUserId(
+        'Водитель отменил заказ',
+        'К сожалению водитель отменил заказ, попробуйте повторить попытку',
+        client.getPropsCopy().deviceToken || ''
+      )
       orderRequest.reject('123')
 
       if (driver)

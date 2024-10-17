@@ -7,6 +7,7 @@ import { OrderRequestGateway } from '@domain/order-request/order-request.gateway
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { OrderStatus } from '@infrastructure/enums';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @Injectable()
 export class StartOrderService {
@@ -14,7 +15,7 @@ export class StartOrderService {
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    // private readonly whatsAppService: WhatsAppService,
+    private readonly notificationService: NotificationService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -28,6 +29,11 @@ export class StartOrderService {
 
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
       if (client && driver) {
+        await this.notificationService.sendNotificationByUserId(
+          'Водитель начал поездку',
+          'Ждем вас снова!',
+          client.getPropsCopy().deviceToken || ''
+        )
         // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
         const driverEntity = await this.userRepository.findOneById(driver.id)
 
