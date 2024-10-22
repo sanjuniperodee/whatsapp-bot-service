@@ -31,7 +31,7 @@ export class StartOrderService {
       if (client && driver) {
         await this.notificationService.sendNotificationByUserId(
           'Водитель начал поездку',
-          'Ждем вас снова!',
+          'Поездка началась',
           client.getPropsCopy().deviceToken || ''
         )
         // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
