@@ -3,10 +3,9 @@ import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/a
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
-// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { SMSCodeRecord } from '@domain/user/types';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @Injectable()
 export class CancelOrderService {
@@ -14,7 +13,7 @@ export class CancelOrderService {
     private readonly userRepository: UserRepository,
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly orderRequestGateway: OrderRequestGateway,
-    // private readonly whatsAppService: WhatsAppService,
+    private readonly notificationService: NotificationService,
     private readonly cacheStorageService: CloudCacheStorageService,
   ) {}
 
@@ -30,8 +29,15 @@ export class CancelOrderService {
 
     const driveId = orderRequest.getPropsCopy().driverId?.value
 
-    if(driveId)
+    if(driveId) {
+      const driver = await this.userRepository.findOneById(driveId)
       await this.orderRequestGateway.handleOrderRejected(driveId);
+      await this.notificationService.sendNotificationByUserId(
+        'Клиент отменил заказ',
+        '',
+        driver?.getPropsCopy().deviceToken || ''
+      )
+    }
     else
       await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
