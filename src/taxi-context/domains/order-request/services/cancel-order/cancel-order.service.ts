@@ -28,18 +28,15 @@ export class CancelOrderService {
     await this.cacheStorageService.removeOrderLocation(orderRequest.id.value, orderRequest.getPropsCopy().orderType);
 
     const driveId = orderRequest.getPropsCopy().driverId?.value
-
-    if(driveId) {
-      const driver = await this.userRepository.findOneById(driveId)
+    const driver = driveId ? await this.userRepository.findOneById(driveId) : undefined
+    const deviceToken = driver?.getPropsCopy().deviceToken
+    if(driveId && driver && deviceToken) {
       await this.orderRequestGateway.handleOrderRejected(driveId);
       await this.notificationService.sendNotificationByUserId(
         'Клиент отменил заказ',
-        '',
-        driver?.getPropsCopy().deviceToken || ''
+        'Найдите новые заказы в приложении',
+        deviceToken
       )
     }
-    else
-      await this.orderRequestGateway.handleOrderCreated(orderRequest);
-
   }
 }
