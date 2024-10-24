@@ -37,7 +37,7 @@ export class RejectOrderService {
       orderRequest.reject('123')
 
       if (driver)
-        await this.orderRequestGateway.emitEvent(driver.id.value, 'orderRejected', orderRequest, driver)
+        await this.orderRequestGateway.emitEvent(client.id.value, 'orderRejected', orderRequest, driver)
     }
   }
 }
