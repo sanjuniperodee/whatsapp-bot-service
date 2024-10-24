@@ -39,6 +39,10 @@ export class StartOrderService {
 
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(client.id.value);
+        console.log("RIDE STARTED")
+        console.log(clientSocketId)
+        console.log(driverEntity)
+        console.log(driver.id)
         if (clientSocketId && driverEntity) {
           console.log('SEND RIDE STARTED NOTIFICATION')
 
