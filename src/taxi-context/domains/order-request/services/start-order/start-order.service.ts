@@ -36,18 +36,9 @@ export class StartOrderService {
         )
         // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
         const driverEntity = await this.userRepository.findOneById(driver.id)
-
-
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(client.id.value);
-        console.log("RIDE STARTED")
-        console.log(clientSocketId)
-        console.log(driverEntity)
-        console.log(driver.id)
-        if (clientSocketId && driverEntity) {
-          console.log('SEND RIDE STARTED NOTIFICATION')
-
+        if(driverEntity)
           await this.orderRequestGateway.emitEvent(client.id.value, 'rideStarted', order, driverEntity)
-        }
+
       }
     }
   }
