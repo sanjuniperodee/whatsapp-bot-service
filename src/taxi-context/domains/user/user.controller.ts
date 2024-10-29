@@ -42,6 +42,9 @@ import { JwtSignUpAuthGuard } from '@infrastructure/guards/jwt-sign-up-auth.guar
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { OrderStatus } from '@infrastructure/enums';
 import { SetDeviceTokenRequest } from '@domain/order-request/services/set-device-token/set-device-token.request';
+import crypto from 'crypto';
+import { LoginRequest } from '@domain/user/commands/login/login.request.dto';
+import { LoginService } from '@domain/user/commands/login/login.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -52,7 +55,8 @@ export class UserController {
     private readonly userRepository: UserRepository,
     private readonly signInByPhoneSendCodeService: SignInByPhoneSendCodeService,
     private readonly signInByPhoneConfirmCodeService: SignInByPhoneConfirmCodeService,
-    private readonly signUpByPhoneCreateUserService: SignUpByPhoneCreateUserService
+    private readonly signUpByPhoneCreateUserService: SignUpByPhoneCreateUserService,
+    private readonly loginService: LoginService
   ) {}
 
 
@@ -181,5 +185,15 @@ export class UserController {
     });
     console.log('DEVICE:' + input.device)
     return device.deviceToken;
+  }
+
+  @Post('login')
+  async login(@Body() input: LoginRequest){
+    const result = await this.loginService.handle(input)
+    if(result.isErr()){
+      throw result.unwrapErr()
+    }
+
+    return result.unwrap()
   }
 }

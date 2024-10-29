@@ -9,6 +9,7 @@ async function bootstrap() {
     origin: '*',  // Allow requests from any origin
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow specific methods
     credentials: true, // Allow cookies and authentication headers
+    exposedHeaders: ['X-Total-Count'],
   });
 
   const config = new DocumentBuilder()

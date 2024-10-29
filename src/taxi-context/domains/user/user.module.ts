@@ -14,15 +14,17 @@ import {
 import { CloudCacheStorageModule } from '../../../third-parties/cloud-cache-storage/src';
 import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module';
+import { ClientOrderRequestController } from '@domain/user/client-admin.controller';
+import { LoginService } from '@domain/user/commands/login/login.service';
 
 const thirdPartyServices = [
   CqrsModule,
 ];
 
-const services = [SignInByPhoneSendCodeService, SignInByPhoneConfirmCodeService, SignUpByPhoneCreateUserService]
+const services = [SignInByPhoneSendCodeService, SignInByPhoneConfirmCodeService, SignUpByPhoneCreateUserService, LoginService]
 
 
-const controllers = [UserController];
+const controllers = [UserController, ClientOrderRequestController];
 
 @Module({
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory), WhatsAppModule],
