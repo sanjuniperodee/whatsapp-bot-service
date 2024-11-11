@@ -57,6 +57,28 @@ export class CategoryLicenseRepository
       throw err;
     }
   }
+
+  async findOneByDriverId(id: string, type: string, trxId?: TransactionId): Promise<CategoryLicenseEntity | undefined> {
+    const [trx, isOwnTrx] = trxId
+      ? [this.unitOfWork.getTrx(trxId), false]
+      : [await CategoryLicenseOrmEntity.startTransaction(), true];
+
+    try {
+      const categoryLicense = await CategoryLicenseOrmEntity.query(trx).where({'driverId': id, categoryType: type}).first()
+
+      if (isOwnTrx) {
+        await trx.commit();
+        await trx.executionPromise;
+      }
+
+      return categoryLicense ? this.mapper.toDomainEntity(categoryLicense, trxId) : undefined;
+    } catch (err) {
+      if (isOwnTrx) {
+        await trx.rollback();
+      }
+      throw err;
+    }
+  }
   async save(entity: CategoryLicenseEntity, trxId?: TransactionId): Promise<UUID> {
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]

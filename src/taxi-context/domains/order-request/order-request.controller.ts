@@ -12,7 +12,6 @@ import { IAM } from '@infrastructure/decorators/iam.decorator';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { MakeReviewRequest } from '@domain/order-request/services/make-review/create-order-request';
-// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { CategoryRegisterRequest } from '@domain/order-request/services/category-register/category-register.request';
 import { UpdateLocationRequest } from '@domain/order-request/services/update-location/update-location.request';
@@ -86,11 +85,15 @@ export class OrderRequestController {
 
         const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
 
+        const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
+
+
         const location = await this.cacheStorageService.getDriverLocation(driverId || '');
 
         return {
           order: orderRequest.getPropsCopy(),
           driver: { ...driver?.getPropsCopy(), location },
+          car: category,
           status: orderRequest.getPropsCopy().orderStatus,
           reviews: orderRequests.length
         }
