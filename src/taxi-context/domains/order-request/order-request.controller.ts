@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
@@ -143,6 +143,28 @@ export class OrderRequestController {
     })
 
     await this.categoryLicenseRepository.save(categoryLicenseEntity)
+  }
+
+  @Put('category/:id')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Edit for category' })
+  @ApiBody({ type: CategoryRegisterRequest })
+  async categoryEdit(@Param('id') id: string, @Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
+    const {governmentNumber, model, SSN, type, color, brand} = input
+
+    const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type, id: new UUID(id)})
+
+    if(!isExists.length)
+      throw new Error("You already registered to this category")
+
+    await CategoryLicenseOrmEntity.query().updateAndFetchById(id, {
+      SSN: SSN,
+      brand: brand,
+      categoryType: type,
+      color: color,
+      model: model,
+      number: governmentNumber
+    })
   }
 
   @Get('category/info')
