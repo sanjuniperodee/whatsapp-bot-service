@@ -64,12 +64,14 @@ export class OrderRequestController {
 
     const order = await this.orderRequestRepository.findOneById(orderId)
 
+    const location = await this.cacheStorageService.getDriverLocation(order?.getPropsCopy().driverId?.value || '')
+
     await this.cacheStorageService.updateDriverLocation(order?.getPropsCopy().driverId?.value || '', lng, lat);
 
     const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
-    if (clientSocketId) {
-      // await this.orderRequestGateway.emitEvent(clientSocketId, 'driverLocation', { lng, lat })
-    }
+    if (clientSocketId && !location)
+      this.orderRequestGateway.server.to(clientSocketId).emit('newOrder');
+
   }
 
   @Get('client-active-order')
