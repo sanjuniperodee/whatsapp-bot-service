@@ -23,9 +23,6 @@ export class LoginService {
       return Err(new NotFoundException('Login not found'));
     }
 
-    console.log(userResult.phone)
-
-
     const userId = userResult.id;
 
     const user = await this.userRepository.findOneById(userResult.id);
