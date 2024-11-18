@@ -91,6 +91,7 @@ export class OrderRequestController {
 
 
         const location = await this.cacheStorageService.getDriverLocation(driverId || '');
+        console.log(orderRequest.getPropsCopy())
 
         return {
           order: orderRequest.getPropsCopy(),
@@ -100,8 +101,8 @@ export class OrderRequestController {
           reviews: orderRequests.length
         }
       }
+    console.log('12312321321312312')
     return 'You dont have active order'
-
   }
 
   @Post('make-review')
