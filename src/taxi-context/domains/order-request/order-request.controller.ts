@@ -78,6 +78,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
+    console.log(user.firstName + ' ' + user.lastName)
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests)
       if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && ((orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating) || orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED))){
