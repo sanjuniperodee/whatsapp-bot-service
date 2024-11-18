@@ -191,7 +191,8 @@ export class OrderRequestController {
   async getActiveOrdersByType(@Param('type') type: OrderType, @IAM() user: UserOrmEntity) {
     const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
     if (!driverLocation) {
-      throw new Error('Driver location not found');
+      return []
+      // throw new Error('Driver location not found');
     }
 
 
