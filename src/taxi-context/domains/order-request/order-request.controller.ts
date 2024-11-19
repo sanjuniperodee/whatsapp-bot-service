@@ -205,7 +205,7 @@ export class OrderRequestController {
       })
     );
 
-    const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null);
+    const validOrderRequests = orderRequests.filter(orderRequest => orderRequest !== null && orderRequest.getPropsCopy().clientId.value != user.id);
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
 
