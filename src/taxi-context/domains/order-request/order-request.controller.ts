@@ -198,13 +198,15 @@ export class OrderRequestController {
 
     const nearbyOrders = await this.cacheStorageService.findNearestOrdersByType(driverLocation.longitude, driverLocation.latitude, type);
     // const nearbyOrders = await this.cacheStorageService.findAllOrders(type);
-    const validOrderRequests = await Promise.all(
+    const orderRequests = await Promise.all(
       nearbyOrders.map(async orderId => {
         const orderRequest = await this.orderRequestRepository.findOneById(orderId);
         if(orderRequest && orderRequest.getPropsCopy().clientId.value != user.id)
           return orderRequest
       })
     );
+
+    const validOrderRequests = orderRequests.filter(orderRequest => orderRequest != null);
 
     validOrderRequests.sort((a, b) => new Date(b!.createdAt.value).getTime() - new Date(a!.createdAt.value).getTime());
 
