@@ -88,7 +88,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       throw new Error('Latitude and Longitude are required');
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
-    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched('categoryLicenses')
+    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched({categoryLicenses: true})
     for (const driver of drivers) {
       const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
       const type = orderRequest.getPropsCopy().orderType
