@@ -1,5 +1,6 @@
 import { ObjectionEntityBase } from '@libs/ddd/infrastructure/database/objection.entity.base';
-import { Model } from 'objection';
+import { Model, RelationMappingsThunk } from 'objection';
+import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
 
 export class UserOrmEntity extends ObjectionEntityBase {
   static create(data: Omit<UserOrmEntity, keyof Model>) {
@@ -13,6 +14,21 @@ export class UserOrmEntity extends ObjectionEntityBase {
   middleName?: string;
   lastSms?: string;
   deviceToken?: string;
+
+  categoryLicenses?: CategoryLicenseOrmEntity[]
+
+  static relationMappings: RelationMappingsThunk = () => {
+    return {
+      transactions: {
+        relation: Model.HasManyRelation,
+        modelClass: CategoryLicenseOrmEntity,
+        join: {
+          from: `${UserOrmEntity.tableName}.id`,
+          to: `${CategoryLicenseOrmEntity.tableName}.driverId`,
+        },
+      },
+    }
+  }
 
   static get jsonSchema() {
     return {

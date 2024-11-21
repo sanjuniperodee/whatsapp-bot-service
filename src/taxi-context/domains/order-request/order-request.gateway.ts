@@ -1,11 +1,17 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
-import { OrderStatus } from '@infrastructure/enums';
+import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { NotificationService } from '@modules/firebase/notification.service';
@@ -82,20 +88,38 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       throw new Error('Latitude and Longitude are required');
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
-    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers)
+    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched('categoryLicenses')
     for (const driver of drivers) {
       const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
-      if (driverSocketIds) {
-        driverSocketIds.forEach(socketId => {
-          this.server.to(socketId).emit('newOrder');
-        });
-      }
-      if(driver.deviceToken){
-        await this.notificationService.sendNotificationByUserId(
-          'Aday Go',
-          'Новый заказ в приложении',
-          driver.deviceToken
-        )
+      const type = orderRequest.getPropsCopy().orderType
+      const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
+      if(hasMatchingCategory){
+        if (driverSocketIds) {
+          driverSocketIds.forEach(socketId => {
+            this.server.to(socketId).emit('newOrder');
+          });
+        }
+        if(driver.deviceToken){
+          let text = ''
+          switch (type){
+            case OrderType.CARGO:
+              text = 'Грузоперевозка'
+              break
+            case OrderType.DELIVERY:
+              text = 'Доставка'
+              break
+            case OrderType.INTERCITY_TAXI:
+              text = 'Межгород'
+              break
+            case OrderType.TAXI:
+              text = 'Такси'
+          }
+          await this.notificationService.sendNotificationByUserId(
+            'Aday Go',
+            `Появился овый заказ для ${text}`,
+            driver.deviceToken
+          )
+        }
       }
     }
   }
