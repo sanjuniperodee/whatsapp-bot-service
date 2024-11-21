@@ -36,6 +36,7 @@ export class SignInByPhoneSendCodeService {
     let smscode: string | null = this.generateSmsCode();
 
     codeRecord = this.saveSMSCode(smscode, '+' + phone);
+    if(phone != '77051479003')
     await fetch("https://api.mobizon.kz/service/message/sendsmsmessage?recipient=" + phone + "&text=Код для входа " + smscode + "&apiKey=kz0502f56621750a9ca3ac636e8301e235c2b647839531f2994222514c786fb6ff2178")
 
 
