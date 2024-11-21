@@ -116,7 +116,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
           }
           await this.notificationService.sendNotificationByUserId(
             'Aday Go',
-            `Появился овый заказ для ${text}`,
+            `Появился новый заказ для ${text}`,
             driver.deviceToken
           )
         }
