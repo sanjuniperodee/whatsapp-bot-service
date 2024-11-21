@@ -3,12 +3,12 @@ import { Server, Socket } from 'socket.io';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { forwardRef, Inject } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
-import { SMSCodeRecord } from '@domain/user/types';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { OrderStatus } from '@infrastructure/enums';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @WebSocketGateway({
   path: '/socket.io/',  // Ensure this matches the client or change it
@@ -26,6 +26,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
+    private readonly notificationService: NotificationService,
     // @Inject(forwardRef(() => WhatsAppService))
     // private readonly whatsAppService: WhatsAppService,
   ) {}
@@ -81,13 +82,22 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       throw new Error('Latitude and Longitude are required');
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
-    for (const driverId of nearestDrivers) {
-      const driverSocketIds = await this.cacheStorageService.getSocketIds(driverId);
+    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers)
+    for (const driver of drivers) {
+      const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
       if (driverSocketIds) {
         driverSocketIds.forEach(socketId => {
           this.server.to(socketId).emit('newOrder');
         });
-      }    }
+      }
+      if(driver.deviceToken){
+        await this.notificationService.sendNotificationByUserId(
+          'Aday Go',
+          'Новый заказ в приложении',
+          driver.deviceToken
+        )
+      }
+    }
   }
 
   async handleOrderRejected(userId: string) {

@@ -9,12 +9,25 @@ export class CloudCacheStorageService {
   constructor(private readonly redisService: RedisService) {}
 
   async addSocketId(userId: string, socketId: string) {
-    await this.redisService.client.sadd(`sockets:${userId}`, socketId);
+    const key = `sockets:${userId}`;
+    // Добавляем Socket ID в множество
+    await this.redisService.client.sadd(key, socketId);
+    // Отменяем TTL, чтобы ключ снова стал постоянным
+    await this.redisService.client.persist(key);
   }
 
   // Удаляем Socket ID из множества для userId
   async removeSocketId(userId: string, socketId: string) {
-    await this.redisService.client.srem(`sockets:${userId}`, socketId);
+    const key = `sockets:${userId}`;
+
+    // Проверяем, существует ли ключ
+    const exists = await this.redisService.client.exists(key);
+    if (exists) {
+      // Устанавливаем таймер на 5 минут (300 секунд)
+      await this.redisService.client.expire(key, 300);
+      // Удаляем конкретный Socket ID из множества
+      await this.redisService.client.srem(key, socketId);
+    }
   }
 
   // Получаем все Socket ID для userId
