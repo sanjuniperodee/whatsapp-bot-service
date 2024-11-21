@@ -19,7 +19,7 @@ export class UserOrmEntity extends ObjectionEntityBase {
 
   static relationMappings: RelationMappingsThunk = () => {
     return {
-      transactions: {
+      categoryLicenses: {
         relation: Model.HasManyRelation,
         modelClass: CategoryLicenseOrmEntity,
         join: {
