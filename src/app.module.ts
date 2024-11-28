@@ -11,6 +11,8 @@ import {
 } from './taxi-context/domain-repositories/taxi-context-domain-repositories.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { loadConfiguration, validationSchema } from '@infrastructure/configs/environment.config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -24,6 +26,10 @@ import { loadConfiguration, validationSchema } from '@infrastructure/configs/env
       load: [loadConfiguration],
       validationSchema: validationSchema,
       validationOptions: { abortEarly: true },
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'), // Путь к папке с файлами
+      serveRoot: '/support', // Путь, по которому будет доступна папка
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

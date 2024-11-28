@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support - Aday Go</title>
+  <style>
+      body {
+          margin: 0;
+          font-family: 'Arial', sans-serif;
+          line-height: 1.6;
+          background-color: #f7f7f7;
+          color: #333;
+      }
+      header {
+          background-color: #007bff;
+          color: white;
+          padding: 1.5em 1em;
+          text-align: center;
+      }
+      header h1 {
+          margin: 0;
+      }
+      .container {
+          max-width: 1200px;
+          margin: 2em auto;
+          padding: 1em;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .section {
+          margin-bottom: 2em;
+      }
+      .section h2 {
+          color: #007bff;
+          border-bottom: 2px solid #007bff;
+          padding-bottom: 0.5em;
+          margin-bottom: 1em;
+      }
+      .contacts {
+          display: flex;
+          justify-content: space-between;
+          flex-wrap: wrap;
+      }
+      .contacts div {
+          flex: 1;
+          min-width: 250px;
+          margin: 1em 0;
+      }
+      .contacts a {
+          color: #007bff;
+          text-decoration: none;
+      }
+      .faq {
+          margin-top: 2em;
+      }
+      .faq-item {
+          margin-bottom: 1em;
+      }
+      .faq-item h3 {
+          font-size: 1.1em;
+          margin-bottom: 0.5em;
+      }
+      .form-container {
+          background: #f9f9f9;
+          padding: 1.5em;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .form-container label {
+          display: block;
+          margin: 0.5em 0 0.2em;
+      }
+      .form-container input, .form-container textarea {
+          width: 100%;
+          padding: 0.8em;
+          margin-bottom: 1em;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          box-sizing: border-box;
+      }
+      .form-container button {
+          background-color: #007bff;
+          color: white;
+          padding: 0.8em 1.5em;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+      }
+      .form-container button:hover {
+          background-color: #0056b3;
+      }
+      footer {
+          text-align: center;
+          padding: 1em;
+          background-color: #f1f1f1;
+          margin-top: 2em;
+      }
+      footer a {
+          color: #007bff;
+          text-decoration: none;
+      }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Support Center</h1>
+  <p>We're here to help you with Aday Go Taxi App</p>
+</header>
+
+<div class="container">
+  <div class="section">
+    <h2>Contact Us</h2>
+    <div class="contacts">
+      <div>
+        <h3>Email</h3>
+        <p><a href="mailto:support@doner24aktau.kz">support@doner24aktau.kz</a></p>
+      </div>
+      <div>
+        <h3>Phone</h3>
+        <p><a href="tel:+77088431748">+7 (708) 843-1748</a></p>
+      </div>
+      <div>
+        <h3>Address</h3>
+        <p>Aktau City, Kazakhstan</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>FAQ</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <h3>How can I book a taxi?</h3>
+        <p>Open the Aday Go app, select your location and destination, and tap "Book Now."</p>
+      </div>
+      <div class="faq-item">
+        <h3>What should I do if my driver is late?</h3>
+        <p>Contact our support team via phone or email for assistance.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How can I report an issue?</h3>
+        <p>Use the form below to submit your issue or feedback directly to us.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Contact Form</h2>
+    <div class="form-container">
+      <form action="/support" method="POST">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+
+        <label for="email">Your Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+
+        <label for="message">Your Message</label>
+        <textarea id="message" name="message" placeholder="Write your message here..." rows="5" required></textarea>
+
+        <button type="submit">Send Message</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2024 Aday Go Taxi. All Rights Reserved. | <a href="#">Privacy Policy</a></p>
+</footer>
+</body>
+</html>
