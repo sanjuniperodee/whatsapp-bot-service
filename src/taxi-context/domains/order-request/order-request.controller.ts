@@ -80,8 +80,9 @@ export class OrderRequestController {
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     console.log(user.firstName + ' ' + user.lastName)
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
-    for (const orderRequest of orderRequests)
-      if(orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && ((orderRequest.getPropsCopy().orderStatus == OrderStatus.COMPLETED && !orderRequest.getPropsCopy().rating) || orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED))){
+    for (const orderRequest of orderRequests){
+      const { orderStatus, rating } = orderRequest.getPropsCopy()
+      if(orderRequest && (orderStatus != OrderStatus.REJECTED_BY_CLIENT && orderStatus != OrderStatus.REJECTED && ((orderStatus == OrderStatus.COMPLETED && !rating) || orderStatus != OrderStatus.COMPLETED))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
 
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
@@ -101,6 +102,8 @@ export class OrderRequestController {
           reviews: orderRequests.length
         }
       }
+    }
+
     return 'You dont have active order'
   }
 
