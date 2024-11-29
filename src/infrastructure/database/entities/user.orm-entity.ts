@@ -31,7 +31,7 @@ export class UserOrmEntity extends ObjectionEntityBase {
       },
       orders: {
         relation: Model.HasManyRelation,
-        modelClass: CategoryLicenseOrmEntity,
+        modelClass: OrderRequestOrmEntity,
         join: {
           from: `${UserOrmEntity.tableName}.id`,
           to: `${OrderRequestOrmEntity.tableName}.driverId`,

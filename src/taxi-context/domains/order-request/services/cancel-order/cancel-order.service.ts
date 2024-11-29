@@ -22,8 +22,8 @@ export class CancelOrderService {
     if (!orderRequest || orderRequest.getPropsCopy().clientId.value != client.id) {
       throw new Error('Session is expired');
     }
-
-    await this.orderRequestRepository.delete(orderRequest);
+    orderRequest.rejectByClient()
+    await this.orderRequestRepository.save(orderRequest);
 
     await this.cacheStorageService.removeOrderLocation(orderRequest.id.value, orderRequest.getPropsCopy().orderType);
 

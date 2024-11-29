@@ -11,6 +11,7 @@ export class ClientOrderRequestController {
   @ApiOperation({ summary: 'Get clients' })
   async getClients(
     @Res({ passthrough: true }) res: Response,
+    @Query('orderStatus') orderStatus: string,
     @Query('_start') _start?: number,
     @Query('_end') _end?: number,
     @Query('_sort') _sort = 'id',
@@ -31,8 +32,12 @@ export class ClientOrderRequestController {
       const end = Number(_end) || 10;
       const limit = end - start;
 
-      const baseQuery = UserOrmEntity.query();
-
+      const baseQuery = UserOrmEntity.query().withGraphFetched('orders')
+        .modifyGraph('orders', (builder) => {
+          if (orderStatus) {
+            builder.where('orderStatus', '=', orderStatus);
+          }
+        });
       // Get total count before pagination
       const totalCountResult = await baseQuery.clone();
       totalCount = totalCountResult.length;

@@ -102,6 +102,11 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
     this.props.updatedAt = new Date();
   }
 
+  rejectByClient(){
+    this.props.orderStatus = OrderStatus.REJECTED_BY_CLIENT;
+    this.props.updatedAt = new Date();
+  }
+
   rideEnded() {
     this.props.orderStatus = OrderStatus.COMPLETED;
     this.props.updatedAt = new Date();
