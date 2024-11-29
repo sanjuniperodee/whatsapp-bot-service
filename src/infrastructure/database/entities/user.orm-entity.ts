@@ -1,6 +1,7 @@
 import { ObjectionEntityBase } from '@libs/ddd/infrastructure/database/objection.entity.base';
 import { Model, RelationMappingsThunk } from 'objection';
 import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/category-license.orm-entity';
+import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 
 export class UserOrmEntity extends ObjectionEntityBase {
   static create(data: Omit<UserOrmEntity, keyof Model>) {
@@ -16,6 +17,7 @@ export class UserOrmEntity extends ObjectionEntityBase {
   deviceToken?: string;
 
   categoryLicenses?: CategoryLicenseOrmEntity[]
+  orders?: OrderRequestOrmEntity[]
 
   static relationMappings: RelationMappingsThunk = () => {
     return {
@@ -25,6 +27,14 @@ export class UserOrmEntity extends ObjectionEntityBase {
         join: {
           from: `${UserOrmEntity.tableName}.id`,
           to: `${CategoryLicenseOrmEntity.tableName}.driverId`,
+        },
+      },
+      orders: {
+        relation: Model.HasManyRelation,
+        modelClass: CategoryLicenseOrmEntity,
+        join: {
+          from: `${UserOrmEntity.tableName}.id`,
+          to: `${OrderRequestOrmEntity.tableName}.driverId`,
         },
       },
     }

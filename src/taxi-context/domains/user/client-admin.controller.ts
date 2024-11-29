@@ -74,7 +74,7 @@ export class ClientOrderRequestController {
       const end = Number(_end) || 10;
       const limit = end - start;
 
-      const baseQuery = UserOrmEntity.query();
+      const baseQuery = UserOrmEntity.query().withGraphFetched({orders: true});
 
       // Get total count before pagination
       const totalCountResult = await baseQuery.clone();
