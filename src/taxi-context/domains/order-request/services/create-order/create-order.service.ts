@@ -26,7 +26,7 @@ export class CreateOrderService {
 
     const activeOrderRequests = await OrderRequestOrmEntity.query()
       .where('clientId', user.id)
-      .whereNotIn('orderStatus', [OrderStatus.REJECTED, OrderStatus.COMPLETED]);
+      .whereNotIn('orderStatus', [OrderStatus.REJECTED, OrderStatus.COMPLETED,OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER]);
 
     if (activeOrderRequests.length > 0) {
       throw new Error("You already have an active order!");
