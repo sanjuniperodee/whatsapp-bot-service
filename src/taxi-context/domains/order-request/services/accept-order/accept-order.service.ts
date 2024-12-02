@@ -27,7 +27,7 @@ export class AcceptOrderService{
     const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
 
     for (const orderRequest of orderRequests)
-      if (orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED))
+      if (orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED && orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED_BY_CLIENT))
         return 'You already have active order'
 
     const order = await this.orderRequestRepository.findOneById(orderId);
@@ -55,7 +55,7 @@ export class AcceptOrderService{
         // await this.whatsAppService.sendMessage(
         //   userPhone + "@c.us",
         //   `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
-        // )w
+        // )wч1
 
         await this.orderRequestGateway.emitEvent(client.id.value, 'orderAccepted', order, driver)
       }
