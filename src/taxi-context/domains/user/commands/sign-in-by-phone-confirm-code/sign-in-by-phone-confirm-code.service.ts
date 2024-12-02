@@ -29,11 +29,11 @@ export class SignInByPhoneConfirmCodeService {
     const { smscode } = dto;
     const phone = dto.phone.replace(/ /g, '');
 
-    const codeRecord = await this.getSMScode('+' + phone);
+    // const codeRecord = await this.getSMScode('+' + phone);
 
-    if (!codeRecord || codeRecord.smsCode !== smscode && phone != '77051479003') {
-      throw new Error("Invalid code")
-    }
+    // if (!codeRecord || codeRecord.smsCode !== smscode && phone != '77051479003') {
+    //   throw new Error("Invalid code")
+    // }
 
     await this.deleteSMScode('+' + phone);
 
