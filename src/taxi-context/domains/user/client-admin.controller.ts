@@ -12,6 +12,7 @@ export class ClientOrderRequestController {
   async getClients(
     @Res({ passthrough: true }) res: Response,
     @Query('orderStatus') orderStatus: string,
+    @Query('orderType') orderType: string,
     @Query('_start') _start?: number,
     @Query('_end') _end?: number,
     @Query('_sort') _sort = 'id',
@@ -36,6 +37,9 @@ export class ClientOrderRequestController {
         .modifyGraph('orders', (builder) => {
           if (orderStatus) {
             builder.where('orderStatus', '=', orderStatus);
+          }
+          if (orderType) {
+            builder.where('orderType', '=', orderType);
           }
         });
       // Get total count before pagination
