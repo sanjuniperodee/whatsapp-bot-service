@@ -13,6 +13,7 @@ export class ClientOrderRequestController {
     @Res({ passthrough: true }) res: Response,
     @Query('orderStatus') orderStatus: string,
     @Query('orderType') orderType: string,
+    @Query('phone') phone: string,
     @Query('_start') _start?: number,
     @Query('_end') _end?: number,
     @Query('_sort') _sort = 'id',
@@ -43,6 +44,8 @@ export class ClientOrderRequestController {
           }
         });
       // Get total count before pagination
+      if(phone)
+          baseQuery.where({phone})
       const totalCountResult = await baseQuery.clone();
       totalCount = totalCountResult.length;
 
