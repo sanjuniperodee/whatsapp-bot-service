@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
+import  axios from 'axios';
+
 @Injectable()
 export class WhatsAppService {
   private readonly apiUrl: string;
@@ -9,7 +10,7 @@ export class WhatsAppService {
   smsCodeLength: number;
 
   constructor() {
-    this.apiUrl = 'https://7103.api.greenapi.com';
+    this.apiUrl = 'https://api.green-api.com';
     this.idInstance = process.env.GREEN_API_ID_INSTANCE as string || '';
     this.apiTokenInstance = process.env.GREEN_API_TOKEN_INSTANCE || '';
     this.smsCodeExpiresIn = 7200000000;
