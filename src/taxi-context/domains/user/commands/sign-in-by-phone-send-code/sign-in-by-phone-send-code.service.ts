@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SignInByPhoneSendCodeRequest } from './sign-in-by-phone-send-code.request.dto';
-import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { CloudCacheStorageService } from '../../../../../third-parties/cloud-cache-storage/src';
 import { SMSCodeRecord } from '@domain/user/types';
-// import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
-import moment from 'moment';
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 
 @Injectable()
 export class SignInByPhoneSendCodeService {
@@ -17,7 +15,7 @@ export class SignInByPhoneSendCodeService {
     private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
     private readonly cacheStorageService: CloudCacheStorageService,
-    // private readonly whatsAppService: WhatsAppService,
+    private readonly whatsAppService: WhatsAppService,
   ) {
     this.smsCodeExpiresIn = configService.get<number>('smsCode.expiresInSeconds') as number;
     this.smsCodeLength = configService.get<number>('smsCode.codeLength') as number;
@@ -35,12 +33,11 @@ export class SignInByPhoneSendCodeService {
 
     let smscode: string | null = this.generateSmsCode();
 
-    codeRecord = this.saveSMSCode(smscode, '+' + phone);
+    await this.saveSMSCode(smscode, '+' + phone);
     if(phone != '77051479003')
     await fetch("https://api.mobizon.kz/service/message/sendsmsmessage?recipient=" + phone + "&text=Код для входа " + smscode + "&apiKey=kz0502f56621750a9ca3ac636e8301e235c2b647839531f2994222514c786fb6ff2178")
 
-
-    // await this.whatsAppService.sendsMessage(phone + "@c.us", smscode);
+    await this.whatsAppService.sendMessage(phone + "@c.us", `Ваш код для входа: ${smscode}`);
 
     return smscode
   }
