@@ -84,7 +84,7 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests){
       const { orderStatus, rating } = orderRequest.getPropsCopy()
       console.log(orderStatus)
-      if(orderRequest && (orderStatus != OrderStatus.REJECTED_BY_CLIENT && orderStatus != OrderStatus.REJECTED && ((orderStatus == OrderStatus.COMPLETED && !rating) || orderStatus != OrderStatus.COMPLETED))){
+      if(orderRequest && (orderStatus == OrderStatus.CREATED || orderStatus == OrderStatus.ONGOING || orderStatus == OrderStatus.WAITING || orderStatus == OrderStatus.STARTED || (orderStatus == OrderStatus.COMPLETED && rating == null) )){
         const driverId = orderRequest.getPropsCopy().driverId?.value
 
         const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
