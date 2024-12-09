@@ -41,7 +41,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const userId = client.handshake.query.userId as string;
 
     if (userId) {
-      console.log(userId)
+      console.log({"CONNECTED:" : userId})
       await this.cacheStorageService.addSocketId(userId, client.id);
       this.server.to(client.id).emit('newOrder');
 
@@ -54,6 +54,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
     if (userId) {
       // Удаляем Socket ID из множества
+      console.log({"DISCONNECTED:" : userId})
+
       await this.cacheStorageService.removeSocketId(userId, client.id);
       client.leave(userId);
     }
