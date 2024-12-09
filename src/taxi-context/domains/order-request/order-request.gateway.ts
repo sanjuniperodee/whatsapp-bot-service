@@ -117,7 +117,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const type = orderRequest.getPropsCopy().orderType
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
       if(hasMatchingCategory){
-        if (driverSocketIds) {
+        if (driverSocketIds.length) {
           this.server.to(driverSocketIds[driverSocketIds.length-1]).emit('newOrder');
         }
         if(driver.deviceToken){
