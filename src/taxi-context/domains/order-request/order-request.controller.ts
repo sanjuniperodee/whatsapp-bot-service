@@ -83,6 +83,7 @@ export class OrderRequestController {
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests){
       const { orderStatus, rating } = orderRequest.getPropsCopy()
+      console.log(orderStatus)
       if(orderRequest && (orderStatus != OrderStatus.REJECTED_BY_CLIENT && orderStatus != OrderStatus.REJECTED && ((orderStatus == OrderStatus.COMPLETED && !rating) || orderStatus != OrderStatus.COMPLETED))){
         const driverId = orderRequest.getPropsCopy().driverId?.value
 
