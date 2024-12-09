@@ -61,17 +61,18 @@ export class OrderRequestController {
     @IAM() user: UserOrmEntity
   ) {
     const { lng, lat, orderId } = input;
+    if(lat && lng){
+      await this.cacheStorageService.updateDriverLocation(user.id, lng, lat);
+      const order = await this.orderRequestRepository.findOneById(orderId)
 
-    const order = await this.orderRequestRepository.findOneById(orderId)
+      if(order && order.getPropsCopy().driverId.value == user.id){
+        const location = await this.cacheStorageService.getDriverLocation(user.id)
 
-    const location = await this.cacheStorageService.getDriverLocation(order?.getPropsCopy().driverId?.value || '')
-
-    await this.cacheStorageService.updateDriverLocation(order?.getPropsCopy().driverId?.value || '', lng, lat);
-
-    const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
-    if (clientSocketId && !location)
-      this.orderRequestGateway.server.to(clientSocketId).emit('newOrder');
-
+        const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
+        if (clientSocketId && !location)
+          this.orderRequestGateway.server.to(clientSocketId).emit('newOrder');
+      }
+    }
   }
 
   @Get('client-active-order')
