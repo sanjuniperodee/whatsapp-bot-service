@@ -118,7 +118,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
       if(hasMatchingCategory){
         if (driverSocketIds.length) {
-          this.server.to(driverSocketIds[driverSocketIds.length-1]).emit('newOrder');
+          await Promise.all(driverSocketIds.map(async socketId => {
+            await this.server.to(socketId).emit('newOrder');
+          }))
         }
         if(driver.deviceToken){
           let text = ''
@@ -148,7 +150,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleOrderRejected(userId: string) {
     const clientSocketIds = await this.cacheStorageService.getSocketIds(userId);
     if (clientSocketIds) {
-      clientSocketIds.forEach(socketId => {
+      await clientSocketIds.forEach(socketId => {
         this.server.to(socketId).emit('orderRejected');
       });
     }
@@ -158,9 +160,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const socketIds = await this.cacheStorageService.getSocketIds(userId);
 
     if (socketIds.length) {
-      this.server.to(socketIds[socketIds.length-1]).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
+      // this.server.to(socketIds[socketIds.length-1]).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
 
-      socketIds.forEach(socketId => {
+      await socketIds.forEach(socketId => {
         this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
       });
     }
