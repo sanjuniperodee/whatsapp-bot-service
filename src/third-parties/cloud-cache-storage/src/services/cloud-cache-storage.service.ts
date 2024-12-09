@@ -85,7 +85,7 @@ export class CloudCacheStorageService {
       await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
     }
     catch (error){
-      console.log("FUCK ME DADDY")
+      console.log("FUCK ME DADDY", latitude, longitude)
     }
   }
 
