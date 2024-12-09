@@ -80,9 +80,9 @@ export class CloudCacheStorageService {
     return Boolean(res);
   }
 
-  async updateDriverLocation(driverId: string, latitude: number, longitude: number): Promise<void> {
+  async updateDriverLocation(driverId: string, latitude: string, longitude: string): Promise<void> {
     try {
-      await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
+      await this.redisService.geoAdd('drivers', parseFloat(longitude), parseFloat(longitude), driverId);
     }
     catch (error){
       console.log("FUCK ME DADDY", latitude, longitude)

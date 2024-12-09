@@ -17,11 +17,11 @@ export class UpdateLocationRequest {
   @IsNotEmpty()
   @IsDefined()
   @IsLongitude()
-  readonly lng: number;
+  readonly lng: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsDefined()
   @IsLatitude()
-  readonly lat: number;
+  readonly lat: string;
 }
