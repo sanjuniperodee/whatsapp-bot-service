@@ -78,7 +78,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
-    console.log(user.firstName + ' ' + user.lastName)
+    // console.log(user.firstName + ' ' + user.lastName)
     const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
     for (const orderRequest of orderRequests){
       const { orderStatus, rating } = orderRequest.getPropsCopy()
@@ -218,9 +218,9 @@ export class OrderRequestController {
 
       if (orderLocation.lat !== undefined && orderLocation.lng !== undefined) {
         const distance = this.calculateDistance(driverLocation.latitude, driverLocation.longitude, orderLocation.lat, orderLocation.lng);
-        console.log(`Расстояние до заказа ${orderRequest!.id.value}: ${distance.toFixed(2)} км`);
+        // console.log(`Расстояние до заказа ${orderRequest!.id.value}: ${distance.toFixed(2)} км`);
       } else {
-        console.log(`Координаты для заказа ${orderRequest!.id.value} не определены.`);
+        // console.log(`Координаты для заказа ${orderRequest!.id.value} не определены.`);
       }
     });
 

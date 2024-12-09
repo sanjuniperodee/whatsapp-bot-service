@@ -41,6 +41,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const userId = client.handshake.query.userId as string;
 
     if (userId) {
+      console.log(userId)
       await this.cacheStorageService.addSocketId(userId, client.id);
       this.server.to(client.id).emit('newOrder');
 
