@@ -39,6 +39,13 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
+    const connections = await this.cacheStorageService.getSocketIds(userId)
+
+    await Promise.all(connections.map(async el => {
+      // await this.cacheStorageService.removeSocketId(userId, el);
+      console.log(el)
+      // client.leave(userId);
+    }))
 
     if (userId) {
       console.log({"CONNECTED:" : userId})
