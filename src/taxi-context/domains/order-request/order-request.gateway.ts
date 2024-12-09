@@ -47,7 +47,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       // client.leave(userId);
     }))
 
-    if (userId) {
+    if (userId && connections.length == 1) {
       console.log({"CONNECTED:" : userId})
       await this.cacheStorageService.addSocketId(userId, client.id);
       this.server.to(client.id).emit('newOrder');
