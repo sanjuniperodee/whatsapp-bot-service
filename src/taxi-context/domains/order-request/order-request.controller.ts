@@ -65,7 +65,7 @@ export class OrderRequestController {
       await this.cacheStorageService.updateDriverLocation(user.id, lng, lat);
       const order = await this.orderRequestRepository.findOneById(orderId)
 
-      if(order && order.getPropsCopy().driverId.value == user.id){
+      if(order && order.getPropsCopy().driverId?.value == user.id){
         const location = await this.cacheStorageService.getDriverLocation(user.id)
 
         const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
