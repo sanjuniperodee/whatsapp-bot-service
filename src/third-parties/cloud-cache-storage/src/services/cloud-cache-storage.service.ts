@@ -108,9 +108,14 @@ export class CloudCacheStorageService {
   }
 
   async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 200000000): Promise<string[]> {
-    if(orderType == OrderType.INTERCITY_TAXI)
-      radius = 3000000000
-    return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
+    try{
+      if(orderType == OrderType.INTERCITY_TAXI)
+        radius = 3000000000
+      return await this.redisService.geoRadius(`orders:${orderType}`, longitude, latitude, radius, 'm', 10, 'ASC');
+    }
+    catch (error){
+      return []
+    }
   }
 
   async removeOrderLocation(orderId: string, orderType: OrderType): Promise<void> {
