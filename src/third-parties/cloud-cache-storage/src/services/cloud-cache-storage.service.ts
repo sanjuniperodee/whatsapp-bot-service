@@ -81,7 +81,12 @@ export class CloudCacheStorageService {
   }
 
   async updateDriverLocation(driverId: string, latitude: number, longitude: number): Promise<void> {
-    await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
+    try {
+      await this.redisService.geoAdd('drivers', longitude, latitude, driverId);
+    }
+    catch (error){
+      console.log("FUCK ME DADDY")
+    }
   }
 
   async getDriverLocation(driverId: string): Promise<{ latitude: number; longitude: number } | null> {
@@ -100,11 +105,21 @@ export class CloudCacheStorageService {
   }
 
   async findNearestDrivers(latitude: number, longitude: number, radius = 2000000): Promise<string[]> {
-    return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
+    try{
+      return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
+    }
+    catch (error){
+      return []
+    }
   }
 
   async updateOrderLocation(orderId: string, latitude: number, longitude: number, orderType: OrderType): Promise<void> {
-    await this.redisService.geoAdd(`orders:${orderType}`, longitude, latitude, orderId);
+    try{
+      await this.redisService.geoAdd(`orders:${orderType}`, longitude, latitude, orderId);
+    }
+    catch (error){
+
+    }
   }
 
   async findNearestOrdersByType(latitude: number, longitude: number, orderType: OrderType, radius = 200000000): Promise<string[]> {
