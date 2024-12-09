@@ -45,15 +45,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const connections = await this.cacheStorageService.getSocketIds(userId);
 
       // Удаляем все предыдущие сокеты из Redis и отключаем их
-      await Promise.all(
-        connections.map(async (socketId) => {
-          const existingSocket = this.server.sockets.sockets.get(socketId);
-          if (existingSocket) {
-            existingSocket.disconnect(true); // Отключаем сокет
-          }
-          await this.cacheStorageService.removeSocketId(userId, socketId); // Удаляем сокет из Redis
-        }),
-      );
+      // await Promise.all(
+      //   connections.map(async (socketId) => {
+      //     const existingSocket = this.server.sockets.sockets.get(socketId);
+      //     if (existingSocket) {
+      //       existingSocket.disconnect(true); // Отключаем сокет
+      //     }
+      //     await this.cacheStorageService.removeSocketId(userId, socketId); // Удаляем сокет из Redis
+      //   }),
+      // );
 
       // Добавляем новый сокет пользователя в Redis
       await this.cacheStorageService.addSocketId(userId, client.id);
@@ -118,9 +118,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
       if(hasMatchingCategory){
         if (driverSocketIds) {
-          driverSocketIds.forEach(socketId => {
-            this.server.to(socketId).emit('newOrder');
-          });
+          this.server.to(driverSocketIds[driverSocketIds.length-1]).emit('newOrder');
         }
         if(driver.deviceToken){
           let text = ''
@@ -159,7 +157,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
     const socketIds = await this.cacheStorageService.getSocketIds(userId);
 
-    if (socketIds) {
+    if (socketIds.length) {
+      this.server.to(socketIds[socketIds.length-1]).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
+
       socketIds.forEach(socketId => {
         this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
       });
