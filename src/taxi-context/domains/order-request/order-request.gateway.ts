@@ -39,19 +39,32 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
-    const connections = await this.cacheStorageService.getSocketIds(userId)
 
-    await Promise.all(connections.map(async el => {
-      // await this.cacheStorageService.removeSocketId(userId, el);
-      console.log(el)
-      // client.leave(userId);
-    }))
+    if (userId) {
+      // Получаем текущие сокеты пользователя
+      const connections = await this.cacheStorageService.getSocketIds(userId);
 
-    if (userId && connections.length == 1) {
-      console.log({"CONNECTED:" : userId})
+      // Удаляем все предыдущие сокеты из Redis и отключаем их
+      await Promise.all(
+        connections.map(async (socketId) => {
+          const existingSocket = this.server.sockets.sockets.get(socketId);
+          if (existingSocket) {
+            existingSocket.disconnect(true); // Отключаем сокет
+          }
+          await this.cacheStorageService.removeSocketId(userId, socketId); // Удаляем сокет из Redis
+        }),
+      );
+
+      // Добавляем новый сокет пользователя в Redis
       await this.cacheStorageService.addSocketId(userId, client.id);
+
+      // Логируем подключение
+      console.log({ CONNECTED: userId });
+
+      // Отправляем событие пользователю
       this.server.to(client.id).emit('newOrder');
 
+      // Присоединяем сокет к комнате пользователя
       client.join(userId);
     }
   }
