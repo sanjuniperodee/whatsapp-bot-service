@@ -87,8 +87,9 @@ export class CloudCacheStorageService {
   async getDriverLocation(driverId: string): Promise<{ latitude: number; longitude: number } | null> {
     try{
       const positions = await this.redisService.client.geopos('drivers', driverId);
-      if (positions.length > 0 && positions[0] && positions[0].longitude && positions[0].latitude) {
+      if (positions.length > 0 && positions[0]) {
         const [longitude, latitude] = positions[0];
+        if(longitude && latitude)
         return { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
       }
       return null;
