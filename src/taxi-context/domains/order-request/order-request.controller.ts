@@ -206,7 +206,7 @@ export class OrderRequestController {
     const orderRequests = await Promise.all(
       nearbyOrders.map(async orderId => {
         const orderRequest = await this.orderRequestRepository.findOneById(orderId);
-        if(orderRequest && orderRequest.getPropsCopy().clientId.value != user.id)
+        if(orderRequest && orderRequest.getPropsCopy().clientId.value != user.id && orderRequest.getPropsCopy().orderStatus == OrderStatus.CREATED)
           return orderRequest
       })
     );
