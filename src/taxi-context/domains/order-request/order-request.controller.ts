@@ -80,33 +80,33 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'Get order status' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     // console.log(user.firstName + ' ' + user.lastName)
-    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user?.id || '')})
-    for (const orderRequest of orderRequests){
-      const { orderStatus, rating } = orderRequest.getPropsCopy()
-      console.log(orderStatus)
-      if(orderRequest && (orderStatus == OrderStatus.CREATED || orderStatus == OrderStatus.ONGOING || orderStatus == OrderStatus.WAITING || orderStatus == OrderStatus.STARTED || (orderStatus == OrderStatus.COMPLETED && rating == null) )){
-        const driverId = orderRequest.getPropsCopy().driverId?.value
-
-        const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
-
-        const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
-
-        const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
-
-
-        const location = await this.cacheStorageService.getDriverLocation(driverId || '');
-
-        return {
-          order: orderRequest.getPropsCopy(),
-          driver: { ...driver?.getPropsCopy(), location },
-          car: category,
-          status: orderRequest.getPropsCopy().orderStatus,
-          reviews: orderRequests.length
-        }
-      }
+    const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
+    if(!orderRequest){
+      return 'You dont have active order'
     }
 
-    return 'You dont have active order'
+    const { orderStatus, rating } = orderRequest.getPropsCopy()
+    console.log(orderStatus)
+    if(orderRequest){
+      const driverId = orderRequest.getPropsCopy().driverId?.value
+
+      const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+
+      const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
+
+      const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
+
+
+      const location = await this.cacheStorageService.getDriverLocation(driverId || '');
+
+      return {
+        order: orderRequest.getPropsCopy(),
+        driver: { ...driver?.getPropsCopy(), location },
+        car: category,
+        status: orderRequest.getPropsCopy().orderStatus,
+        reviews: orderRequests.length
+      }
+    }
   }
 
   @Post('make-review')

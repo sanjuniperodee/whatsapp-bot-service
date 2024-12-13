@@ -87,20 +87,16 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const { driverId, latitude, longitude } = parsedData;
     await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
 
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
+    const orderRequest = await this.orderRequestRepository.findActiveByDriverId(driverId)
 
-    for (const orderRequest of orderRequests) {
-      const {orderStatus} = orderRequest.getPropsCopy()
-
-      if (orderRequest && (orderStatus == OrderStatus.STARTED || orderStatus == OrderStatus.WAITING || orderStatus == OrderStatus.ONGOING)) {
-        const user = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-        if (user) {
-          const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
-          if (clientSocketIds) {
-            clientSocketIds.forEach(socketId => {
-              this.server.to(socketId).emit('driverLocation', { lat: longitude, lng: latitude });
-            });
-          }
+    if (orderRequest) {
+      const user = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
+      if (user) {
+        const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
+        if (clientSocketIds) {
+          clientSocketIds.forEach(socketId => {
+            this.server.to(socketId).emit('driverLocation', { lat: longitude, lng: latitude });
+          });
         }
       }
     }

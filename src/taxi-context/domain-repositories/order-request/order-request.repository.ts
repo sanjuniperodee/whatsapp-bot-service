@@ -10,6 +10,7 @@ import { OrderRequestOrmMapper } from './order-request.orm-mapper';
 import { OrderRequestRepositoryPort } from './order-request.repository.port';
 import { OrderRequestEntity, OrderRequestProps } from '@domain/order-request/domain/entities/order-request.entity';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
+import { OrderStatus } from '@infrastructure/enums';
 
 @Injectable()
 export class OrderRequestRepository
@@ -24,6 +25,26 @@ export class OrderRequestRepository
     const where = this.prepareQuery(params);
 
     const found = await OrderRequestOrmEntity.query().findOne(where).whereNull('rejectReason');
+
+    return found ? this.mapper.toDomainEntity(found) : undefined;
+  }
+
+  async findActiveByDriverId(driverId: string) {
+    // const where = this.prepareQuery(params);
+
+    const found = await OrderRequestOrmEntity.query().where({driverId}).whereIn('orderStatus', [OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING]).first()
+
+    return found ? this.mapper.toDomainEntity(found) : undefined;
+  }
+
+  async findActiveByClientId(clientId: string) {
+    // const where = this.prepareQuery(params);
+
+    const found = await OrderRequestOrmEntity.query()
+      .where({clientId})
+      .whereNull('rating')
+      .whereIn('orderStatus', [OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING, OrderStatus.COMPLETED])
+      .first()
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
