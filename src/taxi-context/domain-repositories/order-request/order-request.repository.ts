@@ -45,7 +45,6 @@ export class OrderRequestRepository
       .whereNull('rating')
       .whereIn('orderStatus', [OrderStatus.CREATED, OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING, OrderStatus.COMPLETED])
       .first()
-    console.log(found)
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
