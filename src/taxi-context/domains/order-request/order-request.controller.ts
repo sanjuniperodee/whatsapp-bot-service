@@ -54,6 +54,11 @@ export class OrderRequestController {
     })
     return menu.json();
   }
+
+  @Post('log')
+  async log(@Body() input: any){
+    console.log(input)
+  }
   @Post('/location/update')
   @UseGuards(JwtAuthGuard())
   async handleLocationUpdate(
