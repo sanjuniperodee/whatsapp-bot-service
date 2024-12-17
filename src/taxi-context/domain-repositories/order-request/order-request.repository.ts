@@ -43,8 +43,9 @@ export class OrderRequestRepository
     const found = await OrderRequestOrmEntity.query()
       .where({clientId})
       .whereNull('rating')
-      .whereIn('orderStatus', [OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING, OrderStatus.COMPLETED])
+      .whereIn('orderStatus', [OrderStatus.CREATED, OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING, OrderStatus.COMPLETED])
       .first()
+    console.log(found)
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
