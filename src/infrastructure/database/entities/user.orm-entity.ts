@@ -18,6 +18,7 @@ export class UserOrmEntity extends ObjectionEntityBase {
 
   categoryLicenses?: CategoryLicenseOrmEntity[]
   orders?: OrderRequestOrmEntity[]
+  orders_as_driver?: OrderRequestOrmEntity[]
 
   static relationMappings: RelationMappingsThunk = () => {
     return {
@@ -30,6 +31,14 @@ export class UserOrmEntity extends ObjectionEntityBase {
         },
       },
       orders: {
+        relation: Model.HasManyRelation,
+        modelClass: OrderRequestOrmEntity,
+        join: {
+          from: `${UserOrmEntity.tableName}.id`,
+          to: `${OrderRequestOrmEntity.tableName}.clientId`,
+        },
+      },
+      orders_as_driver: {
         relation: Model.HasManyRelation,
         modelClass: OrderRequestOrmEntity,
         join: {

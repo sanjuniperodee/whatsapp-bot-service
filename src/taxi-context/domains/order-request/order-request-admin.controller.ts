@@ -15,6 +15,7 @@ export class AdminOrderRequestController {
     @Query('orderType') orderType: number,
     @Query('orderStatus') orderStatus: number,
     @Query('clientId') clientId: string,
+    @Query('driverId') driverId: string,
     @Query('_start') _start: number,
     @Query('_end') _end: number,
     @Query('_sort') _sort = 'id',
@@ -37,6 +38,9 @@ export class AdminOrderRequestController {
 
     if(clientId)
       baseQuery.where({'clientId': clientId});
+
+    if(driverId)
+      baseQuery.where({'driverId': driverId});
 
     // Get total count before pagination
     const totalCountResult = await baseQuery.clone()

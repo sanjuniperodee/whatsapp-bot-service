@@ -75,6 +75,9 @@ export class ClientOrderRequestController {
   @ApiOperation({ summary: 'Get clients' })
   async getDrivers(
     @Res({ passthrough: true }) res: Response,
+    @Query('orderStatus') orderStatus: string,
+    @Query('orderType') orderType: string,
+    @Query('phone') phone: string,
     @Query('_start') _start?: number,
     @Query('_end') _end?: number,
     @Query('_sort') _sort = 'id',
@@ -95,14 +98,32 @@ export class ClientOrderRequestController {
       const end = Number(_end) || 10;
       const limit = end - start;
 
-      const baseQuery = UserOrmEntity.query().withGraphFetched({orders: true});
-
+      const baseQuery = UserOrmEntity.query().withGraphFetched('orders_as_driver')
+        .modifyGraph('orders_as_driver', (builder) => {
+          if (orderStatus) {
+            builder.where('orderStatus', '=', orderStatus);
+          }
+          if (orderType) {
+            builder.where('orderType', '=', orderType);
+          }
+        });
       // Get total count before pagination
+      if(phone)
+        baseQuery.where({phone})
       const totalCountResult = await baseQuery.clone();
       totalCount = totalCountResult.length;
 
       // Apply sorting
-      baseQuery.orderBy(_sort, _order);
+      if (_sort === 'orders_as_driver.length') {
+        baseQuery
+          .select('users.*')
+          .leftJoinRelated('orders_as_driver') // LEFT JOIN instead of INNER JOIN
+          .groupBy('users.id') // Group by user ID
+          .count('orders_as_driver.id as orderCount') // Count related orders (0 if no orders)
+          .orderBy('orderCount', _order); // Sort by the count
+      } else {
+        baseQuery.orderBy(_sort, _order);
+      }
 
       // Apply pagination
       users = await baseQuery.offset(start).limit(limit);
@@ -115,7 +136,12 @@ export class ClientOrderRequestController {
   }
 
   @Get('clients/:id')
-  async getUser(@Param('id') id: string) {
-    return UserOrmEntity.query().findById(id).withGraphFetched({orders: true});
+  async getClient(@Param('id') id: string) {
+    return UserOrmEntity.query().findById(id).withGraphFetched({orders: true, orders_as_driver: true });
+  }
+
+  @Get('drivers/:id')
+  async getDriver(@Param('id') id: string) {
+    return UserOrmEntity.query().findById(id).withGraphFetched({orders: true, orders_as_driver: true });
   }
 }
