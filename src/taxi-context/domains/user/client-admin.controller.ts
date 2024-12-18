@@ -50,7 +50,16 @@ export class ClientOrderRequestController {
       totalCount = totalCountResult.length;
 
       // Apply sorting
-      baseQuery.orderBy(_sort, _order);
+      if (_sort === 'orders.length') {
+        baseQuery
+          .select('users.*')
+          .leftJoinRelated('orders') // LEFT JOIN instead of INNER JOIN
+          .groupBy('users.id') // Group by user ID
+          .count('orders.id as orderCount') // Count related orders (0 if no orders)
+          .orderBy('orderCount', _order); // Sort by the count
+      } else {
+        baseQuery.orderBy(_sort, _order);
+      }
 
       // Apply pagination
       users = await baseQuery.offset(start).limit(limit);
