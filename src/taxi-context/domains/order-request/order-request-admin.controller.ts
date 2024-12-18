@@ -14,6 +14,7 @@ export class AdminOrderRequestController {
   async getOrders(
     @Query('orderType') orderType: number,
     @Query('orderStatus') orderStatus: number,
+    @Query('clientId') clientId: string,
     @Query('_start') _start: number,
     @Query('_end') _end: number,
     @Query('_sort') _sort = 'id',
@@ -26,10 +27,16 @@ export class AdminOrderRequestController {
     const limit = end - start;
 
     // Build the base query
-    const baseQuery = OrderRequestOrmEntity.query().where({'orderType': orderType});
+    const baseQuery = OrderRequestOrmEntity.query()
 
     if(orderStatus)
       baseQuery.where({'orderStatus': orderStatus});
+
+    if(orderType)
+      baseQuery.where({'orderType': orderType});
+
+    if(clientId)
+      baseQuery.where({'clientId': clientId});
 
     // Get total count before pagination
     const totalCountResult = await baseQuery.clone()

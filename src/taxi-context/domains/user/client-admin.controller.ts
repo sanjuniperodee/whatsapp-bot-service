@@ -116,6 +116,6 @@ export class ClientOrderRequestController {
 
   @Get('clients/:id')
   async getUser(@Param('id') id: string) {
-    return UserOrmEntity.query().findById(id);
+    return UserOrmEntity.query().findById(id).withGraphFetched({orders: true});
   }
 }
