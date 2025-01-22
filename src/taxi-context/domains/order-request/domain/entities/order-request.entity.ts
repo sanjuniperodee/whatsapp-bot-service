@@ -10,6 +10,8 @@ export interface CreateOrderRequestProps {
   orderStatus: OrderStatus,
   from: string,
   to: string,
+  fromMapboxId: string,
+  toMapboxId: string,
   startTime?: Date;
   arrivalTime?: Date;
   lat?: number;
@@ -38,6 +40,8 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       arrivalTime,
       from,
       to,
+      fromMapboxId,
+      toMapboxId,
       lat,
       lng,
     price,
@@ -52,6 +56,8 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
       orderStatus,
       from,
       to,
+      fromMapboxId,
+      toMapboxId,
       startTime,
       arrivalTime,
       lat,

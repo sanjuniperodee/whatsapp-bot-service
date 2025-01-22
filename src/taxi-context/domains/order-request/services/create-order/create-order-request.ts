@@ -54,4 +54,16 @@ export class CreateOrderRequest {
   @IsDefined()
   @IsString()
   readonly comment: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsDefined()
+  @IsString()
+  readonly fromMapboxId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsDefined()
+  @IsString()
+  readonly toMapboxId: string;
 }

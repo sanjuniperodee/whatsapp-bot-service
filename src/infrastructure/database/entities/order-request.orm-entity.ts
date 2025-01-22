@@ -14,6 +14,8 @@ export class OrderRequestOrmEntity extends ObjectionEntityBase {
   orderStatus: OrderStatus;
   from: string;
   to: string;
+  fromMapboxId: string;
+  toMapboxId: string;
   startTime?: Date;
   arrivalTime?: Date;
   lat?: number;
