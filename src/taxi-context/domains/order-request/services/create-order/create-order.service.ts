@@ -22,7 +22,7 @@ export class CreateOrderService {
   ) {}
 
   async handle(input: CreateOrderRequest, user: UserOrmEntity) {
-    const { orderType, from, to, lat, lng, price, comment} = input;
+    const { orderType, from, to, lat, lng, price, comment, fromMapboxId, toMapboxId} = input;
 
     const activeOrderRequests = await OrderRequestOrmEntity.query()
       .where('clientId', user.id)
@@ -33,6 +33,8 @@ export class CreateOrderService {
     }
 
     const orderRequest = OrderRequestEntity.create({
+      fromMapboxId,
+      toMapboxId,
       orderType,
       clientId: new UUID(user.id),
       orderStatus: OrderStatus.CREATED,
