@@ -392,6 +392,7 @@ export class OrderRequestController {
 
     const houseObj = this.findHouseUnder60(elements, lat, lon);
     const regionObj = this.findNearestRegion(elements, lat, lon);
+    console.log(regionObj)
 
     return  `${regionObj?.regionName} ${houseObj?.houseNumber}`
   }
@@ -451,12 +452,8 @@ out center;
         closestHouse = el;
       }
     }
-
+    console.log(minDist)
     if (!closestHouse) return null;
-    if (minDist > 60) {
-      // Если дом дальше 60 м, считаем, что нет
-      return null;
-    }
 
     return {
       houseNumber: closestHouse.tags['addr:housenumber'],
@@ -503,18 +500,21 @@ out center;
 
     // fallback для имени
     const t = closest.tags;
+    console.log(t)
     const nameKeysFallback = [
+      'name',
       'addr:street',
       'addr:place',
       'addr:neighbourhood',
       'shop',
       'microdistrict',
       'city_microdistrict',
-      'name'
     ];
     let finalName = 'Без названия';
     for (const key of nameKeysFallback) {
+      console.log(key)
       if (t[key]) {
+        console.log(t[key])
         finalName = t[key];
         break;
       }
@@ -597,7 +597,11 @@ out center;
     }
 
     const results = await response.json();
-    return results; // массив объектов [ { display_name, lat, lon, ... }, ... ]
+    return results.map((el: { lat: number; lon: number; name: string }) => ({
+      lat: el.lat,
+      lon: el.lon,
+      name: el.name
+    })); // массив объектов [ { display_name, lat, lon, ... }, ... ]
   }
 
   /**
