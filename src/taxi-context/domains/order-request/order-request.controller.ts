@@ -25,6 +25,7 @@ import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/cate
 import { CategoryLicenseRepository } from '../../domain-repositories/category-license/category-license.repository';
 import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
 import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
+import * as stringSimilarity from 'string-similarity';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -550,5 +551,78 @@ out center;
       Math.sin(dLon/2)*Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
+  }
+
+  @Get('find-by-name')
+  async localSearch(
+    @Query('lat') latStr: string,
+    @Query('lon') lonStr: string,
+    @Query('search') search: string,
+  ) {
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+
+    if (isNaN(lat) || isNaN(lon) || !search) {
+      throw new Error('Invalid params: lat, lon, query are required');
+    }
+
+    // Вычисляем bounding box на 25км (по умолчанию)
+    const bbox = this.makeBoundingBox(lat, lon, 25);
+
+    // Формируем URL запроса к Nominatim
+    // Важно: viewbox = left, top, right, bottom
+    //        bounded=1 => искать только внутри bounding box
+    const url = new URL('https://nominatim.openstreetmap.org/search');
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', '10');
+    url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('q', search);
+
+    // Порядок: left, top, right, bottom
+    // bbox = { top, bottom, left, right }
+    url.searchParams.set('viewbox',
+      `${bbox.left},${bbox.top},${bbox.right},${bbox.bottom}`
+    );
+    url.searchParams.set('bounded', '1');  // ограничить результаты bbox
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        // Nominatim просит указать User-Agent с контактами
+        'User-Agent': 'MyApp/1.0 (mailto:my_email@example.com)'
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Nominatim search error: ${response.status} ${response.statusText}`);
+    }
+
+    const results = await response.json();
+    return results; // массив объектов [ { display_name, lat, lon, ... }, ... ]
+  }
+
+  /**
+   * Создаём прямоугольную область (bounding box) вокруг (lat, lon)
+   * с радиусом `radiusKm` (в км) по широте и долготе.
+   *
+   * Возвращаем { top, bottom, left, right }:
+   *  - top > bottom
+   *  - left < right
+   *  Пример: 25км = ~0.225 градусов по широте (1° ~ 111км)
+   */
+  private makeBoundingBox(lat: number, lon: number, radiusKm: number) {
+    // Примерное количество километров в одном градусе широты
+    const degPerKmLat = 1 / 111;
+    // Для долготы зависит от широты (чем дальше от экватора, тем меньше 1°)
+    const degPerKmLon = 1 / (111 * Math.cos(lat * Math.PI / 180));
+
+    const latDelta = radiusKm * degPerKmLat;
+    const lonDelta = radiusKm * degPerKmLon;
+
+    const top = lat + latDelta;
+    const bottom = lat - latDelta;
+    const left = lon - lonDelta;
+    const right = lon + lonDelta;
+
+    return { top, bottom, left, right };
   }
 }
