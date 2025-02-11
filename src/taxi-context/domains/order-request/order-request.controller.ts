@@ -392,9 +392,8 @@ export class OrderRequestController {
 
     const houseObj = this.findHouseUnder60(elements, lat, lon);
     const regionObj = this.findNearestRegion(elements, lat, lon);
-    console.log(regionObj)
 
-    return  `${regionObj?.regionName} ${houseObj?.houseNumber}`
+    return  `${regionObj?.regionName || ''} ${houseObj?.houseNumber || ''}`
   }
 
   // -----------------------------------------
@@ -404,18 +403,11 @@ export class OrderRequestController {
     const query = `
 [out:json];
 (
-  node["addr:housenumber"](around:${radius},${lat},${lon});
-  way["addr:housenumber"](around:${radius},${lat},${lon});
-  relation["addr:housenumber"](around:${radius},${lat},${lon});
-
-  node["place"](around:${radius},${lat},${lon});
-  way["place"](around:${radius},${lat},${lon});
-  relation["place"](around:${radius},${lat},${lon});
-
-  relation["boundary"="administrative"](around:${radius},${lat},${lon});
+  node["name"](around:50,${lat},${lon});
+  way["name"](around:50,${lat},${lon});
+  relation["name"](around:50,${lat},${lon});
 );
-out center;
-    `.trim();
+out center;`.trim();
 
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
@@ -452,7 +444,6 @@ out center;
         closestHouse = el;
       }
     }
-    console.log(minDist)
     if (!closestHouse) return null;
 
     return {
@@ -500,7 +491,6 @@ out center;
 
     // fallback для имени
     const t = closest.tags;
-    console.log(t)
     const nameKeysFallback = [
       'name',
       'addr:street',
@@ -512,9 +502,7 @@ out center;
     ];
     let finalName = 'Без названия';
     for (const key of nameKeysFallback) {
-      console.log(key)
       if (t[key]) {
-        console.log(t[key])
         finalName = t[key];
         break;
       }
