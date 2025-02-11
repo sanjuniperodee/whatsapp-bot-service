@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
@@ -366,5 +366,189 @@ export class OrderRequestController {
   @ApiOperation({ summary: 'End Ride' })
   async handleRideEnded(@Body() input: ChangeOrderStatus) {
     await this.completeOrderService.handle(input);
+  }
+
+
+  @Get('address')
+  async getAddress(
+    @Query('lat') latStr: string,
+    @Query('lon') lonStr: string,
+  ) {
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+    if (isNaN(lat) || isNaN(lon)) {
+      throw new Error('Invalid lat/lon query params');
+    }
+
+    // По умолчанию 80, если не указано radius
+    const radius = 80
+
+    // 1) Делаем запрос к Overpass
+    const data = await this.fetchOverpassAll(lat, lon, radius);
+
+    // 2) Ищем отдельно дом (до 60 м), регион (ближайший)
+    const elements = data.elements || [];
+
+    const houseObj = this.findHouseUnder60(elements, lat, lon);
+    const regionObj = this.findNearestRegion(elements, lat, lon);
+
+    return  `${regionObj?.regionName} ${houseObj?.houseNumber}`
+  }
+
+  // -----------------------------------------
+  //  fetchOverpassAll: Аналогичный запрос
+  // -----------------------------------------
+  private async fetchOverpassAll(lat: number, lon: number, radius: number) {
+    const query = `
+[out:json];
+(
+  node["addr:housenumber"](around:${radius},${lat},${lon});
+  way["addr:housenumber"](around:${radius},${lat},${lon});
+  relation["addr:housenumber"](around:${radius},${lat},${lon});
+
+  node["place"](around:${radius},${lat},${lon});
+  way["place"](around:${radius},${lat},${lon});
+  relation["place"](around:${radius},${lat},${lon});
+
+  relation["boundary"="administrative"](around:${radius},${lat},${lon});
+);
+out center;
+    `.trim();
+
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
+      body: query
+    });
+
+    if (!response.ok) {
+      throw new Error('Overpass error: ' + response.statusText);
+    }
+
+    const json = await response.json();
+    return json;
+  }
+
+  // -----------------------------------------
+  //  findHouseUnder60
+  // -----------------------------------------
+  private findHouseUnder60(elements: any[], clickLat: number, clickLon: number) {
+    let closestHouse: any = null;
+    let minDist = Infinity;
+
+    for (const el of elements) {
+      if (!el.tags) continue;
+      const houseNum = el.tags['addr:housenumber'];
+      if (!houseNum) continue;
+
+      const coords = this.getCoords(el);
+      if (!coords) continue;
+
+      const dist = this.haversineDist(clickLat, clickLon, coords.lat, coords.lon);
+      if (dist < minDist) {
+        minDist = dist;
+        closestHouse = el;
+      }
+    }
+
+    if (!closestHouse) return null;
+    if (minDist > 60) {
+      // Если дом дальше 60 м, считаем, что нет
+      return null;
+    }
+
+    return {
+      houseNumber: closestHouse.tags['addr:housenumber'],
+      distance: minDist
+    };
+  }
+
+  // -----------------------------------------
+  //  findNearestRegion
+  // -----------------------------------------
+  private findNearestRegion(elements: any[], clickLat: number, clickLon: number) {
+    const candidateKeys = [
+      'addr:street',
+      'addr:place',
+      'addr:neighbourhood',
+      'shop',
+      'microdistrict',
+      'city_microdistrict',
+      'place',  // place=suburb/neighbourhood/...
+      'name'
+    ];
+
+    let closest: any = null;
+    let minDist = Infinity;
+
+    for (const el of elements) {
+      if (!el.tags) continue;
+
+      // Есть ли хотя бы один ключ из candidateKeys
+      const hasAnyKey = candidateKeys.some(key => el.tags[key]);
+      if (!hasAnyKey) continue;
+
+      const coords = this.getCoords(el);
+      if (!coords) continue;
+
+      const dist = this.haversineDist(clickLat, clickLon, coords.lat, coords.lon);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = el;
+      }
+    }
+
+    if (!closest) return null;
+
+    // fallback для имени
+    const t = closest.tags;
+    const nameKeysFallback = [
+      'addr:street',
+      'addr:place',
+      'addr:neighbourhood',
+      'shop',
+      'microdistrict',
+      'city_microdistrict',
+      'name'
+    ];
+    let finalName = 'Без названия';
+    for (const key of nameKeysFallback) {
+      if (t[key]) {
+        finalName = t[key];
+        break;
+      }
+    }
+
+    return {
+      regionName: finalName,
+      distance: minDist
+    };
+  }
+
+  // -----------------------------------------
+  //  getCoords: node/way/relation => lat/lon
+  // -----------------------------------------
+  private getCoords(el: any) {
+    if (el.type === 'node') {
+      return { lat: el.lat, lon: el.lon };
+    } else if (el.center) {
+      return { lat: el.center.lat, lon: el.center.lon };
+    }
+    return null;
+  }
+
+  // -----------------------------------------
+  //  haversineDist
+  // -----------------------------------------
+  private haversineDist(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371000; // метры
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat/2)*Math.sin(dLat/2) +
+      Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+      Math.sin(dLon/2)*Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 }
