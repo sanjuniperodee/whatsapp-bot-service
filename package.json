@@ -33,6 +33,7 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.3.10",
+    "@types/string-similarity": "^4.0.2",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "class-validator": "^0.14.1",
@@ -50,6 +51,7 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
+    "string-similarity": "^4.0.4",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.20"
   },
