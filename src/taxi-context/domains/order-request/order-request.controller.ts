@@ -445,9 +445,9 @@ export class OrderRequestController {
       return { message: 'Объект не найден' };
     }
     const responsee = data.result.items.map((item: any) => ({
-      name: item.full_name || item.name || 'Неизвестный адрес',
-      lat: item.point.lat,
-      lon: item.point.lon
+      "name": `${item.full_name || item.name || 'Неизвестный адрес'}`,
+      "lat": `${item.point.lat}` ,
+      "lon": `${item.point.lon}`
     }));
     console.log(responsee)
 
