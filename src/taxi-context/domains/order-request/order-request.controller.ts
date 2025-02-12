@@ -390,10 +390,11 @@ export class OrderRequestController {
     // 2) Ищем отдельно дом (до 60 м), регион (ближайший)
     const elements = data.elements || [];
 
+
     const houseObj = this.findHouseUnder60(elements, lat, lon);
     const regionObj = this.findNearestRegion(elements, lat, lon);
 
-    return  `${regionObj?.regionName || ''} ${houseObj?.houseNumber || ''}`
+    return  `${regionObj?.regionName || ''}${houseObj?.houseNumber || ''}`
   }
 
   // -----------------------------------------
@@ -403,9 +404,33 @@ export class OrderRequestController {
     const query = `
 [out:json];
 (
-  node["name"](around:50,${lat},${lon});
-  way["name"](around:50,${lat},${lon});
-  relation["name"](around:50,${lat},${lon});
+  // 1) addr:housenumber
+  node["addr:housenumber"](around:${radius},${lat},${lon});
+  way["addr:housenumber"](around:${radius},${lat},${lon});
+  relation["addr:housenumber"](around:${radius},${lat},${lon});
+
+  // 2) place=*
+  node["place"](around:${radius},${lat},${lon});
+  way["place"](around:${radius},${lat},${lon});
+  relation["place"](around:${radius},${lat},${lon});
+
+  // 3) boundary=administrative
+  relation["boundary"="administrative"](around:${radius},${lat},${lon});
+
+  // 4) name=*
+  node["name"](around:${radius},${lat},${lon});
+  way["name"](around:${radius},${lat},${lon});
+  relation["name"](around:${radius},${lat},${lon});
+
+  // 5) shop=*
+  node["shop"](around:${radius},${lat},${lon});
+  way["shop"](around:${radius},${lat},${lon});
+  relation["shop"](around:${radius},${lat},${lon});
+
+  // 6) building=*
+  node["building"](around:${radius},${lat},${lon});
+  way["building"](around:${radius},${lat},${lon});
+  relation["building"](around:${radius},${lat},${lon});
 );
 out center;`.trim();
 
@@ -457,13 +482,9 @@ out center;`.trim();
   // -----------------------------------------
   private findNearestRegion(elements: any[], clickLat: number, clickLon: number) {
     const candidateKeys = [
-      'addr:street',
       'addr:place',
+      'addr:street',
       'addr:neighbourhood',
-      'shop',
-      'microdistrict',
-      'city_microdistrict',
-      'place',  // place=suburb/neighbourhood/...
       'name'
     ];
 
@@ -491,20 +512,10 @@ out center;`.trim();
 
     // fallback для имени
     const t = closest.tags;
-    const nameKeysFallback = [
-      'name',
-      'addr:street',
-      'addr:place',
-      'addr:neighbourhood',
-      'shop',
-      'microdistrict',
-      'city_microdistrict',
-    ];
-    let finalName = 'Без названия';
-    for (const key of nameKeysFallback) {
+    let finalName = '';
+    for (const key of candidateKeys) {
       if (t[key]) {
-        finalName = t[key];
-        break;
+        finalName += `${t[key]}, `
       }
     }
 
