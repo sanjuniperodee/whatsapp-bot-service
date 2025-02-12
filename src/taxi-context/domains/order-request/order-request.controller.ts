@@ -381,162 +381,34 @@ export class OrderRequestController {
       throw new Error('Invalid lat/lon query params');
     }
 
-    // По умолчанию 80, если не указано radius
-    const radius = 80
-
-    // 1) Делаем запрос к Overpass
-    const data = await this.fetchOverpassAll(lat, lon, radius);
-
-    // 2) Ищем отдельно дом (до 60 м), регион (ближайший)
-    const elements = data.elements || [];
-
-
-    const houseObj = this.findHouseUnder60(elements, lat, lon);
-    const regionObj = this.findNearestRegion(elements, lat, lon);
-
-    return  `${regionObj?.regionName || ''} ${houseObj?.houseNumber || ''}`
-  }
-
-  // -----------------------------------------
-  //  fetchOverpassAll: Аналогичный запрос
-  // -----------------------------------------
-  private async fetchOverpassAll(lat: number, lon: number, radius: number) {
-    const query = `
-[out:json];
-(
-  nwr(around:${radius},${lat},${lon})
-    (if: t["addr:housenumber"]
-       || t["addr:place"]
-       || t["street"]
-       || t["name"]
-       || t["neighbourhood"]
-       || (t["boundary"] == "administrative")
-    );
-);
-out center;`.trim();
-
-  const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
-      body: query
+    // 1️⃣ Запрос в **2ГИС API** для определения ближайшего адреса
+    const response = await fetch(`https://platform.2gis.ru/api/services/geocoder?type=street%2Cbuilding%2Cattraction%2Cstation_platform%2Cadm_div.place%2Cadm_div.city%2Cadm_div.district&fields=items.point%2Citems.region_id%2Citems.segment_id&lon=${lon}&lat=${lat}`, {
+      method: 'GET',
+      headers: { 'User-Agent': 'MyApp/1.0' }
     });
 
+    console.log(response)
+
     if (!response.ok) {
-      throw new Error('Overpass error: ' + response.statusText);
+      throw new Error(`2ГИС API error: ${response.status} ${response.statusText}`);
     }
 
-    const json = await response.json();
-    return json;
-  }
+    const data = await response.json();
 
-  // -----------------------------------------
-  //  findHouseUnder60
-  // -----------------------------------------
-  private findHouseUnder60(elements: any[], clickLat: number, clickLon: number) {
-    let closestHouse: any = null;
-    let minDist = Infinity;
-
-    for (const el of elements) {
-      if (!el.tags) continue;
-      const houseNum = el.tags['addr:housenumber'];
-      if (!houseNum) continue;
-
-      const coords = this.getCoords(el);
-      if (!coords) continue;
-
-      const dist = this.haversineDist(clickLat, clickLon, coords.lat, coords.lon);
-      if (dist < minDist) {
-        minDist = dist;
-        closestHouse = el;
-      }
+    // 2️⃣ Проверяем, есть ли результаты
+    if (!data?.result?.items || data.result.items.length === 0) {
+      return { message: 'Адрес не найден' };
     }
-    if (!closestHouse) return null;
+
+    // 3️⃣ Выбираем **лучший** результат
+    const bestMatch = data.result.items[0];
 
     return {
-      houseNumber: closestHouse.tags['addr:housenumber'],
-      distance: minDist
+      address: bestMatch.full_name || bestMatch.name || 'Неизвестный адрес',
+      type: bestMatch.type,
+      lat: bestMatch.point.lat,
+      lon: bestMatch.point.lon
     };
-  }
-
-  // -----------------------------------------
-  //  findNearestRegion
-  // -----------------------------------------
-  private findNearestRegion(elements: any[], clickLat: number, clickLon: number) {
-    const candidateKeys = [
-      'addr:place',
-      'addr:street',
-      'addr:neighbourhood',
-      'name'
-    ];
-
-    let closest: any = null;
-    let minDist = Infinity;
-
-    for (const el of elements) {
-      if (!el.tags) continue;
-
-      // Есть ли хотя бы один ключ из candidateKeys
-      const hasAnyKey = candidateKeys.some(key => el.tags[key]);
-      if (!hasAnyKey) continue;
-
-      const coords = this.getCoords(el);
-      if (!coords) continue;
-
-      const dist = this.haversineDist(clickLat, clickLon, coords.lat, coords.lon);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = el;
-      }
-    }
-
-    if (!closest) return null;
-
-    // Собираем уникальные значения из candidateKeys
-    const t = closest.tags;
-    const nameSet = new Set<string>();
-
-    for (const key of candidateKeys) {
-      const val = t[key];
-      if (val) {
-        nameSet.add(val.trim()); // trim для безопасности
-      }
-    }
-
-    // Превращаем Set в массив и склеиваем через ", "
-    const finalName = Array.from(nameSet).join(', ');
-
-    return {
-      regionName: finalName,
-      distance: minDist
-    };
-  }
-
-
-  // -----------------------------------------
-  //  getCoords: node/way/relation => lat/lon
-  // -----------------------------------------
-  private getCoords(el: any) {
-    if (el.type === 'node') {
-      return { lat: el.lat, lon: el.lon };
-    } else if (el.center) {
-      return { lat: el.center.lat, lon: el.center.lon };
-    }
-    return null;
-  }
-
-  // -----------------------------------------
-  //  haversineDist
-  // -----------------------------------------
-  private haversineDist(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371000; // метры
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat/2)*Math.sin(dLat/2) +
-      Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-      Math.sin(dLon/2)*Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
   }
 
   @Get('find-by-name')
@@ -552,49 +424,48 @@ out center;`.trim();
       throw new Error('Invalid params: lat, lon, query are required');
     }
 
-    // Вычисляем bounding box на 25км (по умолчанию)
+    // 1️⃣ Вычисляем bounding box на 25км
     const bbox = this.makeBoundingBox(lat, lon, 25);
 
-    // Формируем URL запроса к Nominatim
-    // Важно: viewbox = left, top, right, bottom
-    //        bounded=1 => искать только внутри bounding box
-    const url = new URL('https://nominatim.openstreetmap.org/search');
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('limit', '10');
-    url.searchParams.set('addressdetails', '1');
+    // 2️⃣ Формируем URL запроса к 2ГИС API
+    const url = new URL('https://platform.2gis.ru/api/services/geocoder');
+    url.searchParams.set('type', 'street,building,attraction,station_platform,adm_div.place,adm_div.city,adm_div.district');
+    url.searchParams.set('fields', 'items.point,items.region_id,items.segment_id');
     url.searchParams.set('q', search);
+    url.searchParams.set('point1', `${bbox.left},${bbox.top}`);
+    url.searchParams.set('point2', `${bbox.right},${bbox.bottom}`);
 
-    // Порядок: left, top, right, bottom
-    // bbox = { top, bottom, left, right }
-    url.searchParams.set('viewbox',
-      `${bbox.left},${bbox.top},${bbox.right},${bbox.bottom}`
-    );
-    url.searchParams.set('bounded', '1');  // ограничить результаты bbox
-
+    // 3️⃣ Делаем запрос
     const response = await fetch(url.toString(), {
       method: 'GET',
-      headers: {
-        // Nominatim просит указать User-Agent с контактами
-        'User-Agent': 'MyApp/1.0 (mailto:my_email@example.com)'
-      }
+      headers: { 'User-Agent': 'MyApp/1.0' }
     });
+
     if (!response.ok) {
-      throw new Error(`Nominatim search error: ${response.status} ${response.statusText}`);
+      throw new Error(`2ГИС API error: ${response.status} ${response.statusText}`);
     }
 
-    const results = await response.json();
-    return results.map((el: { lat: number; lon: number; name: string }) => ({
-      lat: el.lat,
-      lon: el.lon,
-      name: el.name
-    })); // массив объектов [ { display_name, lat, lon, ... }, ... ]
+    const data = await response.json();
+
+    // 4️⃣ Проверяем, есть ли результаты
+    if (!data?.result?.items || data.result.items.length === 0) {
+      return { message: 'Объект не найден' };
+    }
+
+    // 5️⃣ Возвращаем список объектов
+    return data.result.items.map((item: any) => ({
+      address: item.full_name || item.name || 'Неизвестный адрес',
+      type: item.type,
+      lat: item.point.lat,
+      lon: item.point.lon
+    }));
   }
 
   /**
-   * Создаём прямоугольную область (bounding box) вокруг (lat, lon)
+   * Создаёт прямоугольную область (bounding box) вокруг (lat, lon)
    * с радиусом `radiusKm` (в км) по широте и долготе.
    *
-   * Возвращаем { top, bottom, left, right }:
+   * Возвращает { top, bottom, left, right }:
    *  - top > bottom
    *  - left < right
    *  Пример: 25км = ~0.225 градусов по широте (1° ~ 111км)
