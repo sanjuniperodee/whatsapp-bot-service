@@ -180,6 +180,7 @@ export class UserController {
   @ApiOperation({ summary: 'Set device token' })
   @ApiBody({ type: SetDeviceTokenRequest })
   async addDevice(@IAM() user: UserOrmEntity, @Body() input: SetDeviceTokenRequest): Promise<any> {
+    console.log(input.device)
     const device = await UserOrmEntity.query().patchAndFetchById(user.id, {
       deviceToken: input.device,
     });
