@@ -403,12 +403,7 @@ export class OrderRequestController {
     // 3️⃣ Выбираем **лучший** результат
     const bestMatch = data.result.items[0];
 
-    return {
-      address: bestMatch.full_name || bestMatch.name || 'Неизвестный адрес',
-      type: bestMatch.type,
-      lat: bestMatch.point.lat,
-      lon: bestMatch.point.lon
-    };
+    return bestMatch.full_name || bestMatch.name
   }
 
   @Get('find-by-name')
@@ -454,7 +449,7 @@ export class OrderRequestController {
 
     // 5️⃣ Возвращаем список объектов
     return data.result.items.map((item: any) => ({
-      address: item.full_name || item.name || 'Неизвестный адрес',
+      name: item.full_name || item.name || 'Неизвестный адрес',
       type: item.type,
       lat: item.point.lat,
       lon: item.point.lon
