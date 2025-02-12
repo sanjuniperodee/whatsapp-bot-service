@@ -446,14 +446,15 @@ export class OrderRequestController {
     if (!data?.result?.items || data.result.items.length === 0) {
       return { message: 'Объект не найден' };
     }
-
-    // 5️⃣ Возвращаем список объектов
-    return data.result.items.map((item: any) => ({
+    const response = data.result.items.map((item: any) => ({
       name: item.full_name || item.name || 'Неизвестный адрес',
-      type: item.type,
       lat: item.point.lat,
       lon: item.point.lon
     }));
+    console.log(response)
+
+    // 5️⃣ Возвращаем список объектов
+    return response
   }
 
   /**
