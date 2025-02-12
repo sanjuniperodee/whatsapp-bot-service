@@ -491,20 +491,26 @@ out center;`.trim();
 
     if (!closest) return null;
 
-    // fallback для имени
+    // Собираем уникальные значения из candidateKeys
     const t = closest.tags;
-    let finalName = '';
+    const nameSet = new Set<string>();
+
     for (const key of candidateKeys) {
-      if (t[key]) {
-        finalName += `${t[key]}, `
+      const val = t[key];
+      if (val) {
+        nameSet.add(val.trim()); // trim для безопасности
       }
     }
+
+    // Превращаем Set в массив и склеиваем через ", "
+    const finalName = Array.from(nameSet).join(', ');
 
     return {
       regionName: finalName,
       distance: minDist
     };
   }
+
 
   // -----------------------------------------
   //  getCoords: node/way/relation => lat/lon
