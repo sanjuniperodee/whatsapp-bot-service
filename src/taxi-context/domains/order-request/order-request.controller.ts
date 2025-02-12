@@ -387,8 +387,6 @@ export class OrderRequestController {
       headers: { 'User-Agent': 'MyApp/1.0' }
     });
 
-    console.log(response)
-
     if (!response.ok) {
       throw new Error(`2ГИС API error: ${response.status} ${response.statusText}`);
     }
