@@ -404,37 +404,18 @@ export class OrderRequestController {
     const query = `
 [out:json];
 (
-  // 1) addr:housenumber
-  node["addr:housenumber"](around:${radius},${lat},${lon});
-  way["addr:housenumber"](around:${radius},${lat},${lon});
-  relation["addr:housenumber"](around:${radius},${lat},${lon});
-
-  // 2) place=*
-  node["place"](around:${radius},${lat},${lon});
-  way["place"](around:${radius},${lat},${lon});
-  relation["place"](around:${radius},${lat},${lon});
-
-  // 3) boundary=administrative
-  relation["boundary"="administrative"](around:${radius},${lat},${lon});
-
-  // 4) name=*
-  node["name"](around:${radius},${lat},${lon});
-  way["name"](around:${radius},${lat},${lon});
-  relation["name"](around:${radius},${lat},${lon});
-
-  // 5) shop=*
-  node["shop"](around:${radius},${lat},${lon});
-  way["shop"](around:${radius},${lat},${lon});
-  relation["shop"](around:${radius},${lat},${lon});
-
-  // 6) building=*
-  node["building"](around:${radius},${lat},${lon});
-  way["building"](around:${radius},${lat},${lon});
-  relation["building"](around:${radius},${lat},${lon});
+  nwr(around:${radius},${lat},${lon})
+    (if: t["addr:housenumber"]
+       || t["addr:place"]
+       || t["street"]
+       || t["name"]
+       || t["neighbourhood"]
+       || (t["boundary"] == "administrative")
+    );
 );
 out center;`.trim();
 
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
+  const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
       body: query
