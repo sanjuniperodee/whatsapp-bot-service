@@ -394,7 +394,7 @@ export class OrderRequestController {
     const houseObj = this.findHouseUnder60(elements, lat, lon);
     const regionObj = this.findNearestRegion(elements, lat, lon);
 
-    return  `${regionObj?.regionName || ''}${houseObj?.houseNumber || ''}`
+    return  `${regionObj?.regionName || ''} ${houseObj?.houseNumber || ''}`
   }
 
   // -----------------------------------------
