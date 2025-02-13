@@ -26,6 +26,7 @@ import { CategoryLicenseRepository } from '../../domain-repositories/category-li
 import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
 import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
 import * as stringSimilarity from 'string-similarity';
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -44,6 +45,7 @@ export class OrderRequestController {
     private readonly createOrderService: CreateOrderService,
     private readonly cancelOrderService: CancelOrderService,
     private readonly rejectOrderService: RejectOrderService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   @Get('menu/:id')
@@ -59,6 +61,11 @@ export class OrderRequestController {
   @Post('log')
   async log(@Body() input: any){
     console.log(input)
+  }
+
+  @Post('send-message-to-bekkhan')
+  async sendMessageToBekkhan(@Body() input: any){
+    await this.whatsAppService.sendMessage('77051479003' + "@c.us", `Новый запрос от клиента: ${input.phoneNumber}, ${input.name}`);
   }
   @Post('/location/update')
   @UseGuards(JwtAuthGuard())
