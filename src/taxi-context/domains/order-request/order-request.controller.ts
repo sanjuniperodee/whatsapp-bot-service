@@ -429,7 +429,6 @@ export class OrderRequestController {
 
     // 2️⃣ Формируем URL запроса к 2ГИС API
     const url = new URL('https://platform.2gis.ru/api/services/geocoder');
-    url.searchParams.set('type', 'street,building,attraction,station_platform,adm_div.place,adm_div.city,adm_div.district');
     url.searchParams.set('fields', 'items.point,items.region_id,items.segment_id');
     url.searchParams.set('q', search);
     url.searchParams.set('point1', `${bbox.left},${bbox.top}`);
