@@ -65,7 +65,7 @@ export class OrderRequestController {
 
   @Post('send-message-to-bekkhan')
   async sendMessageToBekkhan(@Body() input: any){
-    await this.whatsAppService.sendMessage('77051479003' + "@c.us", `Новый запрос от клиента: ${input.phoneNumber}, ${input.name}`);
+    await this.whatsAppService.sendMessage('77051479003' + "@c.us", `Новый запрос от клиента: +${input.phoneNumber}, ${input.name}`);
   }
   @Post('/location/update')
   @UseGuards(JwtAuthGuard())
