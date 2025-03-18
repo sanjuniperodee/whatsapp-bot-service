@@ -44,6 +44,11 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       // Получаем текущие сокеты пользователя
       const connections = await this.cacheStorageService.getSocketIds(userId);
 
+      // Если этот сокет уже подключен, пропускаем
+      if (connections.includes(client.id)) {
+        console.log(`Пользователь ${userId} уже подключен, пропускаем`);
+        return;
+      }
       // Удаляем все предыдущие сокеты из Redis и отключаем их
       // await Promise.all(
       //   connections.map(async (socketId) => {
