@@ -112,6 +112,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched({categoryLicenses: true})
     for (const driver of drivers) {
       const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
+      console.log(driver.id)
       const type = orderRequest.getPropsCopy().orderType
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
       if(hasMatchingCategory){
