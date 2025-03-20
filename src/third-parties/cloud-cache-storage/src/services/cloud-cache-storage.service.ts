@@ -99,7 +99,7 @@ export class CloudCacheStorageService {
 
   async findNearestDrivers(latitude: number, longitude: number, radius = 2000000): Promise<string[]> {
     try{
-      return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 10, 'ASC');
+      return await this.redisService.geoRadius('drivers', longitude, latitude, radius, 'm', 1000, 'ASC');
     }
     catch (error){
       return []
