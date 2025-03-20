@@ -20,7 +20,7 @@ export class CloudCacheStorageService {
   async removeSocketId(userId: string, socketId: string) {
     const key = `sockets:${userId}`;
 
-    await this.redisService.client.srem(key, socketId);
+    await this.redisService.client.del(key); // Удаляем весь ключ
   }
 
   // Получаем все Socket ID для userId

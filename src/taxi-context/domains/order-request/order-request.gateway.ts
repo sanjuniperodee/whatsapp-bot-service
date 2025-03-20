@@ -73,6 +73,14 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const userId = client.handshake.query.userId as string;
 
     if (userId) {
+      const socketIds: string[] = await this.cacheStorageService.getSocketIds(userId);
+
+      for (const socketId of socketIds) {
+        const socket = this.server.sockets.sockets.get(socketId); // Используем `this.server`
+        if (socket) {
+          socket.disconnect(true); // Полностью отключаем сокет
+        }
+      }
       // Удаляем Socket ID из множества
       console.log({"DISCONNECTED:" : userId})
 
@@ -117,7 +125,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       console.log(driver.id)
       const type = orderRequest.getPropsCopy().orderType
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
-      if(hasMatchingCategory){
+      if(hasMatchingCategory && orderRequest.getPropsCopy().clientId.value != driver.id){
         if (driverSocketIds.length) {
           await Promise.all(driverSocketIds.map(async socketId => {
             await this.server.to(socketId).emit('newOrder');
