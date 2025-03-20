@@ -110,8 +110,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
     const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
     const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched({categoryLicenses: true})
+    console.log(drivers)
     for (const driver of drivers) {
       const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
+      console.log('Уведомление о новом заказе!')
       console.log(driver.id)
       const type = orderRequest.getPropsCopy().orderType
       const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
