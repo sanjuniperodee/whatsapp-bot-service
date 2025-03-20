@@ -20,14 +20,7 @@ export class CloudCacheStorageService {
   async removeSocketId(userId: string, socketId: string) {
     const key = `sockets:${userId}`;
 
-    // Проверяем, существует ли ключ
-    const exists = await this.redisService.client.exists(key);
-    if (exists) {
-      // Устанавливаем таймер на 5 минут (300 секунд)
-      await this.redisService.client.expire(key, 300);
-      // Удаляем конкретный Socket ID из множества
-      await this.redisService.client.srem(key, socketId);
-    }
+    await this.redisService.client.srem(key, socketId);
   }
 
   // Получаем все Socket ID для userId
