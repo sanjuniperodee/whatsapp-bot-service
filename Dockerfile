@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=builder /app/src/modules /app/dist/src/modules
 
 COPY --from=builder /app ./
-COPY --from=builder /app/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json /app/dist/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json
+COPY --from=builder /app/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json /app/dist/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json
 RUN apk add bash
 EXPOSE 3000
 ENTRYPOINT ["sh", "-c"]
