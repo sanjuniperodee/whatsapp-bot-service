@@ -3,8 +3,8 @@
     "module": "commonjs",
     "target": "es2017",
     "lib": ["es2017", "dom"],
-    "outDir": "./dist/src",  // Указываем, что файлы компилируются в dist/src
-    "rootDir": "./src",      // Указываем, что исходные файлы находятся в src
+    "outDir": "./dist/src",
+    "rootDir": "./src",
     "strict": true,
     "strictPropertyInitialization": false,
     "declaration": true,
