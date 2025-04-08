@@ -1,23 +1,31 @@
-# Базовый образ Node (можно выбрать нужную версию, например node:18)
-FROM node:18
+# Этап 1: Сборка приложения
+FROM node:18 AS builder
 
-# Создаем рабочую директорию внутри контейнера
 WORKDIR /app
 
-# Копируем package.json и yarn.lock
-COPY package.json yarn.lock tsconfig.json ./
+# Копируем файлы конфигурации и package.json с yarn.lock
+COPY package.json yarn.lock tsconfig.json nest-cli.json ./
 
-# Устанавливаем зависимости с помощью Yarn
+# Устанавливаем зависимости (при сборке нужны devDependencies)
 RUN yarn install
 
-# Копируем оставшиеся файлы
+# Копируем весь исходный код проекта
 COPY . .
 
-# Собираем проект (по умолчанию команда "build" в вашем package.json вызывает "nest build")
+# Сборка NestJS (команда "nest build" берет настройки из nest-cli.json)
 RUN yarn build
 
-# Пробрасываем порт 3000 (по умолчанию Nest слушает 3000)
+# Этап 2: Создаем минимальный образ для продакшена
+FROM node:18 AS runner
+
+WORKDIR /app
+
+# Копируем из предыдущего этапа собранный код и зависимости
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
+
 EXPOSE 3000
 
-# Запуск в продакшн-режиме (использует скрипт "start:prod": "node dist/main")
-CMD ["yarn", "start:prod"]
+# Запускаем приложение; если для корректного резолвинга алиасов требуется tsconfig-paths
+CMD ["node", "-r", "tsconfig-paths/register", "dist/main"]
