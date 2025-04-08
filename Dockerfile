@@ -10,7 +10,8 @@ RUN yarn build
 # Этап 2: запуск приложения в продакшн
 FROM node:18-alpine3.14 AS runner
 WORKDIR /app
-COPY --from=builder /app/src/modules /app/dist/modules
+COPY --from=builder /app/src/modules /app/dist/src/modules
+
 COPY --from=builder /app ./
 COPY --from=builder /app/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json /app/dist/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json
 RUN apk add bash
