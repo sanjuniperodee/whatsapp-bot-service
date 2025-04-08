@@ -17,4 +17,4 @@ COPY --from=builder /app/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1
 RUN apk add bash
 EXPOSE 3000
 ENTRYPOINT ["sh", "-c"]
-CMD ["node -r ./tsconfig-paths-bootstrap.js dist/main.js"]
+CMD ["node -r ./tsconfig-paths-bootstrap.js dist/src/main.js"]
