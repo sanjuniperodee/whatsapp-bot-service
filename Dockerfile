@@ -1,31 +1,18 @@
-# Этап 1: Сборка приложения
-FROM node:18 AS builder
-
+# Этап 1: сборка приложения
+FROM node:18-alpine3.14 AS builder
 WORKDIR /app
-
-# Копируем файлы конфигурации и package.json с yarn.lock
-COPY package.json yarn.lock tsconfig.json nest-cli.json ./
-
-# Устанавливаем зависимости (при сборке нужны devDependencies)
+COPY package.json ./
+COPY yarn.lock ./
 RUN yarn install
-
-# Копируем весь исходный код проекта
 COPY . .
-
-# Сборка NestJS (команда "nest build" берет настройки из nest-cli.json)
 RUN yarn build
 
-# Этап 2: Создаем минимальный образ для продакшена
-FROM node:18 AS runner
-
+# Этап 2: запуск приложения в продакшн
+FROM node:18-alpine3.14 AS runner
 WORKDIR /app
-
-# Копируем из предыдущего этапа собранный код и зависимости
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
-
+COPY --from=builder /app ./
+COPY --from=builder /app/src/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json /app/dist/modules/firebase/aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json
+RUN apk add bash
 EXPOSE 3000
-
-# Запускаем приложение; если для корректного резолвинга алиасов требуется tsconfig-paths
-CMD ["yarn", "start:dev"]
+ENTRYPOINT ["sh", "-c"]
+CMD ["node -r ./tsconfig-paths-bootstrap.js dist/main.js"]
