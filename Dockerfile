@@ -28,4 +28,4 @@ COPY package.json ./
 EXPOSE 3000
 
 # Запускаем приложение; если для корректного резолвинга алиасов требуется tsconfig-paths
-CMD ["node", "-r", "tsconfig-paths/register", "dist/main"]
+CMD ["yarn", "start:dev"]
