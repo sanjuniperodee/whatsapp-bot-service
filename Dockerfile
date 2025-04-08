@@ -5,7 +5,7 @@ FROM node:18
 WORKDIR /app
 
 # Копируем package.json и yarn.lock
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock tsconfig.json ./
 
 # Устанавливаем зависимости с помощью Yarn
 RUN yarn install
