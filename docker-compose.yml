@@ -1,5 +1,19 @@
 version: '3.8'
 services:
+  backend:
+    build: .
+    container_name: nest_backend
+    env_file:
+      - .env
+    environment:
+      # Здесь можно передать переменные окружения, которые используете в NestJS (DB_HOST, и т.п.)
+      DATABASE_HOST: postgres
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+
   postgres:
     image: postgres:13
     container_name: postgres
