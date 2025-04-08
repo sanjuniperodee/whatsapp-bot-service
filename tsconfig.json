@@ -3,8 +3,8 @@
     "module": "commonjs",
     "target": "es2017",
     "lib": ["es2017", "dom"],
-    "outDir": "./dist",             // Скомпилированные файлы будут в dist
-    "rootDir": "./src",             // Исходные файлы в папке src
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "strictPropertyInitialization": false,
     "moduleResolution": "node",
@@ -12,7 +12,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "baseUrl": "./dist",
+    "baseUrl": "./",
     "paths": {
       "@modules/*": ["src/modules/*"],
       "@domain/*": ["src/taxi-context/domains/*"],
