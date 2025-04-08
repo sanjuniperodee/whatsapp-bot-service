@@ -3,8 +3,8 @@
     "module": "commonjs",
     "target": "es2017",
     "lib": ["es2017", "dom"],
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "outDir": "./dist",             // Скомпилированные файлы будут в dist
+    "rootDir": "./src",             // Исходные файлы в папке src
     "strict": true,
     "strictPropertyInitialization": false,
     "moduleResolution": "node",
@@ -12,14 +12,14 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "baseUrl": "./",
+    "baseUrl": "./dist",
     "paths": {
-      "@modules/*": ["src/modules/*"],
-      "@domain/*": ["src/taxi-context/domains/*"],
-      "@infrastructure/*": ["src/infrastructure/*"],
-      "@libs/*": ["src/libs/*"],
-      "@domain-value-objects/*": ["src/taxi-context/domain-value-objects/*"],
-      "@third-parties/*": ["src/third-parties/*"]
+      "@modules/*": ["dist/modules/*"],
+      "@domain/*": ["dist/taxi-context/domains/*"],
+      "@infrastructure/*": ["dist/infrastructure/*"],
+      "@libs/*": ["dist/libs/*"],
+      "@domain-value-objects/*": ["dist/taxi-context/domain-value-objects/*"],
+      "@third-parties/*": ["dist/third-parties/*"]
     }
   },
   "include": ["src/**/*"],
