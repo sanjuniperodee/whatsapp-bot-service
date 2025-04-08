@@ -16,6 +16,7 @@
     "incremental": true,
     "skipLibCheck": true,
     "paths": {
+      "@libs/*": ["./src/libs/*"],
       "@modules/*": ["./src/modules/*"],
       "@domain/*": ["./src/taxi-context/domains/*"],
       "@infrastructure/*": ["./src/infrastructure/*"],
