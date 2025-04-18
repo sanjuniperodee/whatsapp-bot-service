@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
@@ -27,6 +27,7 @@ import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-lic
 import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
 import * as stringSimilarity from 'string-similarity';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
+import { ReccuringProfileCallbackDto } from '@domain/order-request/ReccuringProfileCallbackDto';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -47,6 +48,32 @@ export class OrderRequestController {
     private readonly rejectOrderService: RejectOrderService,
     private readonly whatsAppService: WhatsAppService,
   ) {}
+  @Post('/recurring/callback')
+  async recurrentProfileCallback(@Body() dto: ReccuringProfileCallbackDto) {
+    const recurringProfileId = dto.pg_recurring_profile_id;
+    const orderId = dto.pg_order_id;
+    // Публикуем событие в PubSub
+
+    const key = `recurring:${orderId}`;
+
+    await this.cacheStorageService.setValue(key, { recurringProfileId });
+
+    return { status: 'ok' };
+  }
+
+  @Get('/recurring/:orderId')
+  async getRecurringProfileId(@Param('orderId') orderId: string) {
+    const key = `recurring:${orderId}`;
+    const data = await this.cacheStorageService.getValue(key);
+
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+
+    if (!parsed?.recurringProfileId) {
+      throw new NotFoundException('Recurring profile ID not found');
+    }
+
+    return { recurringProfileId: parsed.recurringProfileId };
+  }
 
   @Get('menu/:id')
   async getMenu(@Param('id') id: string){
