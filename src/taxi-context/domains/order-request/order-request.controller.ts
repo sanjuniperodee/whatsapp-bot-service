@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, NotFoundException, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
@@ -52,6 +52,9 @@ export class OrderRequestController {
   async recurrentProfileCallback(@Body() dto: ReccuringProfileCallbackDto) {
     const recurringProfileId = dto.pg_recurring_profile_id;
     const orderId = dto.pg_order_id;
+
+    Logger.log(dto)
+    console.log(dto)
     // Публикуем событие в PubSub
 
     const key = `recurring:${orderId}`;
