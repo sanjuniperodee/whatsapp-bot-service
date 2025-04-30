@@ -30,8 +30,9 @@ services:
 
   redis:
     image: redis:latest
-    ports:
-      - "6379:6379"
+    # ports:
+    #  - "6379:6379"
+    command: redis-server --requirepass BekkhnN017
 
 volumes:
   postgres_data:

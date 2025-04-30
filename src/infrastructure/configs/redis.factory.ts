@@ -5,7 +5,8 @@ export const redisConfigFactory = {
   useFactory: (configService: ConfigService): CloudCacheModuleOptions => {
     return {
       port: configService.get<number>('redis.common.port'),
-      host: configService.get<string>('redis.common.host')
+      host: configService.get<string>('redis.common.host'),
+      password: configService.get<string>('redis.common.password'),
     };
   },
   inject: [ConfigService],
