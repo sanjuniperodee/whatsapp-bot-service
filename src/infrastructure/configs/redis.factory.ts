@@ -6,7 +6,7 @@ export const redisConfigFactory = {
     return {
       port: configService.get<number>('redis.common.port'),
       host: configService.get<string>('redis.common.host'),
-      password: configService.get<string>('redis.common.password'),
+      password: 'BekkhnN017',
     };
   },
   inject: [ConfigService],
