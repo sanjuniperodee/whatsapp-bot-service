@@ -15,6 +15,9 @@ export class UserOrmEntity extends ObjectionEntityBase {
   middleName?: string;
   lastSms?: string;
   deviceToken?: string;
+  isBlocked: boolean;
+  blockedUntil?: Date;
+  blockReason?: string;
 
   categoryLicenses?: CategoryLicenseOrmEntity[]
   orders?: OrderRequestOrmEntity[]

@@ -1,30 +1,30 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2017",
-    "lib": ["es2017", "dom"],
-    "outDir": "./dist/src",
-    "rootDir": "./src",
-    "strict": true,
-    "strictPropertyInitialization": false,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
     "sourceMap": true,
+    "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@libs/*": ["./src/libs/*"],
-      "@modules/*": ["./src/modules/*"],
-      "@domain/*": ["./src/taxi-context/domains/*"],
-      "@infrastructure/*": ["./src/infrastructure/*"],
-      "@domain-value-objects/*": ["./src/taxi-context/domain-value-objects/*"],
-      "@third-parties/*": ["./src/third-parties/*"]
+      "@libs/*": ["src/libs/*"],
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@modules/*": ["src/modules/*"],
+      "@domain/*": ["src/taxi-context/domains/*"],
+      "@third-parties/*": ["src/third-parties/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

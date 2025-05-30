@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module';
 import { TaxiContextModule } from './taxi-context/taxi-context.module';
 import { AppController } from './app.controller';
@@ -21,6 +22,7 @@ import { join } from 'path';
     TaxiContextModule,
     DatabaseModule,
     WhatsAppModule,
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [loadConfiguration],

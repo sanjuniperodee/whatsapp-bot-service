@@ -67,11 +67,11 @@ export class UserRepository
     return false;
   }
 
-  async findOneByPhone(email: string) {
-    const found = await UserOrmEntity.query().findOne('phone', email);
+  async findOneByPhone(phone: string): Promise<UserEntity | undefined> {
+    const found = await UserOrmEntity.query().findOne('phone', phone);
 
     if (!found) {
-      return found;
+      return undefined;
     }
 
     return this.mapper.toDomainEntity(found);

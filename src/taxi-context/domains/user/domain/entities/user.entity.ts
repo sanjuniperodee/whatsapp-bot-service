@@ -13,6 +13,9 @@ export type UserProps = CreateUserProps & {
   middleName?: string;
   lastSms?: string;
   deviceToken?: string;
+  isBlocked?: boolean;
+  blockedUntil?: Date;
+  blockReason?: string;
 };
 
 export class UserEntity extends AggregateRoot<UserProps> {
@@ -25,7 +28,10 @@ export class UserEntity extends AggregateRoot<UserProps> {
       ...create,
       lastSms: undefined,
       middleName: undefined,
-      deviceToken: undefined
+      deviceToken: undefined,
+      isBlocked: false,
+      blockedUntil: undefined,
+      blockReason: undefined
     };
 
     return new UserEntity({ id, props });
@@ -37,6 +43,40 @@ export class UserEntity extends AggregateRoot<UserProps> {
 
   get phone() {
     return this.props.phone;
+  }
+
+  get isBlocked() {
+    return this.props.isBlocked || false;
+  }
+
+  get blockedUntil() {
+    return this.props.blockedUntil;
+  }
+
+  get blockReason() {
+    return this.props.blockReason;
+  }
+
+  isCurrentlyBlocked(): boolean {
+    if (!this.props.isBlocked) return false;
+    
+    if (!this.props.blockedUntil) return true; // permanent block
+    
+    return new Date() < this.props.blockedUntil;
+  }
+
+  blockUser(blockedUntil?: Date, reason?: string): UserEntity {
+    this.props.isBlocked = true;
+    this.props.blockedUntil = blockedUntil;
+    this.props.blockReason = reason;
+    return this;
+  }
+
+  unblockUser(): UserEntity {
+    this.props.isBlocked = false;
+    this.props.blockedUntil = undefined;
+    this.props.blockReason = undefined;
+    return this;
   }
 
   private baseEditPersonalName(firstName: string, lastName: string, middleName?: string): UserEntity {

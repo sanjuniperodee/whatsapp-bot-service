@@ -6,8 +6,8 @@ import { WhatsAppService } from "@modules/whatsapp/whatsapp.service";
 import {
   TaxiContextDomainRepositoriesModule
 } from '../../taxi-context/domain-repositories/taxi-context-domain-repositories.module';
-import { OrderRequestModule } from '@domain/order-request/order-request.module';
-import { CloudCacheStorageModule } from '@third-parties/cloud-cache-storage/src';
+import { OrderRequestModule } from '../../taxi-context/domains/order-request/order-request.module';
+import { CloudCacheStorageModule } from '../../third-parties/cloud-cache-storage/src/cloud-cache-storage.module';
 import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
 
 @Module({

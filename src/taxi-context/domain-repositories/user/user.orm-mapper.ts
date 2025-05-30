@@ -14,6 +14,9 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
       phone: props.phone,
       lastSms: props.lastSms,
       deviceToken: props.deviceToken,
+      isBlocked: props.isBlocked || false,
+      blockedUntil: props.blockedUntil,
+      blockReason: props.blockReason,
     };
   }
 
@@ -26,7 +29,10 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
       lastName: ormEntity.lastName,
       middleName: ormEntity.middleName,
       lastSms: ormEntity.lastSms,
-      deviceToken: ormEntity.deviceToken
+      deviceToken: ormEntity.deviceToken,
+      isBlocked: ormEntity.isBlocked,
+      blockedUntil: ormEntity.blockedUntil,
+      blockReason: ormEntity.blockReason
     };
 
     return { id, props };

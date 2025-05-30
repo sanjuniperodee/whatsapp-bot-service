@@ -23,12 +23,15 @@
     "seed:run": "yarn _smart-knex seed:run"
   },
   "dependencies": {
+    "@nestjs/common": "^10.3.10",
+    "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.3.10",
     "@nestjs/cqrs": "^10.2.7",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.10",
     "@nestjs/platform-socket.io": "^10.3.10",
+    "@nestjs/schedule": "^6.0.0",
     "@nestjs/serve-static": "^4.0.2",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "^10.0.2",
@@ -42,7 +45,9 @@
     "joi": "^17.13.3",
     "knex": "^3.1.0",
     "libphonenumber-js": "^1.11.4",
+    "ll": "^1.2.0",
     "moment": "^2.30.1",
+    "nvm": "^0.0.4",
     "objection": "^3.1.4",
     "oxide.ts": "^1.1.0",
     "passport": "^0.7.0",
@@ -54,18 +59,17 @@
     "socket.io-client": "^4.7.5",
     "string-similarity": "^4.0.4",
     "swagger-ui-express": "^5.0.1",
+    "tsconfig-paths": "^4.2.0",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
-    "@nestjs/common": "^10.3.10",
-    "@nestjs/config": "^3.2.3",
     "@types/bcrypt": "^5.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.11.6",
     "@types/uuid": "^10.0.0",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.3"
   },
   "jest": {
@@ -82,8 +86,8 @@
       "@libs/(.*)": "<rootDir>/libs/$1",
       "@modules/(.*)": "<rootDir>/modules/$1",
       "@infrastructure/(.*)": "<rootDir>/infrastructure/$1",
-      "@domains/(.*)": "<rootDir>/rental-context/domains/$1",
-      "@domain-value-objects/(.*)": "<rootDir>/rental-context/domain-value-objects/$1",
+      "@domains/(.*)": "<rootDir>/taxi-context/domains/$1",
+      "@domain-value-objects/(.*)": "<rootDir>/taxi-context/domain-value-objects/$1",
       "@third-parties/(.*)": "<rootDir>/third-parties/$1",
       "src/(.*)": "<rootDir>/$1"
     },

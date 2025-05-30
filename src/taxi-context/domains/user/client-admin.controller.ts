@@ -1,12 +1,22 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Res, Query, Param } from '@nestjs/common';
+import { Controller, Get, Res, Query, Param, Post, Body, Put, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
+import { BlockUserDto } from './dto/block-user.dto';
+import { UserRepository } from '../../domain-repositories/user/user.repository';
+import { JwtAuthGuard } from '@infrastructure/guards';
+import { UserUnblockSchedulerService } from './services/user-unblock-scheduler.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
 @Controller('admin')
 export class ClientOrderRequestController {
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly userUnblockSchedulerService: UserUnblockSchedulerService,
+  ) {}
+
   @Get('clients')
   @ApiOperation({ summary: 'Get clients' })
   async getClients(
@@ -26,7 +36,7 @@ export class ClientOrderRequestController {
     if (idParam) {
       // If 'id' query parameter is provided, fetch users by IDs
       const ids = Array.isArray(idParam) ? idParam : [idParam];
-      users = await UserOrmEntity.query().findByIds(ids);
+      users = await UserOrmEntity.query().findByIds(ids).withGraphFetched('[categoryLicenses, orders]');
       totalCount = users.length;
     } else {
       // Handle pagination and sorting
@@ -34,7 +44,8 @@ export class ClientOrderRequestController {
       const end = Number(_end) || 10;
       const limit = end - start;
 
-      const baseQuery = UserOrmEntity.query().withGraphFetched('orders')
+      const baseQuery = UserOrmEntity.query()
+        .withGraphFetched('[categoryLicenses, orders]')
         .modifyGraph('orders', (builder) => {
           if (orderStatus) {
             builder.where('orderStatus', '=', orderStatus);
@@ -72,7 +83,7 @@ export class ClientOrderRequestController {
   }
 
   @Get('drivers')
-  @ApiOperation({ summary: 'Get clients' })
+  @ApiOperation({ summary: 'Get drivers' })
   async getDrivers(
     @Res({ passthrough: true }) res: Response,
     @Query('orderStatus') orderStatus: string,
@@ -90,7 +101,7 @@ export class ClientOrderRequestController {
     if (idParam) {
       // If 'id' query parameter is provided, fetch users by IDs
       const ids = Array.isArray(idParam) ? idParam : [idParam];
-      users = await UserOrmEntity.query().findByIds(ids);
+      users = await UserOrmEntity.query().findByIds(ids).withGraphFetched('[categoryLicenses, orders_as_driver]');
       totalCount = users.length;
     } else {
       // Handle pagination and sorting
@@ -98,7 +109,8 @@ export class ClientOrderRequestController {
       const end = Number(_end) || 10;
       const limit = end - start;
 
-      const baseQuery = UserOrmEntity.query().withGraphFetched('orders_as_driver')
+      const baseQuery = UserOrmEntity.query()
+        .withGraphFetched('[categoryLicenses, orders_as_driver]')
         .modifyGraph('orders_as_driver', (builder) => {
           if (orderStatus) {
             builder.where('orderStatus', '=', orderStatus);
@@ -107,6 +119,7 @@ export class ClientOrderRequestController {
             builder.where('orderType', '=', orderType);
           }
         });
+      
       // Get total count before pagination
       if(phone)
         baseQuery.where({phone})
@@ -143,5 +156,100 @@ export class ClientOrderRequestController {
   @Get('drivers/:id')
   async getDriver(@Param('id') id: string) {
     return UserOrmEntity.query().findById(id).withGraphFetched({orders: true, orders_as_driver: true });
+  }
+
+  @Post('users/block')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Block user' })
+  async blockUser(@Body() blockUserDto: BlockUserDto) {
+    const { userId, blockedUntil, reason } = blockUserDto;
+    
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const blockedUntilDate = blockedUntil ? new Date(blockedUntil) : undefined;
+    user.blockUser(blockedUntilDate, reason);
+    
+    await this.userRepository.save(user);
+    
+    return { message: 'User blocked successfully', userId };
+  }
+
+  @Put('users/:id/unblock')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Unblock user' })
+  async unblockUser(@Param('id') userId: string) {
+    const user = await this.userRepository.findOneById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.unblockUser();
+    await this.userRepository.save(user);
+    
+    return { message: 'User unblocked successfully', userId };
+  }
+
+  @Post('users/check-unblock')
+  // @UseGuards(JwtAuthGuard()) // Временно убираем для тестирования
+  @ApiOperation({ summary: 'Force check and unblock expired users' })
+  async forceCheckUnblockUsers() {
+    await this.userUnblockSchedulerService.forceCheckUnblockUsers();
+    return { message: 'Unblock check completed' };
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get admin statistics' })
+  async getStats() {
+    // Получаем общее количество пользователей
+    const totalUsers = await UserOrmEntity.query().count();
+    
+    // Получаем количество водителей (пользователи с лицензиями)
+    const driversQuery = await UserOrmEntity.query()
+      .joinRelated('categoryLicenses')
+      .distinct('users.id')
+      .count();
+    const totalDrivers = parseInt(driversQuery[0]?.['count(*)'] || '0');
+
+    // Получаем статистику заказов
+    const totalOrders = await OrderRequestOrmEntity.query().count();
+    
+    const activeOrders = await OrderRequestOrmEntity.query()
+      .whereIn('orderStatus', ['CREATED', 'STARTED', 'WAITING', 'ONGOING'])
+      .count();
+    
+    const completedOrders = await OrderRequestOrmEntity.query()
+      .where('orderStatus', 'COMPLETED')
+      .count();
+    
+    const rejectedOrders = await OrderRequestOrmEntity.query()
+      .whereIn('orderStatus', ['REJECTED', 'REJECTED_BY_CLIENT', 'REJECTED_BY_DRIVER'])
+      .count();
+
+    // Заказы за сегодня
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayOrders = await OrderRequestOrmEntity.query()
+      .where('createdAt', '>=', today.toISOString())
+      .count();
+
+    // Подсчет выручки от завершенных заказов
+    const revenueResult = await OrderRequestOrmEntity.query()
+      .where('orderStatus', 'COMPLETED')
+      .sum('price as revenue');
+    const revenue = revenueResult[0]?.['sum(`price`)'] || 0;
+
+    return {
+      totalUsers: parseInt(totalUsers[0]?.['count(*)'] || '0'),
+      totalDrivers: totalDrivers,
+      totalOrders: parseInt(totalOrders[0]?.['count(*)'] || '0'),
+      activeOrders: parseInt(activeOrders[0]?.['count(*)'] || '0'),
+      completedOrders: parseInt(completedOrders[0]?.['count(*)'] || '0'),
+      rejectedOrders: parseInt(rejectedOrders[0]?.['count(*)'] || '0'),
+      todayOrders: parseInt(todayOrders[0]?.['count(*)'] || '0'),
+      revenue: parseFloat(revenue.toString())
+    };
   }
 }

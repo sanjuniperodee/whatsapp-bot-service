@@ -1,73 +1,150 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Админ панель такси
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Современная админ панель для управления системой заказа такси, построенная на React с TypeScript и Material-UI.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Возможности
 
-## Description
+### 🔐 Аутентификация
+- Безопасный вход в систему
+- JWT токены для авторизации
+- Автоматическое перенаправление
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 📊 Dashboard
+- Общая статистика системы
+- Количество пользователей, водителей, заказов
+- Информация о выручке
+- Статистика по статусам заказов
 
-## Installation
+### 👥 Управление клиентами
+- Просмотр списка всех клиентов
+- Поиск и фильтрация
+- Блокировка/разблокировка пользователей
+- Настройка времени блокировки
+- Указание причины блокировки
 
+### 🚗 Управление водителями
+- Просмотр списка водителей
+- Информация о лицензиях и категориях
+- Статистика выполненных заказов
+- Управление статусом водителей
+
+### 📋 Управление заказами
+- Просмотр всех заказов в системе
+- Фильтрация по статусу, типу, клиенту, водителю
+- Детальная информация о каждом заказе
+- Отслеживание статусов заказов
+
+## Технологии
+
+- **React 18** с TypeScript
+- **Material-UI (MUI)** для UI компонентов
+- **React Router** для навигации
+- **Axios** для API запросов
+- **Date-fns** для работы с датами
+- **MUI DataGrid** для таблиц с пагинацией
+
+## Установка и запуск
+
+### Предварительные требования
+- Node.js 16+ 
+- npm или yarn
+
+### Установка зависимостей
 ```bash
-$ yarn install
+npm install
 ```
 
-## Running the app
-
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+### Настройка переменных окружения
+Создайте файл `.env` в корне проекта:
+```env
+REACT_APP_API_URL=http://localhost:3001
+GENERATE_SOURCEMAP=false
 ```
 
-## Test
-
+### Запуск в режиме разработки
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+npm start
 ```
 
-## Support
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Сборка для продакшена
+```bash
+npm run build
+```
 
-## Stay in touch
+## Демо доступ
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Для входа в систему используйте:
+- **Логин:** admin
+- **Пароль:** admin123
 
-## License
+## API Endpoints
 
-Nest is [MIT licensed](LICENSE).
+Админ панель работает со следующими API endpoints:
+
+### Клиенты
+- `GET /admin/clients` - получение списка клиентов
+- `GET /admin/clients/:id` - получение клиента по ID
+- `POST /admin/users/block` - блокировка пользователя
+- `PUT /admin/users/:id/unblock` - разблокировка пользователя
+
+### Водители  
+- `GET /admin/drivers` - получение списка водителей
+- `GET /admin/drivers/:id` - получение водителя по ID
+
+### Заказы
+- `GET /admin/order-requests` - получение списка заказов
+- `GET /admin/order-requests/:id` - получение заказа по ID
+
+## Структура проекта
+
+```
+src/
+├── components/          # Переиспользуемые компоненты
+│   ├── Layout.tsx      # Основной layout с навигацией
+│   └── Login.tsx       # Страница авторизации
+├── contexts/           # React контексты
+│   └── AuthContext.tsx # Контекст аутентификации
+├── pages/              # Страницы приложения
+│   ├── Dashboard.tsx   # Главная страница
+│   ├── Clients.tsx     # Управление клиентами
+│   ├── Drivers.tsx     # Управление водителями
+│   └── Orders.tsx      # Управление заказами
+├── services/           # API сервисы
+│   └── api.ts          # Основной API сервис
+├── types/              # TypeScript типы
+│   └── index.ts        # Интерфейсы и енумы
+└── App.tsx             # Главный компонент приложения
+```
+
+## Функциональность
+
+### Блокировка пользователей
+- Временная блокировка (1 час, 1 день, 1 неделя, 1 месяц)
+- Блокировка до определенной даты
+- Постоянная блокировка
+- Указание причины блокировки
+- Автоматическая разблокировка по истечении времени
+
+### Фильтрация и поиск
+- Поиск по номеру телефона
+- Фильтрация по статусам заказов
+- Фильтрация по типам заказов
+- Поиск по ID клиента/водителя
+
+### Пагинация
+- Серверная пагинация для больших объемов данных
+- Настраиваемый размер страницы (25, 50, 100 записей)
+- Сортировка по различным полям
+
+## Безопасность
+
+- JWT токены для аутентификации
+- Автоматический logout при истечении токена
+- Защищенные маршруты
+- Валидация данных на клиенте
+
+## Поддержка
+
+Для вопросов и предложений обращайтесь к разработчикам проекта.

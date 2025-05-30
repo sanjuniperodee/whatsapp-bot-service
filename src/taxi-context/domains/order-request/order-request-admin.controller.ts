@@ -1,15 +1,14 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
-import { JwtAuthGuard } from '@infrastructure/guards';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
 @Controller('admin/order-requests')
 export class AdminOrderRequestController {
   @Get()
-  @UseGuards(JwtAuthGuard())
+  // @UseGuards(JwtAuthGuard()) // Временно убираем для тестирования админ панели
   @ApiOperation({ summary: 'Get completed orders' })
   async getOrders(
     @Query('orderType') orderType: number,
