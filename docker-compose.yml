@@ -12,18 +12,18 @@ services:
 
   # Comment out local postgres since using remote database
   postgres:
-   image: postgres:13
-   container_name: postgres
-   env_file:
-     - .env
-   environment:
-     POSTGRES_USER: ${DATABASE_USER}
-     POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-     POSTGRES_DB: ${DATABASE_NAME}
-   ports:
-     - "5432:5432"
-   volumes:
-     - postgres_data:/var/lib/postgresql/data
+    image: postgres:13
+    container_name: postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:latest
@@ -31,5 +31,5 @@ services:
       - "6379:6379"
     command: redis-server --requirepass BekkhnN017
 
-# volumes:
-#   postgres_data:
+volumes:
+  postgres_data:
