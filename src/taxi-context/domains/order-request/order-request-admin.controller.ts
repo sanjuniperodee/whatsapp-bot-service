@@ -28,6 +28,7 @@ export class AdminOrderRequestController {
 
     // Build the base query
     const baseQuery = OrderRequestOrmEntity.query()
+      .withGraphFetched('[client, driver]')
 
     if(orderStatus)
       baseQuery.where({'orderStatus': orderStatus});
@@ -65,6 +66,8 @@ export class AdminOrderRequestController {
 
   @Get(':id')
   async getUser(@Param('id') id: string) {
-    return OrderRequestOrmEntity.query().findById(id);
+    return OrderRequestOrmEntity.query()
+      .findById(id)
+      .withGraphFetched('[client, driver]');
   }
 }
