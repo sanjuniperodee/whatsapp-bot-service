@@ -1,7 +1,7 @@
 import { PhoneValidator } from '@infrastructure/validators';
 import { SmscodeValidator } from '@infrastructure/validators/smscode.validator';
-import { IsString, Validate } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, Validate, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SignInByPhoneConfirmCodeRequest {
   @ApiProperty()
@@ -13,4 +13,9 @@ export class SignInByPhoneConfirmCodeRequest {
   @Validate(SmscodeValidator)
   @Validate(PhoneValidator)
   readonly smscode: string;
+
+  @ApiPropertyOptional({ description: 'Device token for push notifications' })
+  @IsOptional()
+  @IsString()
+  readonly device_token?: string;
 }

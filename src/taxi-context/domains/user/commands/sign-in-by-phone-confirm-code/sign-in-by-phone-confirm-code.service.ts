@@ -57,6 +57,19 @@ export class SignInByPhoneConfirmCodeService {
     const token = await this.authService.createToken(TokenType.USER, { id: user.id.value, phone });
     const refreshToken = await this.authService.createToken(TokenType.REFRESH, { id: user.id.value, phone });
 
+    // Автоматически устанавливаем deviceToken если он передан
+    if (dto.device_token && dto.device_token.trim()) {
+      try {
+        await UserOrmEntity.query().patchAndFetchById(userId.id, {
+          deviceToken: dto.device_token.trim(),
+        });
+        console.log(`🔑 DeviceToken автоматически установлен при входе для пользователя ${userId.id}`);
+      } catch (error) {
+        console.error(`❌ Ошибка установки deviceToken при входе для пользователя ${userId.id}:`, error);
+        // Не прерываем процесс входа если не удалось установить токен
+      }
+    }
+
     return {
       userId: user.id,
       token,

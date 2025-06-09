@@ -38,7 +38,7 @@ export class CompleteOrderService {
           client.getPropsCopy().deviceToken || ''
         )
 
-        await this.orderRequestGateway.emitEvent(client.id.value, 'rideEnded', order, driver)
+        await this.orderRequestGateway.handleRideEnded(order, driver)
       }
     }
   }

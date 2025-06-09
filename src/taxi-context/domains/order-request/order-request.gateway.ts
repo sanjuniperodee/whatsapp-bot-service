@@ -17,7 +17,7 @@ import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity
 import { NotificationService } from '@modules/firebase/notification.service';
 
 @WebSocketGateway({
-  path: '/socket.io/',  // Ensure this matches the client or change it
+  path: '/socket.io/',
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
@@ -28,152 +28,548 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   @WebSocketServer() server: Server;
 
+  // Хранение подключений по типам пользователей
+  private clientConnections = new Map<string, Set<string>>(); // userId -> Set<socketId>
+  private driverConnections = new Map<string, Set<string>>(); // driverId -> Set<socketId>
+  private onlineDrivers = new Set<string>(); // Set<driverId>
+
   constructor(
     private readonly orderRequestRepository: OrderRequestRepository,
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
     private readonly notificationService: NotificationService,
-    // @Inject(forwardRef(() => WhatsAppService))
-    // private readonly whatsAppService: WhatsAppService,
   ) {}
 
   async handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId as string;
+    try {
+      const { userType, userId, driverId, sessionId, lat, lng } = client.handshake.query as any;
+      
+      console.log(`🔌 Новое подключение: userType=${userType}, userId=${userId}, driverId=${driverId}`);
 
-    if (userId) {
-      // Получаем текущие сокеты пользователя
-      const connections = await this.cacheStorageService.getSocketIds(userId);
+      if (!sessionId) {
+        console.log('❌ Отклонено подключение: отсутствует sessionId');
+        client.disconnect();
+        return;
+      }
 
-      // Удаляем все предыдущие сокеты из Redis и отключаем их
-      // await Promise.all(
-      //   connections.map(async (socketId) => {
-      //     const existingSocket = this.server.sockets.sockets.get(socketId);
-      //     if (existingSocket) {
-      //       existingSocket.disconnect(true); // Отключаем сокет
-      //     }
-      //     await this.cacheStorageService.removeSocketId(userId, socketId); // Удаляем сокет из Redis
-      //   }),
-      // );
+      if (userType === 'client') {
+        await this.handleClientConnection(client, userId, sessionId);
+      } else if (userType === 'driver') {
+        await this.handleDriverConnection(client, driverId, sessionId, lat, lng);
+      } else {
+        console.log(`❌ Неизвестный тип пользователя: ${userType}`);
+        client.disconnect();
+        return;
+      }
 
-      // Добавляем новый сокет пользователя в Redis
-      await this.cacheStorageService.addSocketId(userId, client.id);
-
-      // Логируем подключение
-      console.log({ CONNECTED: userId });
-
-      // Отправляем событие пользователю
-      this.server.to(client.id).emit('newOrder');
-
-      // Присоединяем сокет к комнате пользователя
-      client.join(userId);
+      console.log(`✅ Пользователь подключен: ${userType} - ${userId || driverId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при подключении:', error);
+      client.disconnect();
     }
+  }
+
+  private async handleClientConnection(client: Socket, userId: string, sessionId: string) {
+    if (!userId) {
+      client.disconnect();
+      return;
+    }
+
+    // Добавляем в хранилище клиентских подключений
+    if (!this.clientConnections.has(userId)) {
+      this.clientConnections.set(userId, new Set());
+    }
+    this.clientConnections.get(userId)!.add(client.id);
+
+    // Присоединяем к комнате клиента
+    client.join(`client_${userId}`);
+
+    // Обновляем кеш
+    await this.cacheStorageService.addSocketId(userId, client.id);
+
+    console.log(`📱 Клиент подключен: ${userId}`);
+  }
+
+  private async handleDriverConnection(client: Socket, driverId: string, sessionId: string, lat?: string, lng?: string) {
+    if (!driverId) {
+      client.disconnect();
+      return;
+    }
+
+    // Добавляем в хранилище подключений водителей
+    if (!this.driverConnections.has(driverId)) {
+      this.driverConnections.set(driverId, new Set());
+    }
+    this.driverConnections.get(driverId)!.add(client.id);
+
+    // Присоединяем к комнатам водителя
+    client.join(`driver_${driverId}`);
+    client.join('all_drivers'); // Комната для всех водителей
+
+    // Обновляем кеш
+    await this.cacheStorageService.addSocketId(driverId, client.id);
+
+    // Обновляем позицию если передана
+    if (lat && lng) {
+      await this.cacheStorageService.updateDriverLocation(driverId, String(parseFloat(lat)), String(parseFloat(lng)));
+    }
+
+    console.log(`🚗 Водитель подключен: ${driverId}`);
   }
 
   async handleDisconnect(client: Socket) {
-    const userId = client.handshake.query.userId as string;
+    try {
+      const { userType, userId, driverId } = client.handshake.query as any;
 
-    if (userId) {
-      const socketIds: string[] = await this.cacheStorageService.getSocketIds(userId);
-
-      for (const socketId of socketIds) {
-        const socket = this.server.sockets.sockets.get(socketId); // Используем `this.server`
-        if (socket) {
-          socket.disconnect(true); // Полностью отключаем сокет
-        }
+      if (userType === 'client' && userId) {
+        await this.handleClientDisconnection(client, userId);
+      } else if (userType === 'driver' && driverId) {
+        await this.handleDriverDisconnection(client, driverId);
       }
-      // Удаляем Socket ID из множества
-      console.log({"DISCONNECTED:" : userId})
 
-      await this.cacheStorageService.removeSocketId(userId, client.id);
-      client.leave(userId);
+      console.log(`🔌 Пользователь отключен: ${userType} - ${userId || driverId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при отключении:', error);
     }
   }
 
-  @SubscribeMessage('updateLocation')
-  async handleLocationUpdate(client: Socket, data: { driverId: string, latitude: number, longitude: number, orderId: string }) {
-    const parsedData = JSON.parse(data.toString())
-    const { driverId, latitude, longitude } = parsedData;
-    await this.cacheStorageService.updateDriverLocation(driverId, latitude, longitude);
-
-    const orderRequest = await this.orderRequestRepository.findActiveByDriverId(driverId)
-
-    if (orderRequest) {
-      const user = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-      if (user) {
-        const clientSocketIds = await this.cacheStorageService.getSocketIds(user.id.value);
-        if (clientSocketIds) {
-          clientSocketIds.forEach(socketId => {
-            this.server.to(socketId).emit('driverLocation', { lat: latitude, lng: longitude });
-          });
-        }
+  private async handleClientDisconnection(client: Socket, userId: string) {
+    // Удаляем из хранилища клиентских подключений
+    const clientSockets = this.clientConnections.get(userId);
+    if (clientSockets) {
+      clientSockets.delete(client.id);
+      if (clientSockets.size === 0) {
+        this.clientConnections.delete(userId);
       }
     }
+
+    // Покидаем комнаты
+    client.leave(`client_${userId}`);
+
+    // Обновляем кеш
+    await this.cacheStorageService.removeSocketId(userId, client.id);
+
+    console.log(`📱 Клиент отключен: ${userId}`);
+  }
+
+  private async handleDriverDisconnection(client: Socket, driverId: string) {
+    // Удаляем из хранилища подключений водителей
+    const driverSockets = this.driverConnections.get(driverId);
+    if (driverSockets) {
+      driverSockets.delete(client.id);
+      if (driverSockets.size === 0) {
+        this.driverConnections.delete(driverId);
+        this.onlineDrivers.delete(driverId); // Водитель больше не онлайн
+      }
+    }
+
+    // Покидаем комнаты
+    client.leave(`driver_${driverId}`);
+    client.leave('all_drivers');
+
+    // Обновляем кеш
+    await this.cacheStorageService.removeSocketId(driverId, client.id);
+
+    console.log(`🚗 Водитель отключен: ${driverId}`);
+  }
+
+  @SubscribeMessage('driverOnline')
+  async handleDriverOnline(client: Socket, data: any) {
+    const driverId = client.handshake.query.driverId as string;
+    if (driverId) {
+      this.onlineDrivers.add(driverId);
+      client.join('online_drivers');
+      console.log(`🟢 Водитель вышел онлайн: ${driverId}`);
+    }
+  }
+
+  @SubscribeMessage('driverOffline')
+  async handleDriverOffline(client: Socket, data: any) {
+    const driverId = client.handshake.query.driverId as string;
+    if (driverId) {
+      this.onlineDrivers.delete(driverId);
+      client.leave('online_drivers');
+      console.log(`🔴 Водитель ушел оффлайн: ${driverId}`);
+    }
+  }
+
+  @SubscribeMessage('driverLocationUpdate')
+  async handleDriverLocationUpdate(client: Socket, data: { lat: number, lng: number, timestamp?: number }) {
+    const driverId = client.handshake.query.driverId as string;
+    if (!driverId) return;
+
+    const { lat, lng } = data;
+    
+    try {
+      // ВСЕГДА обновляем позицию в кеше, независимо от наличия заказа
+      await this.cacheStorageService.updateDriverLocation(driverId, String(lat), String(lng));
+
+      // Находим активный заказ водителя
+      const orderRequest = await this.orderRequestRepository.findActiveByDriverId(driverId);
+
+      // Отправляем позицию клиенту ТОЛЬКО если есть активный заказ
+      if (orderRequest) {
+        const clientId = orderRequest.getPropsCopy().clientId.value;
+        
+        await this.notifyClient(clientId, 'driverLocation', {
+          lat,
+          lng,
+          driverId,
+          orderId: orderRequest.id.value,
+          orderStatus: orderRequest.getPropsCopy().orderStatus,
+          timestamp: data.timestamp || Date.now()
+        });
+      }
+
+      // Логируем обновление позиции (можно убрать в продакшене для экономии логов)
+      // console.log(`📍 Обновлена позиция водителя ${driverId}: ${lat}, ${lng}`);
+      
+    } catch (error) {
+      console.error(`❌ Ошибка обновления позиции водителя ${driverId}:`, error);
+    }
+  }
+
+  // === МЕТОДЫ ДЛЯ УВЕДОМЛЕНИЙ ===
+
+  // Уведомление конкретного клиента
+  async notifyClient(userId: string, event: string, data: any) {
+    this.server.to(`client_${userId}`).emit(event, data);
+    console.log(`📱 Отправлено клиенту ${userId}: ${event}`);
+  }
+
+  // Уведомление конкретного водителя
+  async notifyDriver(driverId: string, event: string, data: any) {
+    this.server.to(`driver_${driverId}`).emit(event, data);
+    console.log(`🚗 Отправлено водителю ${driverId}: ${event}`);
+  }
+
+  // Рассылка всем онлайн водителям
+  async broadcastToOnlineDrivers(event: string, data: any) {
+    this.server.to('online_drivers').emit(event, data);
+    console.log(`📢 Рассылка всем онлайн водителям: ${event}`);
   }
 
   async handleOrderCreated(orderRequest: OrderRequestEntity) {
     const lat = orderRequest.getPropsCopy().lat;
     const lng = orderRequest.getPropsCopy().lng;
+    const orderType = orderRequest.getPropsCopy().orderType;
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+
     if (!lat || !lng) {
       throw new Error('Latitude and Longitude are required');
     }
-    const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
-    const drivers = await UserOrmEntity.query().findByIds(nearestDrivers).withGraphFetched({categoryLicenses: true})
-    console.log(drivers)
-    for (const driver of drivers) {
-      const driverSocketIds = await this.cacheStorageService.getSocketIds(driver.id);
-      console.log('Уведомление о новом заказе!')
-      console.log(driver.id)
-      const type = orderRequest.getPropsCopy().orderType
-      const hasMatchingCategory = driver.categoryLicenses?.some(category => category.categoryType === type);
-      if(hasMatchingCategory && orderRequest.getPropsCopy().clientId.value != driver.id){
-        if (driverSocketIds.length) {
-          await Promise.all(driverSocketIds.map(async socketId => {
-            await this.server.to(socketId).emit('newOrder');
-          }))
-        }
-        if(driver.deviceToken){
-          let text = ''
-          switch (type){
-            case OrderType.CARGO:
-              text = 'Грузоперевозка'
-              break
-            case OrderType.DELIVERY:
-              text = 'Доставка'
-              break
-            case OrderType.INTERCITY_TAXI:
-              text = 'Межгород'
-              break
-            case OrderType.TAXI:
-              text = 'Такси'
+
+    try {
+      // Находим ближайших водителей
+      const nearestDrivers = await this.cacheStorageService.findNearestDrivers(lat, lng);
+      const drivers = await UserOrmEntity.query()
+        .findByIds(nearestDrivers.map(id => String(id)))
+        .withGraphFetched({ categoryLicenses: true });
+
+      console.log(`📦 Создан новый заказ ${orderRequest.id.value}, найдено водителей: ${drivers.length}`);
+
+      for (const driver of drivers) {
+        // Проверяем категорию водителя
+        const hasMatchingCategory = driver.categoryLicenses?.some(
+          category => category.categoryType === orderType
+        );
+
+        // Не отправляем заказ самому клиенту если он водитель
+        if (hasMatchingCategory && clientId !== driver.id) {
+          
+          // Отправляем WebSocket уведомление только онлайн водителям
+          if (this.onlineDrivers.has(driver.id)) {
+            await this.notifyDriver(driver.id, 'newOrder', {
+              id: orderRequest.id.value,
+              from: orderRequest.getPropsCopy().from,
+              to: orderRequest.getPropsCopy().to,
+              price: orderRequest.getPropsCopy().price,
+              orderType: orderType,
+              clientId: clientId,
+              lat,
+              lng,
+              timestamp: Date.now()
+            });
           }
-          await this.notificationService.sendNotificationByUserId(
-            'Aday Go',
-            `Появился новый заказ для ${text}`,
-            driver.deviceToken
-          )
+
+          // Отправляем push уведомление если есть device token
+          if (driver.deviceToken) {
+            let categoryText = '';
+            switch (orderType) {
+              case OrderType.CARGO:
+                categoryText = 'Грузоперевозка';
+                break;
+              case OrderType.DELIVERY:
+                categoryText = 'Доставка';
+                break;
+              case OrderType.INTERCITY_TAXI:
+                categoryText = 'Межгород';
+                break;
+              case OrderType.TAXI:
+                categoryText = 'Такси';
+            }
+
+            await this.notificationService.sendNotificationByUserId(
+              'Aday Go',
+              `Появился новый заказ для ${categoryText}`,
+              driver.deviceToken
+            );
+          }
         }
       }
+    } catch (error) {
+      console.error('❌ Ошибка при обработке создания заказа:', error);
     }
   }
 
   async handleOrderRejected(userId: string) {
-    const clientSocketIds = await this.cacheStorageService.getSocketIds(userId);
-    if (clientSocketIds) {
-      await clientSocketIds.forEach(socketId => {
-        this.server.to(socketId).emit('orderRejected');
+    try {
+      await this.notifyClient(userId, 'orderRejected', {
+        timestamp: Date.now()
       });
+      
+      console.log(`❌ Заказ отклонен для клиента ${userId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке отклонения заказа:', error);
     }
   }
 
-  async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity){
-    const socketIds = await this.cacheStorageService.getSocketIds(userId);
+  async handleOrderAccepted(orderRequest: OrderRequestEntity, driver: UserEntity) {
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+    const orderId = orderRequest.id.value;
+    const driverId = driver.id.value;
 
-    if (socketIds.length) {
-      // this.server.to(socketIds[socketIds.length-1]).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
-
-      await socketIds.forEach(socketId => {
-        this.server.to(socketId).emit(event, { order: order.getPropsCopy(), status: order.getPropsCopy().orderStatus, driver: driver.getPropsCopy() });
+    try {
+      // Уведомляем клиента о принятии заказа
+      await this.notifyClient(clientId, 'orderAccepted', {
+        orderId,
+        driverId,
+        driver: driver.getPropsCopy(),
+        order: orderRequest.getPropsCopy(),
+        timestamp: Date.now()
       });
+
+      // Уведомляем других водителей что заказ занят
+      await this.broadcastToOnlineDrivers('orderTaken', {
+        orderId,
+        takenBy: driverId,
+        timestamp: Date.now()
+      });
+
+      console.log(`✅ Заказ ${orderId} принят водителем ${driverId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке принятия заказа:', error);
+    }
+  }
+
+  async handleDriverArrived(orderRequest: OrderRequestEntity, driver: UserEntity) {
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+    const orderId = orderRequest.id.value;
+    const driverId = driver.id.value;
+
+    try {
+      // Уведомляем клиента что водитель прибыл (на месте)
+      await this.notifyClient(clientId, 'driverArrived', {
+        orderId,
+        driverId,
+        driver: driver.getPropsCopy(),
+        order: orderRequest.getPropsCopy(),
+        message: 'Водитель прибыл и ждет вас',
+        timestamp: Date.now()
+      });
+
+      console.log(`🚗 Водитель ${driverId} прибыл к клиенту ${clientId} для заказа ${orderId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке прибытия водителя:', error);
+    }
+  }
+
+  async handleRideStarted(orderRequest: OrderRequestEntity, driver: UserEntity) {
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+    const orderId = orderRequest.id.value;
+    const driverId = driver.id.value;
+
+    try {
+      // Уведомляем клиента что поездка началась
+      await this.notifyClient(clientId, 'rideStarted', {
+        orderId,
+        driverId,
+        driver: driver.getPropsCopy(),
+        order: orderRequest.getPropsCopy(),
+        message: 'Поездка началась',
+        timestamp: Date.now()
+      });
+
+      console.log(`🚀 Поездка началась: заказ ${orderId}, водитель ${driverId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке начала поездки:', error);
+    }
+  }
+
+  async handleRideEnded(orderRequest: OrderRequestEntity, driver: UserEntity) {
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+    const orderId = orderRequest.id.value;
+    const driverId = driver.id.value;
+
+    try {
+      // Уведомляем клиента что поездка завершена
+      await this.notifyClient(clientId, 'rideEnded', {
+        orderId,
+        driverId,
+        driver: driver.getPropsCopy(),
+        order: orderRequest.getPropsCopy(),
+        message: 'Поездка завершена',
+        timestamp: Date.now()
+      });
+
+      console.log(`🏁 Поездка завершена: заказ ${orderId}, водитель ${driverId}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке завершения поездки:', error);
+    }
+  }
+
+  async handleOrderCancelledByClient(orderRequest: OrderRequestEntity, reason: string = 'cancelled_by_client') {
+    const orderId = orderRequest.id.value;
+    const driverId = orderRequest.getPropsCopy().driverId?.value;
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+
+    try {
+      // Если заказ был принят водителем - уведомляем его об отмене
+      if (driverId) {
+        await this.notifyDriver(driverId, 'orderCancelledByClient', {
+          orderId,
+          clientId,
+          reason,
+          message: 'Клиент отменил заказ',
+          timestamp: Date.now()
+        });
+      }
+
+      // Уведомляем всех водителей об удалении заказа из списка
+      await this.broadcastToOnlineDrivers('orderDeleted', {
+        orderId,
+        reason: 'cancelled_by_client',
+        timestamp: Date.now()
+      });
+
+      console.log(`🚫 Заказ ${orderId} отменен клиентом. Причина: ${reason}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке отмены заказа клиентом:', error);
+    }
+  }
+
+  async handleOrderCancelledByDriver(orderRequest: OrderRequestEntity, driver: UserEntity, reason: string = 'cancelled_by_driver') {
+    const orderId = orderRequest.id.value;
+    const driverId = driver.id.value;
+    const clientId = orderRequest.getPropsCopy().clientId.value;
+
+    try {
+      // Уведомляем клиента об отмене заказа водителем
+      await this.notifyClient(clientId, 'orderCancelledByDriver', {
+        orderId,
+        driverId,
+        driver: driver.getPropsCopy(),
+        reason,
+        message: 'Водитель отменил заказ',
+        timestamp: Date.now()
+      });
+
+      // Заказ снова становится доступным для других водителей
+      await this.broadcastToOnlineDrivers('newOrder', {
+        id: orderId,
+        from: orderRequest.getPropsCopy().from,
+        to: orderRequest.getPropsCopy().to,
+        price: orderRequest.getPropsCopy().price,
+        orderType: orderRequest.getPropsCopy().orderType,
+        clientId: clientId,
+        lat: orderRequest.getPropsCopy().lat,
+        lng: orderRequest.getPropsCopy().lng,
+        message: 'Заказ снова доступен',
+        timestamp: Date.now()
+      });
+
+      console.log(`🚫 Заказ ${orderId} отменен водителем ${driverId}. Причина: ${reason}`);
+      
+    } catch (error) {
+      console.error('❌ Ошибка при обработке отмены заказа водителем:', error);
+    }
+  }
+
+  // Новый метод для периодической отправки позиций всех водителей клиентам (если нужно)
+  async broadcastDriversLocationToClients() {
+    try {
+      // Получаем всех водителей с активными заказами
+      const activeOrders = await this.orderRequestRepository.findMany({
+        orderStatus: { $in: ['STARTED', 'WAITING', 'ONGOING'] } as any
+      });
+
+      for (const order of activeOrders) {
+        const driverId = order.getPropsCopy().driverId?.value;
+        const clientId = order.getPropsCopy().clientId.value;
+
+        if (driverId && clientId) {
+          // Получаем последнюю позицию водителя из кеша
+          const location = await this.cacheStorageService.getDriverLocation(driverId);
+          
+          if (location) {
+            await this.notifyClient(clientId, 'driverLocation', {
+              lat: location.latitude,
+              lng: location.longitude,
+              driverId,
+              orderId: order.id.value,
+              orderStatus: order.getPropsCopy().orderStatus,
+              timestamp: Date.now()
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Ошибка рассылки позиций водителей:', error);
+    }
+  }
+
+  // Вспомогательные методы для получения статистики
+  getConnectionStats() {
+    return {
+      clients: this.clientConnections.size,
+      drivers: this.driverConnections.size,
+      onlineDrivers: this.onlineDrivers.size,
+      totalSockets: this.server.sockets.sockets.size
+    };
+  }
+
+  isDriverOnline(driverId: string): boolean {
+    return this.onlineDrivers.has(driverId);
+  }
+
+  isClientConnected(userId: string): boolean {
+    return this.clientConnections.has(userId);
+  }
+
+  async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity) {
+    try {
+      const data = {
+        order: order.getPropsCopy(),
+        status: order.getPropsCopy().orderStatus,
+        driver: driver.getPropsCopy(),
+        timestamp: Date.now()
+      };
+
+      await this.notifyClient(userId, event, data);
+      
+      console.log(`📤 Событие ${event} отправлено клиенту ${userId}`);
+      
+    } catch (error) {
+      console.error(`❌ Ошибка отправки события ${event} клиенту ${userId}:`, error);
     }
   }
 }
+

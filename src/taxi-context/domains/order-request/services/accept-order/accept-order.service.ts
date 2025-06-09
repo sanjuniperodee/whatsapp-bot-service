@@ -57,7 +57,7 @@ export class AcceptOrderService{
         //   `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         // )wч1
 
-        await this.orderRequestGateway.emitEvent(client.id.value, 'orderAccepted', order, driver)
+        await this.orderRequestGateway.handleOrderAccepted(order, driver)
       }
     }
   }

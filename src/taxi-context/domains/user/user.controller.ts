@@ -45,6 +45,7 @@ import { SetDeviceTokenRequest } from '@domain/order-request/services/set-device
 import crypto from 'crypto';
 import { LoginRequest } from '@domain/user/commands/login/login.request.dto';
 import { LoginService } from '@domain/user/commands/login/login.service';
+import { NotificationService } from '@modules/firebase/notification.service';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -56,7 +57,8 @@ export class UserController {
     private readonly signInByPhoneSendCodeService: SignInByPhoneSendCodeService,
     private readonly signInByPhoneConfirmCodeService: SignInByPhoneConfirmCodeService,
     private readonly signUpByPhoneCreateUserService: SignUpByPhoneCreateUserService,
-    private readonly loginService: LoginService
+    private readonly loginService: LoginService,
+    private readonly notificationService: NotificationService
   ) {}
 
 
@@ -177,14 +179,66 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard())
   @Post('device')
-  @ApiOperation({ summary: 'Set device token' })
+  @ApiOperation({ summary: 'Set device token for push notifications' })
   @ApiBody({ type: SetDeviceTokenRequest })
   async addDevice(@IAM() user: UserOrmEntity, @Body() input: SetDeviceTokenRequest): Promise<any> {
-    console.log(input.device)
-    const device = await UserOrmEntity.query().patchAndFetchById(user.id, {
-      deviceToken: input.device,
-    });
-    return device.deviceToken;
+    try {
+      console.log(`🔑 Установка deviceToken для пользователя ${user.id}:`, input.device);
+      
+      if (!input.device || input.device.trim() === '') {
+        throw new Error('Device token не может быть пустым');
+      }
+
+      // Обновляем deviceToken в базе данных
+      const updatedUser = await UserOrmEntity.query().patchAndFetchById(user.id, {
+        deviceToken: input.device.trim(),
+      });
+
+      console.log(`✅ DeviceToken успешно установлен для пользователя ${user.id}`);
+      
+      return {
+        success: true,
+        deviceToken: updatedUser.deviceToken,
+        userId: user.id,
+        message: 'Device token успешно обновлен'
+      };
+    } catch (error) {
+      console.error(`❌ Ошибка установки deviceToken для пользователя ${user.id}:`, error);
+      throw new Error(`Не удалось установить device token: ${error.message}`);
+    }
+  }
+
+  @UseGuards(JwtAuthGuard())
+  @Post('test-notification')
+  @ApiOperation({ summary: 'Test push notification for current user' })
+  async testNotification(@IAM() user: UserOrmEntity): Promise<any> {
+    try {
+      if (!user.deviceToken) {
+        return {
+          success: false,
+          message: 'DeviceToken не установлен. Сначала установите токен через /device'
+        };
+      }
+
+      console.log(`🧪 Тестируем уведомление для пользователя ${user.id} с токеном ${user.deviceToken.substring(0, 20)}...`);
+      
+      const result = await this.notificationService.testNotification(user.deviceToken);
+      
+      return {
+        success: result,
+        message: result ? 'Тестовое уведомление отправлено' : 'Не удалось отправить тестовое уведомление',
+        deviceToken: user.deviceToken.substring(0, 20) + '...',
+        userId: user.id
+      };
+      
+    } catch (error) {
+      console.error(`❌ Ошибка тестирования уведомления для пользователя ${user.id}:`, error);
+      return {
+        success: false,
+        message: `Ошибка: ${error.message}`,
+        userId: user.id
+      };
+    }
   }
 
   @Post('login')

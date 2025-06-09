@@ -6,6 +6,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { SignUpByPhoneCreateUserRequest } from './sign-up-by-phone-create-create-user.request.dto';
 import { UserRepository } from 'src/taxi-context/domain-repositories/user/user.repository';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 
 type CreateUserResult = {
   userId: UUID;
@@ -37,10 +38,15 @@ export class SignUpByPhoneCreateUserService {
       phone: phone,
       firstName: firstName,
       lastName: lastName,
+      deviceToken: dto.device_token?.trim() || undefined,
     });
 
     await this.userRepository.save(user);
 
+    // Логируем установку deviceToken если он был передан
+    if (dto.device_token && dto.device_token.trim()) {
+      console.log(`🔑 DeviceToken установлен при регистрации для нового пользователя ${user.id.value}`);
+    }
 
     const token = await this.authService.createToken(TokenType.USER, { id: user.id.value, phone });
     const refreshToken = await this.authService.createToken(TokenType.REFRESH, { id: user.id.value, phone });

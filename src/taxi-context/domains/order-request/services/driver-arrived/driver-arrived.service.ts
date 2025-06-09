@@ -51,7 +51,7 @@ export class DriverArrivedService {
         //   `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         // )
 
-        await this.orderRequestGateway.emitEvent(user.id.value, 'driverArrived', order, driver)
+        await this.orderRequestGateway.handleDriverArrived(order, driver)
       }
     }
   }

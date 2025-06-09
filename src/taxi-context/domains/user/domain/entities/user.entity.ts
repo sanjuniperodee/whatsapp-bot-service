@@ -6,13 +6,13 @@ export interface CreateUserProps {
   phone: string;
   firstName: string;
   lastName: string;
+  deviceToken?: string;
 }
 
 // All properties that a User has
 export type UserProps = CreateUserProps & {
   middleName?: string;
   lastSms?: string;
-  deviceToken?: string;
   isBlocked?: boolean;
   blockedUntil?: Date;
   blockReason?: string;
@@ -28,7 +28,7 @@ export class UserEntity extends AggregateRoot<UserProps> {
       ...create,
       lastSms: undefined,
       middleName: undefined,
-      deviceToken: undefined,
+      deviceToken: create.deviceToken || undefined,
       isBlocked: false,
       blockedUntil: undefined,
       blockReason: undefined

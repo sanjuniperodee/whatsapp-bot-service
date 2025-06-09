@@ -37,7 +37,7 @@ export class StartOrderService {
         // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
         const driverEntity = await this.userRepository.findOneById(driver.id)
         if(driverEntity)
-          await this.orderRequestGateway.emitEvent(client.id.value, 'rideStarted', order, driverEntity)
+          await this.orderRequestGateway.handleRideStarted(order, driverEntity)
 
       }
     }

@@ -31,12 +31,15 @@ export class CancelOrderService {
     const driver = driveId ? await this.userRepository.findOneById(driveId) : undefined
     const deviceToken = driver?.getPropsCopy().deviceToken
     if(driveId && driver && deviceToken) {
-      await this.orderRequestGateway.handleOrderRejected(driveId);
+      await this.orderRequestGateway.handleOrderCancelledByClient(orderRequest, 'cancelled_by_client');
       await this.notificationService.sendNotificationByUserId(
         'Клиент отменил заказ',
         'Найдите новые заказы в приложении',
         deviceToken
       )
+    } else {
+      // Если водитель еще не принял заказ, просто удаляем из списка доступных
+      await this.orderRequestGateway.handleOrderCancelledByClient(orderRequest, 'cancelled_by_client');
     }
   }
 }

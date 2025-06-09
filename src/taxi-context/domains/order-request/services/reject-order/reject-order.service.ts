@@ -14,30 +14,47 @@ export class RejectOrderService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async handle(orderId: string) {
+  async handle(orderId: string, driverId?: string, reason: string = 'rejected_by_driver') {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
     if (!orderRequest) {
-      throw new Error('Session is expired');
+      throw new Error('Order not found');
     }
-    await this.orderRequestRepository.delete(orderRequest);
 
-    const driver = await this.userRepository.findOneById(orderRequest?.getPropsCopy().driverId?.value || '')
+    const driver = await this.userRepository.findOneById(driverId || orderRequest?.getPropsCopy().driverId?.value || '');
+    const client = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
 
-    await this.orderRequestGateway.handleOrderRejected(driver?.id.value || '');
+    if (!driver || !client) {
+      throw new Error('Driver or client not found');
+    }
 
-    const client = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value)
+    // Если водитель уже принял заказ, то это отмена, а не отклонение
+    const currentStatus = orderRequest.getPropsCopy().orderStatus;
+    
+    if (currentStatus === 'CREATED') {
+      // Водитель просто отклоняет заказ (не принимает)
+      // Заказ остается доступным для других водителей
+      await this.notificationService.sendNotificationByUserId(
+        'Водитель отклонил заказ',
+        'Поиск другого водителя...',
+        client.getPropsCopy().deviceToken || ''
+      );
+      
+      // Не удаляем заказ, просто логируем отклонение
+      console.log(`🚫 Водитель ${driver.id.value} отклонил заказ ${orderId}`);
+      
+    } else {
+      // Водитель отменяет уже принятый заказ
+      orderRequest.rejectByDriver();
+      await this.orderRequestRepository.save(orderRequest);
 
-    if (driver && client) {
-      // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель отменил заказ')
       await this.notificationService.sendNotificationByUserId(
         'Водитель отменил заказ',
         'К сожалению водитель отменил заказ, попробуйте повторить попытку',
         client.getPropsCopy().deviceToken || ''
-      )
-      orderRequest.reject('123')
+      );
 
-      if (driver)
-        await this.orderRequestGateway.emitEvent(client.id.value, 'orderRejected', orderRequest, driver)
+      // Используем новый метод gateway для уведомления об отмене водителем
+      await this.orderRequestGateway.handleOrderCancelledByDriver(orderRequest, driver, reason);
     }
   }
 }

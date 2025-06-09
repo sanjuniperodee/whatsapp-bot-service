@@ -1,6 +1,6 @@
 import { PhoneValidator } from '@infrastructure/validators';
-import { IsDefined, IsString, Validate } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger'; // Import ApiModelProperty
+import { IsDefined, IsString, Validate, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'; // Import ApiModelProperty
 
 export class SignUpByPhoneCreateUserRequest {
   @ApiProperty()
@@ -17,4 +17,9 @@ export class SignUpByPhoneCreateUserRequest {
     @IsDefined()
   @Validate(PhoneValidator)
   readonly phone: string;
+
+  @ApiPropertyOptional({ description: 'Device token for push notifications' })
+  @IsOptional()
+  @IsString()
+  readonly device_token?: string;
 }
