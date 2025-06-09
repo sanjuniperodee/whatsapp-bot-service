@@ -92,30 +92,32 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   private async handleDriverConnection(client: Socket, driverId: string, sessionId: string, lat?: string, lng?: string) {
-    if (!driverId) {
-      client.disconnect();
-      return;
-    }
-
-    // Добавляем в хранилище подключений водителей
+    console.log(`🚗 Водитель подключается: ${driverId}, сессия: ${sessionId}`);
+    
+    // Добавляем водителя в комнату его ID для индивидуальных уведомлений
+    client.join(`driver_${driverId}`);
+    
+    // Добавляем в Map подключений водителей
     if (!this.driverConnections.has(driverId)) {
       this.driverConnections.set(driverId, new Set());
     }
     this.driverConnections.get(driverId)!.add(client.id);
-
-    // Присоединяем к комнатам водителя
-    client.join(`driver_${driverId}`);
-    client.join('all_drivers'); // Комната для всех водителей
-
-    // Обновляем кеш
-    await this.cacheStorageService.addSocketId(driverId, client.id);
-
-    // Обновляем позицию если передана
+    
+    // Если указаны координаты - обновляем местоположение
     if (lat && lng) {
-      await this.cacheStorageService.updateDriverLocation(driverId, String(parseFloat(lat)), String(parseFloat(lng)));
+      try {
+        await this.cacheStorageService.updateDriverLocation(driverId, lat, lng);
+        console.log(`📍 Обновлено местоположение водителя ${driverId}: ${lat}, ${lng}`);
+      } catch (error) {
+        console.error(`❌ Ошибка обновления местоположения водителя ${driverId}:`, error);
+      }
     }
-
-    console.log(`🚗 Водитель подключен: ${driverId}`);
+    
+    // Сохраняем связь сокета с водителем
+    client.data.driverId = driverId;
+    client.data.userType = 'driver';
+    
+    console.log(`✅ Водитель ${driverId} успешно подключен (сокет: ${client.id})`);
   }
 
   async handleDisconnect(client: Socket) {
@@ -181,7 +183,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     if (driverId) {
       this.onlineDrivers.add(driverId);
       client.join('online_drivers');
-      console.log(`🟢 Водитель вышел онлайн: ${driverId}`);
+      console.log(`🟢 Водитель вышел онлайн: ${driverId} (всего онлайн: ${this.onlineDrivers.size})`);
+    } else {
+      console.log(`❌ Попытка выйти онлайн без driverId`);
     }
   }
 
@@ -269,12 +273,31 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
         .withGraphFetched({ categoryLicenses: true });
 
       console.log(`📦 Создан новый заказ ${orderRequest.id.value}, найдено водителей: ${drivers.length}`);
+      
+      // ДОПОЛНИТЕЛЬНО: Рассылаем всем онлайн водителям для гарантии доставки
+      console.log(`📢 Количество онлайн водителей: ${this.onlineDrivers.size}`);
+      console.log(`📢 Список онлайн водителей: ${Array.from(this.onlineDrivers).join(', ')}`);
+      
+      // Рассылаем заказ всем онлайн водителям подходящей категории
+      await this.broadcastToOnlineDrivers('newOrder', {
+        id: orderRequest.id.value,
+        from: orderRequest.getPropsCopy().from,
+        to: orderRequest.getPropsCopy().to,
+        price: orderRequest.getPropsCopy().price,
+        orderType: orderType,
+        clientId: clientId,
+        lat,
+        lng,
+        timestamp: Date.now()
+      });
 
       for (const driver of drivers) {
         // Проверяем категорию водителя
         const hasMatchingCategory = driver.categoryLicenses?.some(
           category => category.categoryType === orderType
         );
+
+        console.log(`🔍 Водитель ${driver.id}: категория=${hasMatchingCategory}, онлайн=${this.onlineDrivers.has(driver.id)}, не клиент=${clientId !== driver.id}`);
 
         // Не отправляем заказ самому клиенту если он водитель
         if (hasMatchingCategory && clientId !== driver.id) {
@@ -292,6 +315,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
               lng,
               timestamp: Date.now()
             });
+            console.log(`✅ Уведомление отправлено водителю: ${driver.id}`);
+          } else {
+            console.log(`⚠️ Водитель ${driver.id} не онлайн, отправляем только PUSH`);
           }
 
           // Отправляем push уведомление если есть device token
