@@ -37,7 +37,6 @@ export class OrderCancellationSchedulerService {
           .findById(order.id)
           .patch({
             orderStatus: OrderStatus.REJECTED, // Or a new CANCELLED_AUTO status if preferred
-            rejectReason: 'No driver accepted the order within 10 minutes.',
             updatedAt: new Date(),
           });
 
