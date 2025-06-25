@@ -11,6 +11,7 @@ import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { UserBlockingService } from '@domain/user/services/user-blocking.service';
+import { UserBlockedException } from '@domain/user/errors/user-blocked.exception';
 
 @Injectable()
 export class CreateOrderService {
@@ -25,9 +26,12 @@ export class CreateOrderService {
     const { orderType, from, to, lat, lng, price, comment, fromMapboxId, toMapboxId} = input;
 
     // Проверяем блокировку пользователя
-    const isBlocked = await this.userBlockingService.checkUserBlockingAndNotify(user);
-    if (isBlocked) {
-      throw new Error('Ваш аккаунт заблокирован. Создание заказов недоступно.');
+    const userEntity = await this.userBlockingService.checkUserBlockingAndNotify(user);
+    if (userEntity) {
+      throw new UserBlockedException(
+        user.blockReason || 'Нарушение правил использования сервиса',
+        user.blockedUntil,
+      );
     }
 
     const activeOrderRequests = await OrderRequestOrmEntity.query()
@@ -59,9 +63,5 @@ export class CreateOrderService {
     await this.orderRequestGateway.handleOrderCreated(orderRequest);
 
     return orderRequest.getPropsCopy();
-  }
-  
-  private getSMScode(phone: string): Promise<SMSCodeRecord | null> {
-    return this.cacheStorageService.getValue(phone);
   }
 }

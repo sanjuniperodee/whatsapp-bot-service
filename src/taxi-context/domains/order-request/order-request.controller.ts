@@ -411,9 +411,12 @@ export class OrderRequestController {
   async getAddress(
     @Query('lat') latStr: string,
     @Query('lon') lonStr: string,
+    @Query('radius') radiusStr?: string,
   ) {
     const lat = parseFloat(latStr);
     const lon = parseFloat(lonStr);
+    const radius = radiusStr ? parseFloat(radiusStr) : 15;
+
     if (isNaN(lat) || isNaN(lon)) {
       throw new Error('Invalid lat/lon query params');
     }

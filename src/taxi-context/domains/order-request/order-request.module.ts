@@ -16,6 +16,7 @@ import { RejectOrderService } from '@domain/order-request/services/reject-order/
 import { NotificationService } from '@modules/firebase/notification.service';
 import { AdminOrderRequestController } from '@domain/order-request/order-request-admin.controller';
 import { UserModule } from '@domain/user/user.module';
+import { OrderCancellationSchedulerService } from './services/order-cancellation/order-cancellation-scheduler.service';
 
 const thirdPartyServices = [
   CqrsModule,
@@ -27,7 +28,7 @@ const controllers = [OrderRequestController, AdminOrderRequestController];
 
 @Module({
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory), forwardRef(() => UserModule)],
-  providers: [OrderRequestGateway, NotificationService, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService, RejectOrderService],
+  providers: [OrderRequestGateway, NotificationService, AcceptOrderService, DriverArrivedService, StartOrderService, CompleteOrderService, CancelOrderService, CreateOrderService, RejectOrderService, OrderCancellationSchedulerService],
   controllers: [...controllers],
   exports: [OrderRequestGateway]
 })
