@@ -11,7 +11,19 @@ function getValidServiceAccountPath(): string {
   for (const filePath of possibleServiceAccountPaths) {
     if (fs.existsSync(filePath)) {
       console.log(`🔑 Firebase: Найден файл service account: ${filePath}`);
+
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const parsed = JSON.parse(content);
+        console.log(`📄 Firebase: Файл загружен. Project ID: ${parsed.project_id || 'не указан'}`);
+      } catch (readError) {
+        console.error(`❌ Firebase: Ошибка при чтении или парсинге JSON файла: ${filePath}`);
+        throw readError;
+      }
+
       return filePath;
+    } else {
+      console.log(`🔍 Firebase: Файл не найден по пути: ${filePath}`);
     }
   }
   throw new Error(`❌ Firebase: Не найден ни один файл service account в ${__dirname}`);
