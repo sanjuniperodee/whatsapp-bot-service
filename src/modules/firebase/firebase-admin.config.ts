@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 // Попробуем оба возможных файла
 const possibleServiceAccountPaths = [
-  path.join(__dirname, 'aktau-go-firebase-adminsdk-yairb-9fc785e74c.json')
+  path.join(__dirname, 'aktau-go-firebase-adminsdk-yairb-1b4b0b54cc.json')
 ];
 
 function getValidServiceAccountPath(): string {
