@@ -158,6 +158,8 @@ export class OrderRequestController {
   async makeReview(@Body() input: MakeReviewRequest) {
     const { orderRequestId, comment, rating } = input;
 
+    console.log("Make review started")
+
     const orderRequest = await this.orderRequestRepository.findOneById(orderRequestId)
 
     if(!orderRequest){
