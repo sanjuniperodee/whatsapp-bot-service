@@ -38,13 +38,18 @@ export class OrderRequestRepository
   }
 
   async findActiveByClientId(clientId: string) {
-    // const where = this.prepareQuery(params);
-
     const found = await OrderRequestOrmEntity.query()
-      .where({clientId})
+      .where({ clientId })
       .whereNull('rating')
-      .whereIn('orderStatus', [OrderStatus.CREATED, OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING, OrderStatus.COMPLETED])
-      .first()
+      .whereIn('orderStatus', [
+        OrderStatus.CREATED,
+        OrderStatus.STARTED,
+        OrderStatus.WAITING,
+        OrderStatus.ONGOING,
+        OrderStatus.COMPLETED,
+      ])
+      .orderBy('createdAt', 'desc')
+      .first();
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
