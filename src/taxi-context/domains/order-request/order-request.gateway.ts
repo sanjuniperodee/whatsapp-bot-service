@@ -97,6 +97,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     // Добавляем водителя в комнату его ID для индивидуальных уведомлений
     client.join(`driver_${driverId}`);
     
+    // АВТОМАТИЧЕСКИ добавляем в онлайн при подключении к сокету
+    this.onlineDrivers.add(driverId);
+    client.join('online_drivers');
+    
     // Добавляем в Map подключений водителей
     if (!this.driverConnections.has(driverId)) {
       this.driverConnections.set(driverId, new Set());
@@ -118,6 +122,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     client.data.userType = 'driver';
     
     console.log(`✅ Водитель ${driverId} успешно подключен (сокет: ${client.id})`);
+    console.log(`🟢 Водитель ${driverId} автоматически онлайн (всего онлайн: ${this.onlineDrivers.size})`);
   }
 
   async handleDisconnect(client: Socket) {
