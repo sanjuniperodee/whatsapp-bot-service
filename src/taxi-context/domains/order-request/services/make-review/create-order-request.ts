@@ -1,4 +1,4 @@
-import { IsDefined, IsNotEmpty, IsNumber, IsString, IsUUID } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsNumber, IsString, IsUUID, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MakeReviewRequest {
@@ -9,11 +9,10 @@ export class MakeReviewRequest {
   @IsUUID('4')
   readonly orderRequestId: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsDefined()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
-  readonly comment: string;
+  readonly comment?: string;
 
   @ApiProperty()
   @IsNotEmpty()
