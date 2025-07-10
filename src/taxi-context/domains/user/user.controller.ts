@@ -4,6 +4,7 @@ import {
   UseGuards,
   Post,
   Body,
+  Put,
 } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
@@ -46,6 +47,19 @@ import crypto from 'crypto';
 import { LoginRequest } from '@domain/user/commands/login/login.request.dto';
 import { LoginService } from '@domain/user/commands/login/login.service';
 import { NotificationService } from '@modules/firebase/notification.service';
+import { ApiProperty } from '@nestjs/swagger';
+
+// Добавляем новый DTO для обновления профиля
+export class UpdateProfileRequest {
+  @ApiProperty()
+  firstName?: string;
+
+  @ApiProperty()
+  lastName?: string;
+
+  @ApiProperty()
+  middleName?: string;
+}
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Users')
@@ -238,6 +252,34 @@ export class UserController {
         message: `Ошибка: ${error.message}`,
         userId: user.id
       };
+    }
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiBody({ type: UpdateProfileRequest })
+  async updateProfile(@IAM() user: UserOrmEntity, @Body() input: UpdateProfileRequest) {
+    try {
+      console.log(`📝 Обновление профиля пользователя ${user.id}:`, input);
+      
+      // Обновляем данные пользователя
+      const updatedUser = await UserOrmEntity.query().patchAndFetchById(user.id, {
+        firstName: input.firstName || user.firstName,
+        lastName: input.lastName || user.lastName,
+        middleName: input.middleName,
+      });
+
+      console.log(`✅ Профиль пользователя ${user.id} успешно обновлен`);
+      
+      return {
+        success: true,
+        user: updatedUser,
+        message: 'Профиль успешно обновлен'
+      };
+    } catch (error) {
+      console.error(`❌ Ошибка обновления профиля пользователя ${user.id}:`, error);
+      throw new Error(`Не удалось обновить профиль: ${error.message}`);
     }
   }
 

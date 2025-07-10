@@ -204,10 +204,10 @@ export class OrderRequestController {
   async categoryEdit(@Param('id') id: string, @Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
-    const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type, id: new UUID(id)})
+    const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), id: new UUID(id)})
 
-    if(!isExists.length)
-      throw new Error("You already registered to this category")
+    if(isExists.length === 0)
+      throw new Error("Category not found or doesn't belong to you")
 
     await CategoryLicenseOrmEntity.query().updateAndFetchById(id, {
       SSN: SSN,
