@@ -125,7 +125,7 @@ export class OrderRequestController {
     // console.log(user.firstName + ' ' + user.lastName)
     const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
     if(!orderRequest){
-      return 'You dont have active order'
+      throw new NotFoundException('Order not found');
     }
 
     const { orderStatus, rating } = orderRequest.getPropsCopy()
@@ -313,7 +313,7 @@ export class OrderRequestController {
     }
 
 
-    return 'You dont have active order'
+    throw new NotFoundException('Order not found');
   }
 
   @UseGuards(JwtAuthGuard())
