@@ -7,7 +7,7 @@ echo "🚀 Deploying NestJS application with clustering..."
 
 # Build and start the clustered application
 echo "📦 Building and starting clustered application..."
-docker-compose -f docker-compose.prod.yml down
+docker-compose down --remove-orphans
 docker-compose -f docker-compose.prod.yml build --no-cache
 docker-compose -f docker-compose.prod.yml up -d
 
