@@ -1,17 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as os from 'os';
-
-const cluster = require('cluster');
+import { ClusterManager } from './cluster';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: '*',  // Allow requests from any origin
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow specific methods
-    credentials: true, // Allow cookies and authentication headers
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
     exposedHeaders: ['X-Total-Count'],
   });
 
@@ -28,30 +26,22 @@ async function bootstrap() {
   await app.listen(3000);
 }
 
-// Clustering setup
-if (cluster.isPrimary) {
-  const numCPUs = os.cpus().length;
-  console.log(`Primary ${process.pid} is running`);
-  console.log(`Forking for ${numCPUs} CPUs`);
-
-  // Fork workers
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
+// Start clustering if in production
+if (process.env.NODE_ENV === 'production') {
+  const clusterManager = new ClusterManager();
+  clusterManager.start();
+  
+  // Only start the app if this is a worker process
+  if (!require('cluster').isPrimary) {
+    bootstrap().catch((error) => {
+      console.error(`❌ Worker ${process.pid} failed to start:`, error);
+      process.exit(1);
+    });
   }
-
-  cluster.on('exit', (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died`);
-    // Replace the dead worker
-    cluster.fork();
-  });
-
-  cluster.on('online', (worker) => {
-    console.log(`Worker ${worker.process.pid} is online`);
-  });
 } else {
-  // Workers can share any TCP connection
+  // Development mode - no clustering
   bootstrap().catch((error) => {
-    console.error('Error starting worker:', error);
+    console.error('❌ Application failed to start:', error);
     process.exit(1);
   });
 }
