@@ -97,6 +97,54 @@ npm run build
 - `GET /admin/order-requests` - получение списка заказов
 - `GET /admin/order-requests/:id` - получение заказа по ID
 
+## Clustering Deployment
+
+### 🚀 Production Clustering Setup
+
+This application supports clustering to utilize all CPU cores for better performance in production.
+
+#### Quick Deployment
+
+```bash
+# Deploy with clustering (recommended for production)
+./deploy-cluster.sh
+```
+
+#### Manual Deployment
+
+```bash
+# Build and run with clustering
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+#### Clustering Features
+
+- **Multi-Core Utilization**: Automatically spawns worker processes for each CPU core
+- **Process Management**: Primary process manages worker lifecycle
+- **Auto-Recovery**: Automatically restarts crashed workers
+- **Load Balancing**: Built-in Node.js cluster load balancing
+- **Production Optimized**: Uses compiled JavaScript for better performance
+
+#### Monitoring
+
+```bash
+# View cluster logs
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Check cluster status
+docker-compose -f docker-compose.prod.yml ps
+
+# Scale workers (if needed)
+docker-compose -f docker-compose.prod.yml up -d --scale backend=2
+```
+
+#### Performance Benefits
+
+- **Concurrent Requests**: Handle multiple requests simultaneously across cores
+- **Better Throughput**: Improved request processing capacity
+- **Fault Tolerance**: Individual worker crashes don't affect the entire application
+- **Resource Efficiency**: Better CPU utilization
+
 ## Структура проекта
 
 ```
