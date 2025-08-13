@@ -1,8 +1,9 @@
-import * as cluster from 'cluster';
 import * as os from 'os';
 
+const cluster = require('cluster');
+
 export class ClusterManager {
-  private workers: cluster.Worker[] = [];
+  private workers: any[] = [];
   private readonly numCPUs: number;
 
   constructor() {
