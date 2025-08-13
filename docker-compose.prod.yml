@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 services:
   backend:
     build:
@@ -12,12 +12,6 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 512M
     environment:
       - NODE_ENV=production
     healthcheck:
