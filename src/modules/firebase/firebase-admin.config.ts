@@ -7,7 +7,7 @@ const possibleServiceAccountPaths = [
   path.join(__dirname, 'aktau-go-420cf0ba8c4c.json')
 ];
 
-function getValidServiceAccountPath(): string {
+function getValidServiceAccountPath(): string | null {
   for (const filePath of possibleServiceAccountPaths) {
     if (fs.existsSync(filePath)) {
       console.log(`🔑 Firebase: Найден файл service account: ${filePath}`);
@@ -26,7 +26,8 @@ function getValidServiceAccountPath(): string {
       console.log(`🔍 Firebase: Файл не найден по пути: ${filePath}`);
     }
   }
-  throw new Error(`❌ Firebase: Не найден ни один файл service account в ${__dirname}`);
+  console.log(`⚠️ Firebase: Service account файл не найден в ${__dirname}. Firebase будет отключен.`);
+  return null;
 }
 
 function validateServiceAccount(filePath: string): any {
@@ -64,6 +65,12 @@ function initializeFirebaseAdmin() {
 
   try {
     const serviceAccountPath = getValidServiceAccountPath();
+    
+    if (!serviceAccountPath) {
+      console.log('⚠️ Firebase: Service account не найден, Firebase отключен');
+      return null;
+    }
+    
     const serviceAccount = validateServiceAccount(serviceAccountPath);
     
     const app = admin.initializeApp({
@@ -84,7 +91,8 @@ function initializeFirebaseAdmin() {
     
   } catch (error) {
     console.error('❌ Firebase: Критическая ошибка инициализации:', error);
-    throw error;
+    console.log('⚠️ Firebase: Продолжаем без Firebase');
+    return null;
   }
 }
 
