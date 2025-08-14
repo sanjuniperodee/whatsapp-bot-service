@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '../../order-request.gateway';
@@ -39,7 +39,7 @@ export class CreateOrderService {
       .whereNotIn('orderStatus', [OrderStatus.REJECTED, OrderStatus.COMPLETED,OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER]);
 
     if (activeOrderRequests.length > 0) {
-      throw new Error("You already have an active order!");
+      throw new ConflictException("You already have an active order!");
     }
 
     const orderRequest = OrderRequestEntity.create({

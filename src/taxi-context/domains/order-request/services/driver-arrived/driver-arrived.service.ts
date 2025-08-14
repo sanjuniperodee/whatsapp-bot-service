@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/driver-arrived/driver-arrived.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
@@ -27,7 +27,7 @@ export class DriverArrivedService {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){
-        throw new Error("You can not accept orders before registering into category");
+        throw new BadRequestException("You can not accept orders before registering into category");
       }
 
       order.driverArrived();
@@ -39,7 +39,7 @@ export class DriverArrivedService {
       if (userId && driver) {
         const user = await this.userRepository.findOneById(userId.value);
         if (!user) {
-          throw new Error("SOMETHING WENT WRONG");
+          throw new InternalServerErrorException("SOMETHING WENT WRONG");
         }
         await this.notificationService.sendNotificationByUserId(
           'Водитель на месте',

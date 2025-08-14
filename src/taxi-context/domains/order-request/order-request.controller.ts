@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, NotFoundException, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Logger, NotFoundException, Param, Post, Put, Query, UseGuards, ConflictException } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
@@ -163,7 +163,7 @@ export class OrderRequestController {
     const orderRequest = await this.orderRequestRepository.findOneById(orderRequestId)
 
     if(!orderRequest){
-      throw new Error("Order request doesn't exist")
+      throw new NotFoundException("Order request doesn't exist")
     }
 
     orderRequest?.rate(rating, comment)
@@ -181,7 +181,7 @@ export class OrderRequestController {
     const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), categoryType: type})
 
     if(isExists.length > 0){
-      throw new Error("You already registered to this category")
+      throw new ConflictException("You already registered to this category")
     }
 
     const categoryLicenseEntity = CategoryLicenseEntity.create({
@@ -207,7 +207,7 @@ export class OrderRequestController {
     const isExists = await this.categoryLicenseRepository.findMany({driverId: new UUID(user.id), id: new UUID(id)})
 
     if(isExists.length === 0)
-      throw new Error("Category not found or doesn't belong to you")
+      throw new NotFoundException("Category not found or doesn't belong to you")
 
     await CategoryLicenseOrmEntity.query().updateAndFetchById(id, {
       SSN: SSN,
@@ -420,7 +420,7 @@ export class OrderRequestController {
     const radius = radiusStr ? parseFloat(radiusStr) : 15;
 
     if (isNaN(lat) || isNaN(lon)) {
-      throw new Error('Invalid lat/lon query params');
+      throw new BadRequestException('Invalid lat/lon query params');
     }
 
     // 1️⃣ Запрос в **2ГИС API** для определения ближайшего адреса
@@ -430,7 +430,7 @@ export class OrderRequestController {
     });
 
     if (!response.ok) {
-      throw new Error(`2ГИС API error: ${response.status} ${response.statusText}`);
+      throw new BadRequestException(`2ГИС API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -456,7 +456,7 @@ export class OrderRequestController {
     const lon = parseFloat(lonStr);
 
     if (isNaN(lat) || isNaN(lon) || !search) {
-      throw new Error('Invalid params: lat, lon, query are required');
+      throw new BadRequestException('Invalid params: lat, lon, query are required');
     }
 
     // 1️⃣ Вычисляем bounding box на 25км
@@ -476,7 +476,7 @@ export class OrderRequestController {
     });
 
     if (!response.ok) {
-      throw new Error(`2ГИС API error: ${response.status} ${response.statusText}`);
+      throw new BadRequestException(`2ГИС API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();

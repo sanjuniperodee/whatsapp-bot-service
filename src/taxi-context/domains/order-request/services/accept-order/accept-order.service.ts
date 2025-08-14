@@ -1,4 +1,4 @@
-import { Body, Injectable } from '@nestjs/common';
+import { BadRequestException, Body, Injectable } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderStatus } from '@infrastructure/enums';
@@ -36,7 +36,7 @@ export class AcceptOrderService{
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
       if(!category){
-        throw new Error("You can not accept orders before registering into category");
+        throw new BadRequestException("You can not accept orders before registering into category");
       }
       order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);

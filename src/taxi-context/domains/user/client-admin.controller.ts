@@ -1,5 +1,5 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Res, Query, Param, Post, Body, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res, Query, Param, Post, Body, Put, UseGuards, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
@@ -166,7 +166,7 @@ export class ClientOrderRequestController {
     
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     const blockedUntilDate = blockedUntil ? new Date(blockedUntil) : undefined;
@@ -183,7 +183,7 @@ export class ClientOrderRequestController {
   async unblockUser(@Param('id') userId: string) {
     const user = await this.userRepository.findOneById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     user.unblockUser();

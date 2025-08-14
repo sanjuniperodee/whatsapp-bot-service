@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
@@ -20,7 +20,7 @@ export class CancelOrderService {
   async handle(orderId: string, client: UserOrmEntity) {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
     if (!orderRequest || orderRequest.getPropsCopy().clientId.value != client.id) {
-      throw new Error('Session is expired');
+      throw new UnauthorizedException('Session is expired');
     }
     orderRequest.rejectByClient()
     await this.orderRequestRepository.save(orderRequest);

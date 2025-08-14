@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   UseGuards,
   Post,
   Body,
   Put,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { JwtAuthGuard } from '@infrastructure/guards';
@@ -200,7 +202,7 @@ export class UserController {
       console.log(`🔑 Установка deviceToken для пользователя ${user.id}:`, input.device);
       
       if (!input.device || input.device.trim() === '') {
-        throw new Error('Device token не может быть пустым');
+        throw new BadRequestException('Device token не может быть пустым');
       }
 
       // Обновляем deviceToken в базе данных
@@ -218,7 +220,7 @@ export class UserController {
       };
     } catch (error) {
       console.error(`❌ Ошибка установки deviceToken для пользователя ${user.id}:`, error);
-      throw new Error(`Не удалось установить device token: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось установить device token: ${error.message}`);
     }
   }
 
@@ -279,7 +281,7 @@ export class UserController {
       };
     } catch (error) {
       console.error(`❌ Ошибка обновления профиля пользователя ${user.id}:`, error);
-      throw new Error(`Не удалось обновить профиль: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось обновить профиль: ${error.message}`);
     }
   }
 

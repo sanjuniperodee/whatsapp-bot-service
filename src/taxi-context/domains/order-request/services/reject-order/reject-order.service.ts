@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
@@ -17,14 +17,14 @@ export class RejectOrderService {
   async handle(orderId: string, driverId?: string, reason: string = 'rejected_by_driver') {
     const orderRequest = await this.orderRequestRepository.findOneById(orderId);
     if (!orderRequest) {
-      throw new Error('Order not found');
+      throw new NotFoundException('Order not found');
     }
 
     const driver = await this.userRepository.findOneById(driverId || orderRequest?.getPropsCopy().driverId?.value || '');
     const client = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
 
     if (!driver || !client) {
-      throw new Error('Driver or client not found');
+      throw new NotFoundException('Driver or client not found');
     }
 
     // Если водитель уже принял заказ, то это отмена, а не отклонение
