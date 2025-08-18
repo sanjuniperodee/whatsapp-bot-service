@@ -91,6 +91,7 @@ export class OrderRequestController {
   @Post('log')
   async log(@Body() input: any){
     console.log(input)
+    return { ok: true }
   }
 
   @Post('send-message-to-bekkhan')
