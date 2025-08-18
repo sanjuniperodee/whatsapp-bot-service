@@ -4,9 +4,9 @@ import { CloudCacheModuleOptions } from '../../third-parties/cloud-cache-storage
 export const redisConfigFactory = {
   useFactory: (configService: ConfigService): CloudCacheModuleOptions => {
     return {
-      port: configService.get<number>('redis.common.port'),
-      host: configService.get<string>('redis.common.host'),
-      password: 'BekkhnN017',
+      port: configService.get<number>('REDIS_PORT', 6379),
+      host: configService.get<string>('REDIS_HOST', 'redis'),
+      password: configService.get<string>('REDIS_PASSWORD', 'BekkhnN017'),
     };
   },
   inject: [ConfigService],

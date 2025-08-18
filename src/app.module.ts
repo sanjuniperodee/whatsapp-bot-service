@@ -14,9 +14,11 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { loadConfiguration, validationSchema } from '@infrastructure/configs/environment.config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { PerformanceModule } from '@modules/performance/performance.module';
 
 @Module({
   imports: [
+    PerformanceModule, // Добавляем модуль производительности
     AuthModule,
     TaxiContextDomainRepositoriesModule,
     TaxiContextModule,
@@ -30,16 +32,17 @@ import { join } from 'path';
       validationOptions: { abortEarly: true },
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public'), // Путь к папке с файлами
-      serveRoot: '/support', // Путь, по которому будет доступна папка
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/support',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
         useFactory: (configService: ConfigService) => {
+          const isDevelopment = configService.get<string>('NODE_ENV') === 'development';
+          
           console.log('Database Host:', configService.get<string>('DATABASE_HOST'));
           console.log('Database Port:', configService.get<number>('DATABASE_PORT'));
           console.log('Database User:', configService.get<string>('DATABASE_USER'));
-          console.log('Database Password:', configService.get<string>('DATABASE_PASSWORD'));
           console.log('Database Name:', configService.get<string>('DATABASE_NAME'));
 
           return {
@@ -51,7 +54,24 @@ import { join } from 'path';
             database: configService.get<string>('DATABASE_NAME'),
             entities: [__dirname + '/../**/*.entity{.ts}'],
             synchronize: false,
-            logging: true,
+            logging: isDevelopment, // Отключаем логирование в продакшене
+            // Оптимизированные настройки пула
+            extra: {
+              max: 20, // Увеличиваем максимальное количество соединений
+              min: 5,  // Минимальное количество соединений
+              acquireTimeoutMillis: 30000,
+              createTimeoutMillis: 30000,
+              destroyTimeoutMillis: 5000,
+              idleTimeoutMillis: 30000,
+              reapIntervalMillis: 1000,
+              createRetryIntervalMillis: 100,
+            },
+            // Дополнительные оптимизации
+            cache: {
+              duration: 30000, // 30 секунд кэширования
+            },
+            // Включаем автоматическую загрузку сущностей
+            autoLoadEntities: true,
           };
         },
       inject: [ConfigService],

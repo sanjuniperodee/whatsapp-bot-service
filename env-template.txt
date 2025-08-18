@@ -1,0 +1,28 @@
+# Environment
+NODE_ENV=development
+PORT=3000
+CORS_CLIENT_URLS=http://localhost:3000,http://localhost:3001
+BACKEND_URL=http://localhost:3000
+
+# Database
+DATABASE_HOST=postgres
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=taxi_service
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-for-development
+JWT_EXPIRES_IN=3600
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-for-development
+JWT_REFRESH_EXPIRES_IN=86400
+JWT_SIGN_UP_SECRET=your-super-secret-signup-key-for-development
+JWT_SIGN_UP_EXPIRES_IN=300
+
+# Redis
+REDIS_PUBSUB_HOST=redis
+REDIS_PUBSUB_PORT=6379
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_EXPIRES_IN=3600
+REDIS_PASSWORD=BekkhnN017 

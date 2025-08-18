@@ -1,40 +1,59 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Multi-stage build for production
+FROM node:18-alpine AS builder
+
 WORKDIR /app
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm ci
-COPY . .
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY tsconfig-paths-bootstrap.js ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY src/ ./src/
+COPY public/ ./public/
+
+# Build the application
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
-WORKDIR /app
+FROM node:18-alpine AS production
 
-# Install dumb-init for proper signal handling in clusters
+# Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Create non-root user for security
+# Create app user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
 
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm ci --only=production && npm install tsconfig-paths && npm cache clean --force
+WORKDIR /app
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/tsconfig-paths-bootstrap.js ./
-COPY --from=builder /app/tsconfig.json ./
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/public ./public
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/tsconfig-paths-bootstrap.js ./
+COPY --from=builder --chown=nestjs:nodejs /app/tsconfig.json ./
 
-# Change ownership to non-root user
-RUN chown -R nestjs:nodejs /app
+# Switch to non-root user
 USER nestjs
 
+# Оптимизации для Node.js в продакшене
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
+# Expose port
 EXPOSE 3000
 
-# Set production environment
-ENV NODE_ENV=production
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Use dumb-init to handle signals properly in clustered environment
+# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application with clustering
 CMD ["node", "-r", "./tsconfig-paths-bootstrap.js", "dist/main.js"]
