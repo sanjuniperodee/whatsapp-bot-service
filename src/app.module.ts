@@ -14,11 +14,8 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { loadConfiguration, validationSchema } from '@infrastructure/configs/environment.config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { PerformanceModule } from '@modules/performance/performance.module';
-
 @Module({
   imports: [
-    PerformanceModule, // Добавляем модуль производительности
     AuthModule,
     TaxiContextDomainRepositoriesModule,
     TaxiContextModule,

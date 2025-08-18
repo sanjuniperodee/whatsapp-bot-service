@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "build": "nest build --tsc",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
