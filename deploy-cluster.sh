@@ -60,7 +60,7 @@ docker-compose -f docker-compose.prod.yml logs --tail=20
 # Performance test
 echo "🧪 Running quick performance test..."
 if command -v node &> /dev/null; then
-    node performance-test.js
+    node quick-local-test.js
 else
     echo "⚠️  Node.js not found, skipping performance test"
 fi
@@ -74,6 +74,5 @@ echo "🔍 To monitor clustering:"
 echo "   docker-compose -f docker-compose.prod.yml logs -f backend"
 echo ""
 echo "📊 To run performance tests:"
-echo "   node performance-test.js"
-echo "   node quick-test.js"
-echo "   node load-test.js"
+echo "   node comprehensive-api-test.js"
+echo "   node quick-local-test.js"
