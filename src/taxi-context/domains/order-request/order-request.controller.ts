@@ -321,37 +321,49 @@ export class OrderRequestController {
   @Get('history/:type')
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user.id), orderType: type, orderStatus: OrderStatus.COMPLETED})
-    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+    // Получаем завершенные и отмененные заказы с JOIN для клиента
+    const orderRequestsOrm = await OrderRequestOrmEntity.query()
+      .where('driverId', user.id)
+      .where('orderType', type)
+      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
+      .withGraphFetched('client') // JOIN с таблицей клиентов
+      .orderBy('createdAt', 'desc');
 
-    return Promise.all(
-      orderRequests.map(async orderRequest => {
-        if (orderRequest) {
-          const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-          return { whatsappUser, orderRequest };
-        }
-        return null;
-      })
-    ).then(results => results.filter(result => result !== null));
+    return orderRequestsOrm.map((orderRequestOrm) => {
+      if (orderRequestOrm && orderRequestOrm.client) {
+        // Возвращаем данные напрямую из ORM без дополнительных запросов
+        return { 
+          whatsappUser: orderRequestOrm.client, 
+          orderRequest: orderRequestOrm 
+        };
+      }
+      return null;
+    }).filter(result => result !== null);
   }
 
   @UseGuards(JwtAuthGuard())
   @Get('client-history/:type')
   @ApiOperation({ summary: 'Get my order history' })
   async getCilentOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
-    const orderRequests = await this.orderRequestRepository.findMany({ clientId: new UUID(user.id), orderType: type, orderStatus: OrderStatus.COMPLETED})
-    orderRequests.sort((a, b) => new Date(b.createdAt.value).getTime() - new Date(a.createdAt.value).getTime());
+    // Получаем завершенные и отмененные заказы с JOIN для водителя
+    const orderRequestsOrm = await OrderRequestOrmEntity.query()
+      .where('clientId', user.id)
+      .where('orderType', type)
+      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
+      .whereNotNull('driverId') // Только заказы с водителем
+      .withGraphFetched('driver') // JOIN с таблицей водителей
+      .orderBy('createdAt', 'desc');
 
-    return Promise.all(
-      orderRequests.map(async orderRequest => {
-        const driverId = orderRequest.getPropsCopy().driverId
-        if (orderRequest && driverId) {
-          const driver = await this.userRepository.findOneById(driverId.value);
-          return { driver, orderRequest };
-        }
-        return null;
-      })
-    ).then(results => results.filter(result => result !== null));
+    return orderRequestsOrm.map((orderRequestOrm) => {
+      if (orderRequestOrm && orderRequestOrm.driver) {
+        // Возвращаем данные напрямую из ORM без дополнительных запросов
+        return { 
+          driver: orderRequestOrm.driver, 
+          orderRequest: orderRequestOrm 
+        };
+      }
+      return null;
+    }).filter(result => result !== null);
   }
 
   @Post('cancel/:orderId')
