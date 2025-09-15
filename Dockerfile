@@ -14,7 +14,7 @@ COPY package.json ./
 COPY package-lock.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/tsconfig-paths-bootstrap.js ./
+COPY --from=builder /app/tsconfig-paths-bootstrap.cjs ./
 RUN apk add bash
 EXPOSE 3000
-CMD ["node", "-r", "./tsconfig-paths-bootstrap.js", "dist/main.js"]
+CMD ["node", "-r", "./tsconfig-paths-bootstrap.cjs", "dist/main.js"]
