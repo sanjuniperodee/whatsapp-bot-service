@@ -7,6 +7,7 @@ export class ClusterManager {
   private readonly numCPUs: number;
 
   constructor() {
+    // Используем все доступные CPU ядра для максимальной производительности
     this.numCPUs = os.cpus().length;
   }
 
@@ -22,6 +23,9 @@ export class ClusterManager {
     console.log(`🚀 Primary process ${process.pid} starting...`);
     console.log(`📊 Forking ${this.numCPUs} worker processes for optimal performance`);
 
+    // Настройки для высоких нагрузок
+    process.setMaxListeners(0);
+    
     // Fork workers
     for (let i = 0; i < this.numCPUs; i++) {
       const worker = cluster.fork();
@@ -53,10 +57,16 @@ export class ClusterManager {
 
     // Monitor memory usage
     this.startMemoryMonitoring();
+    
+    // Monitor worker performance
+    this.startPerformanceMonitoring();
   }
 
   private startWorker(): void {
     console.log(`👷 Worker ${process.pid} starting...`);
+    
+    // Оптимизации для воркера
+    process.setMaxListeners(0);
     
     // Handle shutdown signal from primary
     process.on('message', (msg) => {
@@ -64,6 +74,16 @@ export class ClusterManager {
         console.log(`🛑 Worker ${process.pid} shutting down gracefully...`);
         process.exit(0);
       }
+    });
+    
+    // Обработка необработанных ошибок
+    process.on('uncaughtException', (error) => {
+      console.error(`❌ Uncaught Exception in worker ${process.pid}:`, error);
+      process.exit(1);
+    });
+    
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error(`❌ Unhandled Rejection in worker ${process.pid}:`, reason);
     });
   }
 
@@ -87,7 +107,27 @@ export class ClusterManager {
   private startMemoryMonitoring(): void {
     setInterval(() => {
       const memUsage = process.memoryUsage();
-      console.log(`📈 Memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
+      const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+      const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+      const rssMB = Math.round(memUsage.rss / 1024 / 1024);
+      
+      console.log(`📈 Memory usage: ${heapUsedMB}MB heap / ${heapTotalMB}MB total / ${rssMB}MB RSS`);
+      
+      // Предупреждение при высоком использовании памяти
+      if (heapUsedMB > 500) {
+        console.warn(`⚠️  High memory usage detected: ${heapUsedMB}MB`);
+      }
     }, 30000);
+  }
+  
+  private startPerformanceMonitoring(): void {
+    setInterval(() => {
+      const activeWorkers = this.workers.filter(w => !w.isDead());
+      console.log(`📊 Active workers: ${activeWorkers.length}/${this.numCPUs}`);
+      
+      // Проверяем нагрузку на CPU
+      const cpuUsage = process.cpuUsage();
+      console.log(`🖥️  CPU usage: ${Math.round(cpuUsage.user / 1000)}ms user, ${Math.round(cpuUsage.system / 1000)}ms system`);
+    }, 60000);
   }
 }

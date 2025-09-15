@@ -4,7 +4,8 @@ import * as fs from 'fs';
 
 // Попробуем оба возможных файла
 const possibleServiceAccountPaths = [
-  path.join(__dirname, 'aktau-go-420cf0ba8c4c.json')
+  path.join(__dirname, 'aktau-go-420cf0ba8c4c.json'),
+  path.join(__dirname, 'aktau-go-firebase-adminsdk-test.json')
 ];
 
 function getValidServiceAccountPath(): string | null {
@@ -57,7 +58,7 @@ function validateServiceAccount(filePath: string): any {
 }
 
 function initializeFirebaseAdmin() {
-  // Проверяем, не инициализован ли уже
+  // Проверяем, не инициализирован ли уже
   if (admin.apps.length > 0) {
     console.log('🔄 Firebase: Admin SDK уже инициализирован');
     return admin.app();

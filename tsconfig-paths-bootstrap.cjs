@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-//@es
 const tsConfig = require('./tsconfig.json');
 const tsConfigPaths = require('tsconfig-paths');
 
@@ -17,4 +16,4 @@ adjustedPaths['src/*'] = ['./dist/*'];
 tsConfigPaths.register({
   baseUrl,
   paths: adjustedPaths,
-});
+}); 

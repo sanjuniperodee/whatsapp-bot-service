@@ -11,9 +11,11 @@ const OBJECTION_CLIENT_PROVIDER_NAME = 'OBJECTION_CLIENT_PROVIDER_NAME';
 export const ObjectionClientFactory: FactoryProvider = {
   provide: OBJECTION_CLIENT_PROVIDER_NAME,
   useFactory: (configService: ConfigService) => {
+    const isDevelopment = configService.get<string>('NODE_ENV') === 'development';
+    
     const knex = Knex({
       client: 'pg',
-      debug: configService.get<string>('nodeEnv') === 'development',
+      debug: isDevelopment,
       connection: {
         host: configService.get<string>('DATABASE_HOST'),
         port: configService.get<number>('DATABASE_PORT'),
@@ -23,8 +25,14 @@ export const ObjectionClientFactory: FactoryProvider = {
       },
       searchPath: ['public'],
       pool: {
-        min: 2,
-        max: 10,
+        min: 5,        // Увеличиваем минимальное количество соединений
+        max: 20,       // Увеличиваем максимальное количество соединений
+        acquireTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
+        destroyTimeoutMillis: 5000,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
+        createRetryIntervalMillis: 100,
         afterCreate: (conn: any, done: any) => {
           // Set search path to ensure we can find tables
           conn.query('SET search_path TO public', (err: any) => {
