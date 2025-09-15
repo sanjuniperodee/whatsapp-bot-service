@@ -307,7 +307,7 @@ export class OrderRequestController {
     for (const orderRequest of orderRequests)
     {
       const { orderStatus } = orderRequest.getPropsCopy()
-      if(orderRequest && (orderStatus != OrderStatus.REJECTED && orderStatus != OrderStatus.COMPLETED && orderStatus != OrderStatus.REJECTED_BY_CLIENT)){
+      if(orderRequest && (orderStatus != OrderStatus.REJECTED && orderStatus != OrderStatus.COMPLETED && orderStatus != OrderStatus.REJECTED_BY_CLIENT && orderStatus != OrderStatus.REJECTED_BY_DRIVER)){
         const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
         return { whatsappUser, orderRequest }
       }
@@ -332,9 +332,9 @@ export class OrderRequestController {
     return orderRequestsOrm.map((orderRequestOrm) => {
       if (orderRequestOrm && orderRequestOrm.client) {
         // Возвращаем данные напрямую из ORM без дополнительных запросов
-        return { 
-          whatsappUser: orderRequestOrm.client, 
-          orderRequest: orderRequestOrm 
+        return {
+          whatsappUser: orderRequestOrm.client,
+          orderRequest: orderRequestOrm
         };
       }
       return null;
@@ -358,7 +358,7 @@ export class OrderRequestController {
       if (orderRequestOrm && orderRequestOrm.driver) {
         // Возвращаем данные напрямую из ORM без дополнительных запросов
         return { 
-          driver: orderRequestOrm.driver, 
+          driver: orderRequestOrm.driver,
           orderRequest: orderRequestOrm 
         };
       }
