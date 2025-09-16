@@ -41,6 +41,8 @@ export class DriverArrivedService {
         if (!user) {
           throw new InternalServerErrorException("SOMETHING WENT WRONG");
         }
+        await this.orderRequestGateway.handleDriverArrived(order, driver)
+
         await this.notificationService.sendNotificationByUserId(
           'Водитель на месте',
           `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`,
@@ -50,8 +52,6 @@ export class DriverArrivedService {
         //   userPhone + "@c.us",
         //   `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         // )
-
-        await this.orderRequestGateway.handleDriverArrived(order, driver)
       }
     }
   }

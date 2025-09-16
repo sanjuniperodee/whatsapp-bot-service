@@ -29,16 +29,15 @@ export class StartOrderService {
 
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
       if (client && driver) {
+        const driverEntity = await this.userRepository.findOneById(driver.id)
+        if(driverEntity)
+          await this.orderRequestGateway.handleRideStarted(order, driverEntity)
         await this.notificationService.sendNotificationByUserId(
           'Водитель начал поездку',
           'Поездка началась',
           client.getPropsCopy().deviceToken || ''
         )
         // await this.whatsAppService.sendMessage(userPhone + "@c.us", 'Водитель начал заказ')
-        const driverEntity = await this.userRepository.findOneById(driver.id)
-        if(driverEntity)
-          await this.orderRequestGateway.handleRideStarted(order, driverEntity)
-
       }
     }
   }

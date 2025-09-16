@@ -47,14 +47,14 @@ export class RejectOrderService {
       orderRequest.rejectByDriver();
       await this.orderRequestRepository.save(orderRequest);
 
+      await this.orderRequestGateway.handleOrderCancelledByDriver(orderRequest, driver, reason);
+
       await this.notificationService.sendNotificationByUserId(
         'Водитель отменил заказ',
         'К сожалению водитель отменил заказ, попробуйте повторить попытку',
         client.getPropsCopy().deviceToken || ''
       );
 
-      // Используем новый метод gateway для уведомления об отмене водителем
-      await this.orderRequestGateway.handleOrderCancelledByDriver(orderRequest, driver, reason);
-    }
+      // Используем новый метод gateway для уведомления об отмене водителем    }
   }
 }

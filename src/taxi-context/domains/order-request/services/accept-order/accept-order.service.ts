@@ -45,6 +45,7 @@ export class AcceptOrderService{
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
 
       if (client && driver) {
+        await this.orderRequestGateway.handleOrderAccepted(order, driver)
 
         await this.notificationService.sendNotificationByUserId(
           'Водитель принял ваш заказ',
@@ -55,8 +56,6 @@ export class AcceptOrderService{
         //   userPhone + "@c.us",
         //   `Водитель принял ваш заказ,\nК вам приедет ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         // )wч1
-
-        await this.orderRequestGateway.handleOrderAccepted(order, driver)
       }
     }
   }

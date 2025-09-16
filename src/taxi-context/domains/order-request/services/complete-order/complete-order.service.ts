@@ -32,13 +32,13 @@ export class CompleteOrderService {
 
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
       if (client && driver) {
+        await this.orderRequestGateway.handleRideEnded(order, driver)
+
         await this.notificationService.sendNotificationByUserId(
           'Заказ завершен',
           'Пожалуйста оцените поездку',
           client.getPropsCopy().deviceToken || ''
         )
-
-        await this.orderRequestGateway.handleRideEnded(order, driver)
       }
     }
   }
