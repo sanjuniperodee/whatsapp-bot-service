@@ -22,7 +22,14 @@ import { NotificationService } from '@modules/firebase/notification.service';
     origin: '*',
     methods: ['GET', 'POST'],
     credentials: true,
-  }
+  },
+  // Оптимизированные настройки для стабильности
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000, // 60 секунд
+  pingInterval: 25000, // 25 секунд
+  upgradeTimeout: 10000, // 10 секунд
+  maxHttpBufferSize: 1e6, // 1MB
+  allowEIO3: true, // Поддержка старых версий
 })
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
@@ -32,6 +39,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   private clientConnections = new Map<string, Set<string>>(); // userId -> Set<socketId>
   private driverConnections = new Map<string, Set<string>>(); // driverId -> Set<socketId>
   private onlineDrivers = new Set<string>(); // Set<driverId>
+  
+  // Лимиты соединений
+  private readonly MAX_CONNECTIONS_PER_USER = 3; // Максимум 3 соединения на пользователя
+  private readonly MAX_TOTAL_CONNECTIONS = 1000; // Максимум 1000 соединений всего
 
   constructor(
     private readonly orderRequestRepository: OrderRequestRepository,
@@ -45,6 +56,14 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       const { userType, userId, driverId, sessionId, lat, lng } = client.handshake.query as any;
       
       console.log(`🔌 Новое подключение: userType=${userType}, userId=${userId}, driverId=${driverId}`);
+
+      // Проверяем общий лимит соединений
+      const totalConnections = this.getTotalConnections();
+      if (totalConnections >= this.MAX_TOTAL_CONNECTIONS) {
+        console.log(`❌ Отклонено подключение: превышен лимит соединений (${totalConnections}/${this.MAX_TOTAL_CONNECTIONS})`);
+        client.disconnect();
+        return;
+      }
 
       if (!sessionId) {
         console.log('❌ Отклонено подключение: отсутствует sessionId');
@@ -76,6 +95,14 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       return;
     }
 
+    // Проверяем лимит соединений для пользователя
+    const userConnections = this.clientConnections.get(userId);
+    if (userConnections && userConnections.size >= this.MAX_CONNECTIONS_PER_USER) {
+      console.log(`❌ Отклонено подключение клиента ${userId}: превышен лимит соединений (${userConnections.size}/${this.MAX_CONNECTIONS_PER_USER})`);
+      client.disconnect();
+      return;
+    }
+
     // Добавляем в хранилище клиентских подключений
     if (!this.clientConnections.has(userId)) {
       this.clientConnections.set(userId, new Set());
@@ -93,6 +120,14 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   private async handleDriverConnection(client: Socket, driverId: string, sessionId: string, lat?: string, lng?: string) {
     console.log(`🚗 Водитель подключается: ${driverId}, сессия: ${sessionId}`);
+    
+    // Проверяем лимит соединений для водителя
+    const driverConnections = this.driverConnections.get(driverId);
+    if (driverConnections && driverConnections.size >= this.MAX_CONNECTIONS_PER_USER) {
+      console.log(`❌ Отклонено подключение водителя ${driverId}: превышен лимит соединений (${driverConnections.size}/${this.MAX_CONNECTIONS_PER_USER})`);
+      client.disconnect();
+      return;
+    }
     
     // Добавляем водителя в комнату его ID для индивидуальных уведомлений
     client.join(`driver_${driverId}`);
@@ -202,6 +237,16 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       client.leave('online_drivers');
       console.log(`🔴 Водитель ушел оффлайн: ${driverId}`);
     }
+  }
+
+  @SubscribeMessage('ping')
+  async handlePing(client: Socket, data: any) {
+    // Отвечаем на ping событие для поддержания соединения
+    client.emit('pong', { 
+      timestamp: Date.now(),
+      received: data?.timestamp || Date.now()
+    });
+    console.log(`💓 Ping получен от ${client.handshake.query.userType}: ${client.handshake.query.userId || client.handshake.query.driverId}`);
   }
 
   @SubscribeMessage('driverLocationUpdate')
@@ -583,6 +628,18 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   isClientConnected(userId: string): boolean {
     return this.clientConnections.has(userId);
+  }
+
+  // Подсчет общего количества соединений
+  private getTotalConnections(): number {
+    let total = 0;
+    for (const connections of this.clientConnections.values()) {
+      total += connections.size;
+    }
+    for (const connections of this.driverConnections.values()) {
+      total += connections.size;
+    }
+    return total;
   }
 
   async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity) {

@@ -128,73 +128,78 @@ export class OrderRequestController {
   @ApiResponse({ status: 200, description: 'Active order retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getClientActiveOrder(@IAM() user: UserOrmEntity) {
-    const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
-    if(!orderRequest){
-      throw new NotFoundException('Order not found');
-    }
+    try {
+      const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
+      if(!orderRequest){
+        throw new NotFoundException('Order not found');
+      }
 
-    const driverId = orderRequest.getPropsCopy().driverId?.value
-    const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
-    const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
+      const driverId = orderRequest.getPropsCopy().driverId?.value
+      const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+      const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
 
-    // Возвращаем в формате, который ожидает фронтенд ActiveClientRequestModel
-    const orderProps = orderRequest.getPropsCopy();
-    
-    return {
-      order: {
-        id: orderRequest.id.value,
-        createdAt: orderProps.createdAt.value,
-        updatedAt: orderProps.updatedAt.value,
-        driverId: orderProps.driverId?.value,
-        clientId: orderProps.clientId.value,
-        user_phone: null, // Добавляем для совместимости
-        orderType: orderProps.orderType,
-        orderStatus: orderProps.orderStatus,
-        from: orderProps.from,
-        to: orderProps.to,
-        fromMapboxId: orderProps.fromMapboxId,
-        toMapboxId: orderProps.toMapboxId,
-        startTime: orderProps.startTime,
-        arrivalTime: orderProps.arrivalTime,
-        lat: orderProps.lat,
-        lng: orderProps.lng,
-        price: orderProps.price,
-        comment: orderProps.comment || '',
-        rating: orderProps.rating,
-        sessionid: null, // Добавляем для совместимости
-      },
-      driver: driver ? {
-        _id: { props: { value: driver.id.value } },
-        props: {
-          phone: driver.getPropsCopy().phone,
+      // Возвращаем в формате, который ожидает фронтенд ActiveClientRequestModel
+      const orderProps = orderRequest.getPropsCopy();
+      
+      return {
+        order: {
+          id: orderRequest.id.value,
+          createdAt: orderProps.createdAt.value,
+          updatedAt: orderProps.updatedAt.value,
+          driverId: orderProps.driverId?.value,
+          clientId: orderProps.clientId.value,
+          user_phone: null, // Добавляем для совместимости
+          orderType: orderProps.orderType,
+          orderStatus: orderProps.orderStatus,
+          from: orderProps.from,
+          to: orderProps.to,
+          fromMapboxId: orderProps.fromMapboxId,
+          toMapboxId: orderProps.toMapboxId,
+          startTime: orderProps.startTime,
+          arrivalTime: orderProps.arrivalTime,
+          lat: orderProps.lat,
+          lng: orderProps.lng,
+          price: orderProps.price,
+          comment: orderProps.comment || '',
+          rating: orderProps.rating,
+          sessionid: null, // Добавляем для совместимости
+        },
+        driver: driver ? {
+          _id: { props: { value: driver.id.value } },
+          props: {
+            phone: driver.getPropsCopy().phone,
+            firstName: driver.getPropsCopy().firstName,
+            lastName: driver.getPropsCopy().lastName,
+            middleName: driver.getPropsCopy().middleName,
+            lastSms: driver.getPropsCopy().lastSms,
+            deviceToken: driver.getPropsCopy().deviceToken,
+            isBlocked: driver.getPropsCopy().isBlocked,
+            blockedUntil: driver.getPropsCopy().blockedUntil,
+            blockReason: driver.getPropsCopy().blockReason,
+          },
           firstName: driver.getPropsCopy().firstName,
           lastName: driver.getPropsCopy().lastName,
-          middleName: driver.getPropsCopy().middleName,
-          lastSms: driver.getPropsCopy().lastSms,
-          deviceToken: driver.getPropsCopy().deviceToken,
-          isBlocked: driver.getPropsCopy().isBlocked,
-          blockedUntil: driver.getPropsCopy().blockedUntil,
-          blockReason: driver.getPropsCopy().blockReason,
-        },
-        firstName: driver.getPropsCopy().firstName,
-        lastName: driver.getPropsCopy().lastName,
-        phone: driver.getPropsCopy().phone,
-        rating: null, // Добавляем для совместимости
-        earnings: null, // Добавляем для совместимости
-        orders: null, // Добавляем для совместимости
-        ratedOrders: null, // Добавляем для совместимости
-      } : null,
-      car: category ? {
-        id: category.id.value,
-        props: {
-          SSN: category.getPropsCopy().SSN,
-          brand: category.getPropsCopy().brand,
-          model: category.getPropsCopy().model,
-          color: category.getPropsCopy().color,
-          number: category.getPropsCopy().number,
-        },
-      } : null,
-    };
+          phone: driver.getPropsCopy().phone,
+          rating: null, // Добавляем для совместимости
+          earnings: null, // Добавляем для совместимости
+          orders: null, // Добавляем для совместимости
+          ratedOrders: null, // Добавляем для совместимости
+        } : null,
+        car: category ? {
+          id: category.id.value,
+          props: {
+            SSN: category.getPropsCopy().SSN,
+            brand: category.getPropsCopy().brand,
+            model: category.getPropsCopy().model,
+            color: category.getPropsCopy().color,
+            number: category.getPropsCopy().number,
+          },
+        } : null,
+      };
+    } catch (error) {
+      console.error('Error getting client active order:', error);
+      throw error;
+    }
   }
 
   @Get('order-status')
@@ -305,6 +310,33 @@ export class OrderRequestController {
     return categoryLicenses.map(categoryLicense => new CategoryLicenseResponseDto(categoryLicense));
   }
 
+  @Get('my-active-order')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Get driver active order' })
+  @ApiResponse({ status: 200, description: 'Active order retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async getMyActiveOrder(@IAM() user: UserOrmEntity) {
+    try {
+      const orderRequest = await this.orderRequestRepository.findActiveByDriverId(user.id);
+      if (!orderRequest) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const clientId = orderRequest.getPropsCopy().clientId?.value;
+      const client = clientId ? await this.userRepository.findOneById(clientId) : undefined;
+
+      // Возвращаем в формате, который ожидает фронтенд ActiveRequestModel
+      return {
+        whatsappUser: client ? new UserResponseDto(client) : undefined,
+        driver: undefined, // Водитель - это текущий пользователь, поэтому не нужно возвращать
+        orderRequest: new OrderRequestResponseDto(orderRequest)
+      };
+    } catch (error) {
+      console.error('Error getting driver active order:', error);
+      throw error;
+    }
+  }
+
   @Post('create-order')
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
@@ -376,27 +408,6 @@ export class OrderRequestController {
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI/180);
-  }
-
-
-  @UseGuards(JwtAuthGuard())
-  @Get('my-active-order')
-  @ApiOperation({ summary: 'Get my current order' })
-  @ApiResponse({ status: 200, description: 'Active order retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Order not found' })
-  async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
-    const orderRequest = await this.orderRequestRepository.findActiveByDriverId(user.id);
-
-    if (orderRequest) {
-      // Возвращаем данные в формате ActiveRequestModel для фронтенда
-      return {
-        whatsappUser: orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
-        driver: undefined,
-        orderRequest: new OrderRequestResponseDto(orderRequest)
-      };
-    }
-
-    throw new NotFoundException('Order not found');
   }
 
   @UseGuards(JwtAuthGuard())
