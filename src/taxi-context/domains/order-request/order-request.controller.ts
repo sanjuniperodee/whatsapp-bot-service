@@ -30,6 +30,7 @@ import { ReccuringProfileCallbackDto } from '@domain/order-request/ReccuringProf
 import { OrderRequestResponseDto } from './dtos/order-request-response.dto';
 import { UserResponseDto } from '@domain/user/dtos/user-response.dto';
 import { CategoryLicenseResponseDto } from '@domain/user/dtos/category-license-response.dto';
+import { OrderStatusResponseDto } from './dtos/order-status-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -124,7 +125,7 @@ export class OrderRequestController {
   @Get('client-active-order')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Get order status' })
-  @ApiResponse({ status: 200, description: 'Order status retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Order status retrieved successfully', type: OrderStatusResponseDto })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     // console.log(user.firstName + ' ' + user.lastName)
@@ -147,13 +148,13 @@ export class OrderRequestController {
 
       const location = await this.cacheStorageService.getDriverLocation(driverId || '');
 
-      return {
-        order: orderRequest.getPropsCopy(),
-        driver: { ...driver?.getPropsCopy(), location },
-        car: category,
-        status: orderRequest.getPropsCopy().orderStatus,
-        reviews: orderRequests.length
-      }
+      return new OrderStatusResponseDto(
+        orderRequest,
+        driver,
+        category,
+        location,
+        orderRequests.length
+      );
     }
   }
 
@@ -252,7 +253,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('active/:type')
   @ApiOperation({ summary: 'Get active orders by type' })
-  @ApiResponse({ status: 200, description: 'Active orders retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Active orders retrieved successfully', type: [OrderRequestResponseDto] })
   async getActiveOrdersByType(@Param('type') type: OrderType, @IAM() user: UserOrmEntity) {
     const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
     if (!driverLocation) {
@@ -288,10 +289,11 @@ export class OrderRequestController {
 
     return await Promise.all(validOrderRequests.map(async orderRequest => {
       const orderUser = await this.userRepository.findOneById(orderRequest!.getPropsCopy().clientId.value);
-      return {
-        user: orderUser,
-        orderRequest: orderRequest
-      };
+      return new OrderRequestResponseDto(
+        orderRequest!,
+        orderUser ? new UserResponseDto(orderUser) : undefined,
+        undefined
+      );
     }));
   }
 
