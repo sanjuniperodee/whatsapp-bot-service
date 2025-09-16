@@ -317,18 +317,18 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
-  @ApiResponse({ status: 200, description: 'Active order retrieved successfully', type: OrderRequestResponseDto })
+  @ApiResponse({ status: 200, description: 'Active order retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
     const orderRequest = await this.orderRequestRepository.findActiveByDriverId(user.id);
 
     if (orderRequest) {
-      // Возвращаем данные в правильном формате для фронтенда
-      return new OrderRequestResponseDto(
-        orderRequest,
-        orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
-        undefined
-      );
+      // Возвращаем данные в формате ActiveRequestModel для фронтенда
+      return {
+        whatsappUser: orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
+        driver: undefined,
+        orderRequest: new OrderRequestResponseDto(orderRequest)
+      };
     }
 
     throw new NotFoundException('Order not found');
