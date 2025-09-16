@@ -124,38 +124,103 @@ export class OrderRequestController {
 
   @Get('client-active-order')
   @UseGuards(JwtAuthGuard())
-  @ApiOperation({ summary: 'Get order status' })
-  @ApiResponse({ status: 200, description: 'Order status retrieved successfully', type: OrderStatusResponseDto })
+  @ApiOperation({ summary: 'Get client active order' })
+  @ApiResponse({ status: 200, description: 'Active order retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  async getOrderStatus(@IAM() user: UserOrmEntity) {
-    // console.log(user.firstName + ' ' + user.lastName)
+  async getClientActiveOrder(@IAM() user: UserOrmEntity) {
     const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
     if(!orderRequest){
       throw new NotFoundException('Order not found');
     }
 
-    const { orderStatus, rating } = orderRequest.getPropsCopy()
-    console.log(orderStatus)
-    if(orderRequest){
-      const driverId = orderRequest.getPropsCopy().driverId?.value
+    const driverId = orderRequest.getPropsCopy().driverId?.value
+    const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+    const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
 
-      const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+    // Возвращаем в формате, который ожидает фронтенд ActiveClientRequestModel
+    const orderProps = orderRequest.getPropsCopy();
+    
+    return {
+      order: {
+        id: orderRequest.id.value,
+        createdAt: orderProps.createdAt.value,
+        updatedAt: orderProps.updatedAt.value,
+        driverId: orderProps.driverId?.value,
+        clientId: orderProps.clientId.value,
+        user_phone: null, // Добавляем для совместимости
+        orderType: orderProps.orderType,
+        orderStatus: orderProps.orderStatus,
+        from: orderProps.from,
+        to: orderProps.to,
+        fromMapboxId: orderProps.fromMapboxId,
+        toMapboxId: orderProps.toMapboxId,
+        startTime: orderProps.startTime,
+        arrivalTime: orderProps.arrivalTime,
+        lat: orderProps.lat,
+        lng: orderProps.lng,
+        price: orderProps.price,
+        comment: orderProps.comment || '',
+        rating: orderProps.rating,
+        sessionid: null, // Добавляем для совместимости
+      },
+      driver: driver ? {
+        _id: { props: { value: driver.id.value } },
+        props: {
+          phone: driver.getPropsCopy().phone,
+          firstName: driver.getPropsCopy().firstName,
+          lastName: driver.getPropsCopy().lastName,
+          middleName: driver.getPropsCopy().middleName,
+          lastSms: driver.getPropsCopy().lastSms,
+          deviceToken: driver.getPropsCopy().deviceToken,
+          isBlocked: driver.getPropsCopy().isBlocked,
+          blockedUntil: driver.getPropsCopy().blockedUntil,
+          blockReason: driver.getPropsCopy().blockReason,
+        },
+        firstName: driver.getPropsCopy().firstName,
+        lastName: driver.getPropsCopy().lastName,
+        phone: driver.getPropsCopy().phone,
+        rating: null, // Добавляем для совместимости
+        earnings: null, // Добавляем для совместимости
+        orders: null, // Добавляем для совместимости
+        ratedOrders: null, // Добавляем для совместимости
+      } : null,
+      car: category ? {
+        id: category.id.value,
+        props: {
+          SSN: category.getPropsCopy().SSN,
+          brand: category.getPropsCopy().brand,
+          model: category.getPropsCopy().model,
+          color: category.getPropsCopy().color,
+          number: category.getPropsCopy().number,
+        },
+      } : null,
+    };
+  }
 
-      const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
-
-      const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
-
-
-      const location = await this.cacheStorageService.getDriverLocation(driverId || '');
-
-      return new OrderStatusResponseDto(
-        orderRequest,
-        driver,
-        category,
-        location,
-        orderRequests.length
-      );
+  @Get('order-status')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Get order status' })
+  @ApiResponse({ status: 200, description: 'Order status retrieved successfully', type: OrderStatusResponseDto })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async getOrderStatus(@IAM() user: UserOrmEntity) {
+    const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
+    if(!orderRequest){
+      throw new NotFoundException('Order not found');
     }
+
+    const driverId = orderRequest.getPropsCopy().driverId?.value
+    const driver = driverId ? await this.userRepository.findOneById(driverId) : undefined;
+    const orderRequests = await OrderRequestOrmEntity.query().whereNotNull('rating')
+    const category = driverId ? await this.categoryLicenseRepository.findOneByDriverId(driverId, orderRequest.getPropsCopy().orderType) : undefined
+    const location = await this.cacheStorageService.getDriverLocation(driverId || '');
+
+    return new OrderStatusResponseDto(
+      orderRequest,
+      driver,
+      category,
+      location,
+      orderRequests.length
+    );
   }
 
   @Post('make-review')
