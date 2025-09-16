@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Logger, NotFoundException, Param, Post, Put, Query, UseGuards, ConflictException } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
@@ -29,6 +29,7 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ReccuringProfileCallbackDto } from '@domain/order-request/ReccuringProfileCallbackDto';
 import { OrderRequestResponseDto } from './dtos/order-request-response.dto';
 import { UserResponseDto } from '@domain/user/dtos/user-response.dto';
+import { CategoryLicenseResponseDto } from '@domain/user/dtos/category-license-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -123,6 +124,8 @@ export class OrderRequestController {
   @Get('client-active-order')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Get order status' })
+  @ApiResponse({ status: 200, description: 'Order status retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   async getOrderStatus(@IAM() user: UserOrmEntity) {
     // console.log(user.firstName + ' ' + user.lastName)
     const orderRequest = await this.orderRequestRepository.findActiveByClientId(user.id)
@@ -157,6 +160,8 @@ export class OrderRequestController {
   @Post('make-review')
   @ApiOperation({ summary: 'Make Review' })
   @ApiBody({ type: MakeReviewRequest })
+  @ApiResponse({ status: 200, description: 'Review submitted successfully' })
+  @ApiResponse({ status: 404, description: 'Order request not found' })
   async makeReview(@Body() input: MakeReviewRequest) {
     const { orderRequestId, comment, rating } = input;
 
@@ -177,6 +182,8 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Register for category' })
   @ApiBody({ type: CategoryRegisterRequest })
+  @ApiResponse({ status: 201, description: 'Category registered successfully' })
+  @ApiResponse({ status: 409, description: 'Already registered to this category' })
   async categoryRegister(@Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
@@ -203,6 +210,8 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Edit for category' })
   @ApiBody({ type: CategoryRegisterRequest })
+  @ApiResponse({ status: 200, description: 'Category updated successfully' })
+  @ApiResponse({ status: 404, description: 'Category not found or does not belong to you' })
   async categoryEdit(@Param('id') id: string, @Body() input: CategoryRegisterRequest, @IAM() user: UserOrmEntity) {
     const {governmentNumber, model, SSN, type, color, brand} = input
 
@@ -224,13 +233,16 @@ export class OrderRequestController {
   @Get('category/info')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Info about registration by category' })
+  @ApiResponse({ status: 200, description: 'Category licenses retrieved successfully', type: [CategoryLicenseResponseDto] })
   async categoryInfo(@IAM() user: UserOrmEntity) {
-    return await this.categoryLicenseRepository.findAllByDriverId(user.id);
+    const categoryLicenses = await this.categoryLicenseRepository.findAllByDriverId(user.id);
+    return categoryLicenses.map(categoryLicense => new CategoryLicenseResponseDto(categoryLicense));
   }
 
   @Post('create-order')
   @ApiOperation({ summary: 'Creating order request' })
   @ApiBody({ type: CreateOrderRequest })
+  @ApiResponse({ status: 201, description: 'Order created successfully' })
   @UseGuards(JwtAuthGuard())
   async createOrder(@Body() input: CreateOrderRequest, @IAM() user: UserOrmEntity) {
     return this.createOrderService.handle(input, user)
@@ -240,6 +252,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('active/:type')
   @ApiOperation({ summary: 'Get active orders by type' })
+  @ApiResponse({ status: 200, description: 'Active orders retrieved successfully' })
   async getActiveOrdersByType(@Param('type') type: OrderType, @IAM() user: UserOrmEntity) {
     const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
     if (!driverLocation) {
@@ -303,6 +316,8 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
+  @ApiResponse({ status: 200, description: 'Active order retrieved successfully', type: OrderRequestResponseDto })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
     const orderRequest = await this.orderRequestRepository.findActiveByDriverId(user.id);
 
@@ -321,6 +336,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('history/:type')
   @ApiOperation({ summary: 'Get my order history' })
+  @ApiResponse({ status: 200, description: 'Order history retrieved successfully', type: [OrderRequestResponseDto] })
   async getMyOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
     // Используем метод репозитория для получения истории заказов водителя
     const orderRequests = await this.orderRequestRepository.findHistoryByDriverId(user.id, type);
@@ -338,6 +354,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('client-history/:type')
   @ApiOperation({ summary: 'Get my order history' })
+  @ApiResponse({ status: 200, description: 'Client order history retrieved successfully', type: [OrderRequestResponseDto] })
   async getCilentOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
     // Используем метод репозитория для получения истории заказов клиента
     const orderRequests = await this.orderRequestRepository.findHistoryByClientId(user.id, type);
@@ -355,6 +372,7 @@ export class OrderRequestController {
   @Post('cancel/:orderId')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order' })
+  @ApiResponse({ status: 200, description: 'Order cancelled successfully' })
   async cancelOrderRequest(@Param('orderId') orderId: string, @IAM() user: UserOrmEntity) {
     return this.cancelOrderService.handle(orderId, user)
   }
@@ -362,12 +380,14 @@ export class OrderRequestController {
   @Post('reject/:orderId')
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Cancel order by order id' })
+  @ApiResponse({ status: 200, description: 'Order rejected successfully' })
   async cancelOrderRequestByOrderId(@Param('orderId') orderId: string) {
     return this.rejectOrderService.handle(orderId)
   }
 
   @Get('user/:id')
   @ApiOperation({ summary: 'Get user by session id' })
+  @ApiResponse({ status: 200, description: 'User retrieved successfully' })
   async getUserBySessionId(@Param('id') id: string) {
     const user = await this.userRepository.findOneById(id)
 
@@ -378,6 +398,7 @@ export class OrderRequestController {
   @Post('accept')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Accept order' })
+  @ApiResponse({ status: 200, description: 'Order accepted successfully' })
   async handleOrderAccepted(@Body() input: ChangeOrderStatus, @IAM() user: UserOrmEntity) {
     await this.acceptOrderService.handle(input, user);
   }
@@ -386,6 +407,7 @@ export class OrderRequestController {
   @Post('driver-arrived')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'Driver arriver to take up place' })
+  @ApiResponse({ status: 200, description: 'Driver arrived status updated successfully' })
   async handleDriverArrived(@Body() input: ChangeOrderStatus) {
     await this.driverArrivedService.handle(input);
 
@@ -395,6 +417,7 @@ export class OrderRequestController {
   @Post('start')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'start' })
+  @ApiResponse({ status: 200, description: 'Order started successfully' })
   async handleOrderStarted(@Body() input: ChangeOrderStatus, @IAM() user: UserOrmEntity) {
     await this.startOrderService.handle(input, user);
   }
@@ -403,12 +426,16 @@ export class OrderRequestController {
   @Post('end')
   @ApiBody({ type: ChangeOrderStatus })
   @ApiOperation({ summary: 'End Ride' })
+  @ApiResponse({ status: 200, description: 'Ride ended successfully' })
   async handleRideEnded(@Body() input: ChangeOrderStatus) {
     await this.completeOrderService.handle(input);
   }
 
 
   @Get('address')
+  @ApiOperation({ summary: 'Get address by coordinates' })
+  @ApiResponse({ status: 200, description: 'Address retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid coordinates' })
   async getAddress(
     @Query('lat') latStr: string,
     @Query('lon') lonStr: string,
@@ -446,6 +473,9 @@ export class OrderRequestController {
   }
 
   @Get('find-by-name')
+  @ApiOperation({ summary: 'Search places by name' })
+  @ApiResponse({ status: 200, description: 'Places found successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid search parameters' })
   async localSearch(
     @Query('lat') latStr: string,
     @Query('lon') lonStr: string,

@@ -10,7 +10,7 @@ import { OrderRequestOrmMapper } from './order-request.orm-mapper';
 import { OrderRequestRepositoryPort } from './order-request.repository.port';
 import { OrderRequestEntity, OrderRequestProps } from '@domain/order-request/domain/entities/order-request.entity';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
-import { OrderStatus } from '@infrastructure/enums';
+import { OrderStatus, OrderType } from '@infrastructure/enums';
 
 @Injectable()
 export class OrderRequestRepository
