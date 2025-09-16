@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UserResponseDto {
   @ApiProperty()
-  _id: string;
+  _id: { props: { value: string } };
 
   @ApiProperty()
   props: {
@@ -18,7 +18,7 @@ export class UserResponseDto {
   };
 
   constructor(user: any) {
-    this._id = user.id?.value || user._id;
+    this._id = { props: { value: user.id?.value || user._id } };
     this.props = {
       phone: user.props?.phone || user.phone,
       firstName: user.props?.firstName || user.firstName,

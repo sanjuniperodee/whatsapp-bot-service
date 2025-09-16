@@ -253,7 +253,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @Get('active/:type')
   @ApiOperation({ summary: 'Get active orders by type' })
-  @ApiResponse({ status: 200, description: 'Active orders retrieved successfully', type: [OrderRequestResponseDto] })
+  @ApiResponse({ status: 200, description: 'Active orders retrieved successfully' })
   async getActiveOrdersByType(@Param('type') type: OrderType, @IAM() user: UserOrmEntity) {
     const driverLocation = await this.cacheStorageService.getDriverLocation(user.id);
     if (!driverLocation) {
@@ -289,11 +289,10 @@ export class OrderRequestController {
 
     return await Promise.all(validOrderRequests.map(async orderRequest => {
       const orderUser = await this.userRepository.findOneById(orderRequest!.getPropsCopy().clientId.value);
-      return new OrderRequestResponseDto(
-        orderRequest!,
-        orderUser ? new UserResponseDto(orderUser) : undefined,
-        undefined
-      );
+      return {
+        user: orderUser ? new UserResponseDto(orderUser) : undefined,
+        orderRequest: new OrderRequestResponseDto(orderRequest!)
+      };
     }));
   }
 
@@ -344,12 +343,32 @@ export class OrderRequestController {
     const orderRequests = await this.orderRequestRepository.findHistoryByDriverId(user.id, type);
 
     return orderRequests.map((orderRequest) => {
-      // Возвращаем данные в правильном формате для фронтенда
-      return new OrderRequestResponseDto(
-        orderRequest,
-        orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
-        undefined
-      );
+      const props = orderRequest.getPropsCopy();
+      return {
+        whatsappUser: orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
+        driver: undefined,
+        orderRequest: {
+          id: orderRequest.id.value,
+          driverId: props.driverId?.value,
+          clientId: props.clientId.value,
+          orderType: props.orderType,
+          from: props.from,
+          to: props.to,
+          startTime: props.startTime,
+          arrivalTime: props.arrivalTime,
+          lat: props.lat,
+          lng: props.lng,
+          price: props.price,
+          comment: props.comment,
+          createdAt: props.createdAt,
+          updatedAt: props.updatedAt,
+          deletedAt: undefined,
+          rating: props.rating,
+          orderStatus: props.orderStatus,
+          fromMapboxId: props.fromMapboxId,
+          toMapboxId: props.toMapboxId,
+        }
+      };
     });
   }
 
@@ -362,12 +381,32 @@ export class OrderRequestController {
     const orderRequests = await this.orderRequestRepository.findHistoryByClientId(user.id, type);
 
     return orderRequests.map((orderRequest) => {
-      // Возвращаем данные в правильном формате для фронтенда
-      return new OrderRequestResponseDto(
-        orderRequest,
-        undefined,
-        orderRequest.driver ? new UserResponseDto(orderRequest.driver) : undefined
-      );
+      const props = orderRequest.getPropsCopy();
+      return {
+        whatsappUser: undefined,
+        driver: orderRequest.driver ? new UserResponseDto(orderRequest.driver) : undefined,
+        orderRequest: {
+          id: orderRequest.id.value,
+          driverId: props.driverId?.value,
+          clientId: props.clientId.value,
+          orderType: props.orderType,
+          from: props.from,
+          to: props.to,
+          startTime: props.startTime,
+          arrivalTime: props.arrivalTime,
+          lat: props.lat,
+          lng: props.lng,
+          price: props.price,
+          comment: props.comment,
+          createdAt: props.createdAt,
+          updatedAt: props.updatedAt,
+          deletedAt: undefined,
+          rating: props.rating,
+          orderStatus: props.orderStatus,
+          fromMapboxId: props.fromMapboxId,
+          toMapboxId: props.toMapboxId,
+        }
+      };
     });
   }
 

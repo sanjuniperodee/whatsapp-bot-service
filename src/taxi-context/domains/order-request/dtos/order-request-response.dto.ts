@@ -4,15 +4,15 @@ import { UserResponseDto } from '@domain/user/dtos/user-response.dto';
 
 export class OrderRequestResponseDto {
   @ApiProperty()
-  _id: string;
+  _id: { props: { value: string } };
 
   @ApiProperty()
   props: {
-    id: string;
+    id: { props: { value: string } };
     createdAt: Date;
     updatedAt: Date;
-    driverId?: string;
-    clientId: string;
+    driverId?: { props: { value: string } };
+    clientId: { props: { value: string } };
     orderType: OrderType;
     orderStatus: OrderStatus;
     from: string;
@@ -37,13 +37,15 @@ export class OrderRequestResponseDto {
   driver?: UserResponseDto;
 
   constructor(orderRequest: any, whatsappUser?: any, driver?: any) {
-    this._id = orderRequest.id?.value || orderRequest._id;
+    this._id = { props: { value: orderRequest.id?.value || orderRequest._id } };
     this.props = {
-      id: orderRequest.id?.value || orderRequest._id,
+      id: { props: { value: orderRequest.id?.value || orderRequest._id } },
       createdAt: orderRequest.props?.createdAt || orderRequest.createdAt,
       updatedAt: orderRequest.props?.updatedAt || orderRequest.updatedAt,
-      driverId: orderRequest.props?.driverId?.value || orderRequest.driverId,
-      clientId: orderRequest.props?.clientId?.value || orderRequest.clientId,
+      driverId: orderRequest.props?.driverId?.value || orderRequest.driverId
+        ? { props: { value: orderRequest.props?.driverId?.value || orderRequest.driverId } }
+        : undefined,
+      clientId: { props: { value: orderRequest.props?.clientId?.value || orderRequest.clientId } },
       orderType: orderRequest.props?.orderType || orderRequest.orderType,
       orderStatus: orderRequest.props?.orderStatus || orderRequest.orderStatus,
       from: orderRequest.props?.from || orderRequest.from,
