@@ -65,6 +65,15 @@ export class CloudCacheStorageService {
     return await this.redisService.client.scard('online_drivers');
   }
 
+  async getSocketKeys(): Promise<string[]> {
+    try {
+      return await this.redisService.client.keys('sockets:*');
+    } catch (error) {
+      console.error('❌ Ошибка получения ключей сокетов:', error);
+      return [];
+    }
+  }
+
   setValue(key: string, value: Record<string, any>) {
     this.redisService.client.set(key, JSON.stringify(value));
   }

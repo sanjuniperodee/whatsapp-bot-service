@@ -13,8 +13,8 @@ import { UserRepository } from '../../domain-repositories/user/user.repository';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
-import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { NotificationService } from '@modules/firebase/notification.service';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 
 @WebSocketGateway({
   path: '/socket.io/',
@@ -25,9 +25,9 @@ import { NotificationService } from '@modules/firebase/notification.service';
   },
   // Оптимизированные настройки для стабильности
   transports: ['websocket', 'polling'],
-  pingTimeout: 120000, // 120 секунд - увеличиваем для стабильности
-  pingInterval: 60000, // 60 секунд - увеличиваем интервал
-  upgradeTimeout: 15000, // 15 секунд - увеличиваем время апгрейда
+  pingTimeout: 60000, // 60 секунд - оптимальное время для мобильных устройств
+  pingInterval: 25000, // 25 секунд - более частые проверки
+  upgradeTimeout: 10000, // 10 секунд - уменьшаем для быстрого апгрейда
   maxHttpBufferSize: 1e6, // 1MB
   allowEIO3: true, // Поддержка старых версий
   connectTimeout: 20000, // 20 секунд на подключение
@@ -41,7 +41,12 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     private readonly cacheStorageService: CloudCacheStorageService,
     private readonly userRepository: UserRepository,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) {
+    // Запускаем периодическую очистку неактивных сокетов каждые 5 минут
+    setInterval(() => {
+      this.cleanupInactiveSockets();
+    }, 5 * 60 * 1000); // 5 минут
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -197,15 +202,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     }
   }
 
-  @SubscribeMessage('ping')
-  async handlePing(client: Socket, data: any) {
-    // Отвечаем на ping событие для поддержания соединения
-    client.emit('pong', { 
-      timestamp: Date.now(),
-      received: data?.timestamp || Date.now()
-    });
-    console.log(`💓 Ping получен от ${client.handshake.query.userType}: ${client.handshake.query.userId || client.handshake.query.driverId}`);
-  }
+  // Ping handler removed - Socket.IO has built-in ping/pong mechanism
+  // @SubscribeMessage('ping') - не нужен, так как Socket.IO автоматически обрабатывает ping/pong
 
   @SubscribeMessage('driverLocationUpdate')
   async handleDriverLocationUpdate(client: Socket, data: { lat: number, lng: number, timestamp?: number }) {
@@ -346,6 +344,44 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   // === МЕТОДЫ ДЛЯ УВЕДОМЛЕНИЙ ===
 
+  // Очистка неактивных сокетов из Redis
+  async cleanupInactiveSockets() {
+    try {
+      console.log('🧹 Начинаем очистку неактивных сокетов...');
+      
+      // Получаем все ключи сокетов из Redis
+      const socketKeys = await this.cacheStorageService.getSocketKeys();
+      let cleanedCount = 0;
+      
+      for (const key of socketKeys) {
+        const userId = key.replace('sockets:', '');
+        const socketIds = await this.cacheStorageService.getSocketIds(userId);
+        
+        const activeSockets = [];
+        const inactiveSockets = [];
+        
+        for (const socketId of socketIds) {
+          const socket = this.server.sockets.sockets.get(socketId);
+          if (socket && socket.connected) {
+            activeSockets.push(socketId);
+          } else {
+            inactiveSockets.push(socketId);
+          }
+        }
+        
+        // Удаляем неактивные сокеты
+        for (const socketId of inactiveSockets) {
+          await this.cacheStorageService.removeSocketId(userId, socketId);
+          cleanedCount++;
+        }
+      }
+      
+      console.log(`🧹 Очистка завершена. Удалено ${cleanedCount} неактивных сокетов`);
+    } catch (error) {
+      console.error('❌ Ошибка при очистке неактивных сокетов:', error);
+    }
+  }
+
   // Уведомление конкретного клиента (всем его сокетам)
   async notifyClient(userId: string, event: string, data: any) {
     const clientSockets = await this.cacheStorageService.getSocketIds(userId);
@@ -353,6 +389,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       console.log(`📱 Отправляем событие ${event} клиенту ${userId} на ${clientSockets.length} сокетов`);
       
       let successCount = 0;
+      const inactiveSockets = [];
+      
       for (const socketId of clientSockets) {
         try {
           const socket = this.server.sockets.sockets.get(socketId);
@@ -360,10 +398,22 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
             socket.emit(event, data);
             successCount++;
           } else {
-            console.log(`⚠️ Сокет ${socketId} клиента ${userId} неактивен, пропускаем`);
+            console.log(`⚠️ Сокет ${socketId} клиента ${userId} неактивен, удаляем из Redis`);
+            inactiveSockets.push(socketId);
           }
         } catch (error) {
           console.error(`❌ Ошибка отправки на сокет ${socketId}:`, error);
+          inactiveSockets.push(socketId);
+        }
+      }
+      
+      // Удаляем неактивные сокеты из Redis
+      for (const socketId of inactiveSockets) {
+        try {
+          await this.cacheStorageService.removeSocketId(userId, socketId);
+          console.log(`🧹 Удален неактивный сокет ${socketId} клиента ${userId} из Redis`);
+        } catch (error) {
+          console.error(`❌ Ошибка удаления сокета ${socketId} из Redis:`, error);
         }
       }
       
@@ -380,6 +430,8 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       console.log(`🚗 Отправляем событие ${event} водителю ${driverId} на ${driverSockets.length} сокетов`);
       
       let successCount = 0;
+      const inactiveSockets = [];
+      
       for (const socketId of driverSockets) {
         try {
           const socket = this.server.sockets.sockets.get(socketId);
@@ -387,10 +439,31 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
             socket.emit(event, data);
             successCount++;
           } else {
-            console.log(`⚠️ Сокет ${socketId} водителя ${driverId} неактивен, пропускаем`);
+            console.log(`⚠️ Сокет ${socketId} водителя ${driverId} неактивен, удаляем из Redis`);
+            inactiveSockets.push(socketId);
           }
         } catch (error) {
           console.error(`❌ Ошибка отправки на сокет ${socketId}:`, error);
+          inactiveSockets.push(socketId);
+        }
+      }
+      
+      // Удаляем неактивные сокеты из Redis
+      for (const socketId of inactiveSockets) {
+        try {
+          await this.cacheStorageService.removeSocketId(driverId, socketId);
+          console.log(`🧹 Удален неактивный сокет ${socketId} водителя ${driverId} из Redis`);
+        } catch (error) {
+          console.error(`❌ Ошибка удаления сокета ${socketId} из Redis:`, error);
+        }
+      }
+      
+      // Если у водителя не осталось активных сокетов, убираем его из онлайн
+      if (successCount === 0 && driverSockets.length > 0) {
+        const hasActiveSockets = await this.cacheStorageService.hasActiveSockets(driverId);
+        if (!hasActiveSockets) {
+          await this.cacheStorageService.removeOnlineDriver(driverId);
+          console.log(`🔴 Водитель ${driverId} убран из онлайн (нет активных сокетов)`);
         }
       }
       
