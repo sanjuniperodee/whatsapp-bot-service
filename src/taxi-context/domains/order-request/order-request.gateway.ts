@@ -266,15 +266,20 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       // Отправляем позицию клиенту ТОЛЬКО если есть активный заказ
       if (orderRequest) {
         const clientId = orderRequest.getPropsCopy().clientId.value;
+        const orderStatus = orderRequest.getPropsCopy().orderStatus;
+        
+        console.log(`📍 Отправляем позицию водителя ${driverId} клиенту ${clientId}, статус заказа: ${orderStatus}`);
         
         await this.notifyClient(clientId, 'driverLocation', {
           lat,
           lng,
           driverId,
           orderId: orderRequest.id.value,
-          orderStatus: orderRequest.getPropsCopy().orderStatus,
+          orderStatus: orderStatus,
           timestamp: data.timestamp || Date.now()
         });
+      } else {
+        console.log(`📍 Водитель ${driverId} обновил позицию, но активного заказа нет`);
       }
 
       // Логируем обновление позиции (можно убрать в продакшене для экономии логов)
@@ -418,8 +423,11 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     const orderId = orderRequest.id.value;
     const driverId = driver.id.value;
 
+    console.log(`🔄 Обработка принятия заказа: orderId=${orderId}, clientId=${clientId}, driverId=${driverId}`);
+
     try {
       // Уведомляем клиента о принятии заказа
+      console.log(`📤 Отправляем событие orderAccepted клиенту ${clientId}`);
       await this.notifyClient(clientId, 'orderAccepted', {
         orderId,
         driverId,
@@ -429,6 +437,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       });
 
       // Уведомляем других водителей что заказ занят
+      console.log(`📤 Отправляем событие orderTaken всем водителям`);
       await this.broadcastToOnlineDrivers('orderTaken', {
         orderId,
         takenBy: driverId,
