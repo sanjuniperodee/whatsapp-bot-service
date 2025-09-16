@@ -54,7 +54,6 @@ export class RejectOrderService {
         'К сожалению водитель отменил заказ, попробуйте повторить попытку',
         client.getPropsCopy().deviceToken || ''
       );
-
-      // Используем новый метод gateway для уведомления об отмене водителем    }
+     }
   }
 }
