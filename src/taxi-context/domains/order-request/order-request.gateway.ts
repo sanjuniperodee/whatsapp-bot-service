@@ -25,24 +25,16 @@ import { NotificationService } from '@modules/firebase/notification.service';
   },
   // Оптимизированные настройки для стабильности
   transports: ['websocket', 'polling'],
-  pingTimeout: 60000, // 60 секунд
-  pingInterval: 25000, // 25 секунд
-  upgradeTimeout: 10000, // 10 секунд
+  pingTimeout: 120000, // 120 секунд - увеличиваем для стабильности
+  pingInterval: 60000, // 60 секунд - увеличиваем интервал
+  upgradeTimeout: 15000, // 15 секунд - увеличиваем время апгрейда
   maxHttpBufferSize: 1e6, // 1MB
   allowEIO3: true, // Поддержка старых версий
+  connectTimeout: 20000, // 20 секунд на подключение
 })
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer() server: Server;
-
-  // Хранение подключений по типам пользователей
-  private clientConnections = new Map<string, Set<string>>(); // userId -> Set<socketId>
-  private driverConnections = new Map<string, Set<string>>(); // driverId -> Set<socketId>
-  private onlineDrivers = new Set<string>(); // Set<driverId>
-  
-  // Лимиты соединений
-  private readonly MAX_CONNECTIONS_PER_USER = 3; // Максимум 3 соединения на пользователя
-  private readonly MAX_TOTAL_CONNECTIONS = 1000; // Максимум 1000 соединений всего
 
   constructor(
     private readonly orderRequestRepository: OrderRequestRepository,
@@ -57,13 +49,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       
       console.log(`🔌 Новое подключение: userType=${userType}, userId=${userId}, driverId=${driverId}`);
 
-      // Проверяем общий лимит соединений
-      const totalConnections = this.getTotalConnections();
-      if (totalConnections >= this.MAX_TOTAL_CONNECTIONS) {
-        console.log(`❌ Отклонено подключение: превышен лимит соединений (${totalConnections}/${this.MAX_TOTAL_CONNECTIONS})`);
-        client.disconnect();
-        return;
-      }
+      // Проверка лимита соединений удалена - теперь используется Redis для хранения соединений
 
       if (!sessionId) {
         console.log('❌ Отклонено подключение: отсутствует sessionId');
@@ -95,24 +81,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       return;
     }
 
-    // Проверяем лимит соединений для пользователя
-    const userConnections = this.clientConnections.get(userId);
-    if (userConnections && userConnections.size >= this.MAX_CONNECTIONS_PER_USER) {
-      console.log(`❌ Отклонено подключение клиента ${userId}: превышен лимит соединений (${userConnections.size}/${this.MAX_CONNECTIONS_PER_USER})`);
-      client.disconnect();
-      return;
-    }
-
-    // Добавляем в хранилище клиентских подключений
-    if (!this.clientConnections.has(userId)) {
-      this.clientConnections.set(userId, new Set());
-    }
-    this.clientConnections.get(userId)!.add(client.id);
-
     // Присоединяем к комнате клиента
     client.join(`client_${userId}`);
 
-    // Обновляем кеш
+    // Добавляем socket ID в Redis
     await this.cacheStorageService.addSocketId(userId, client.id);
 
     console.log(`📱 Клиент подключен: ${userId}`);
@@ -124,26 +96,15 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   private async handleDriverConnection(client: Socket, driverId: string, sessionId: string, lat?: string, lng?: string) {
     console.log(`🚗 Водитель подключается: ${driverId}, сессия: ${sessionId}`);
     
-    // Проверяем лимит соединений для водителя
-    const driverConnections = this.driverConnections.get(driverId);
-    if (driverConnections && driverConnections.size >= this.MAX_CONNECTIONS_PER_USER) {
-      console.log(`❌ Отклонено подключение водителя ${driverId}: превышен лимит соединений (${driverConnections.size}/${this.MAX_CONNECTIONS_PER_USER})`);
-      client.disconnect();
-      return;
-    }
-    
     // Добавляем водителя в комнату его ID для индивидуальных уведомлений
     client.join(`driver_${driverId}`);
     
     // АВТОМАТИЧЕСКИ добавляем в онлайн при подключении к сокету
-    this.onlineDrivers.add(driverId);
+    await this.cacheStorageService.addOnlineDriver(driverId);
     client.join('online_drivers');
     
-    // Добавляем в Map подключений водителей
-    if (!this.driverConnections.has(driverId)) {
-      this.driverConnections.set(driverId, new Set());
-    }
-    this.driverConnections.get(driverId)!.add(client.id);
+    // Добавляем socket ID в Redis
+    await this.cacheStorageService.addSocketId(driverId, client.id);
     
     // Если указаны координаты - обновляем местоположение
     if (lat && lng) {
@@ -159,8 +120,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     client.data.driverId = driverId;
     client.data.userType = 'driver';
     
+    const onlineCount = await this.cacheStorageService.getOnlineDriversCount();
     console.log(`✅ Водитель ${driverId} успешно подключен (сокет: ${client.id})`);
-    console.log(`🟢 Водитель ${driverId} автоматически онлайн (всего онлайн: ${this.onlineDrivers.size})`);
+    console.log(`🟢 Водитель ${driverId} автоматически онлайн (всего онлайн: ${onlineCount})`);
 
     // Синхронизируем активный заказ водителя
     await this.syncDriverActiveOrder(driverId, client);
@@ -184,41 +146,30 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   private async handleClientDisconnection(client: Socket, userId: string) {
-    // Удаляем из хранилища клиентских подключений
-    const clientSockets = this.clientConnections.get(userId);
-    if (clientSockets) {
-      clientSockets.delete(client.id);
-      if (clientSockets.size === 0) {
-        this.clientConnections.delete(userId);
-      }
-    }
-
     // Покидаем комнаты
     client.leave(`client_${userId}`);
 
-    // Обновляем кеш
+    // Удаляем socket ID из Redis
     await this.cacheStorageService.removeSocketId(userId, client.id);
 
     console.log(`📱 Клиент отключен: ${userId}`);
   }
 
   private async handleDriverDisconnection(client: Socket, driverId: string) {
-    // Удаляем из хранилища подключений водителей
-    const driverSockets = this.driverConnections.get(driverId);
-    if (driverSockets) {
-      driverSockets.delete(client.id);
-      if (driverSockets.size === 0) {
-        this.driverConnections.delete(driverId);
-        this.onlineDrivers.delete(driverId); // Водитель больше не онлайн
-      }
-    }
-
     // Покидаем комнаты
     client.leave(`driver_${driverId}`);
-    client.leave('all_drivers');
+    client.leave('online_drivers');
 
-    // Обновляем кеш
+    // Удаляем socket ID из Redis
     await this.cacheStorageService.removeSocketId(driverId, client.id);
+
+    // Проверяем, остались ли активные сокеты у водителя
+    const hasActiveSockets = await this.cacheStorageService.hasActiveSockets(driverId);
+    if (!hasActiveSockets) {
+      // Если нет активных сокетов, убираем водителя из онлайн
+      await this.cacheStorageService.removeOnlineDriver(driverId);
+      console.log(`🔴 Водитель ${driverId} ушел оффлайн (нет активных сокетов)`);
+    }
 
     console.log(`🚗 Водитель отключен: ${driverId}`);
   }
@@ -227,9 +178,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleDriverOnline(client: Socket, data: any) {
     const driverId = client.handshake.query.driverId as string;
     if (driverId) {
-      this.onlineDrivers.add(driverId);
+      await this.cacheStorageService.addOnlineDriver(driverId);
       client.join('online_drivers');
-      console.log(`🟢 Водитель вышел онлайн: ${driverId} (всего онлайн: ${this.onlineDrivers.size})`);
+      const onlineCount = await this.cacheStorageService.getOnlineDriversCount();
+      console.log(`🟢 Водитель вышел онлайн: ${driverId} (всего онлайн: ${onlineCount})`);
     } else {
       console.log(`❌ Попытка выйти онлайн без driverId`);
     }
@@ -239,7 +191,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async handleDriverOffline(client: Socket, data: any) {
     const driverId = client.handshake.query.driverId as string;
     if (driverId) {
-      this.onlineDrivers.delete(driverId);
+      await this.cacheStorageService.removeOnlineDriver(driverId);
       client.leave('online_drivers');
       console.log(`🔴 Водитель ушел оффлайн: ${driverId}`);
     }
@@ -394,16 +346,58 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
 
   // === МЕТОДЫ ДЛЯ УВЕДОМЛЕНИЙ ===
 
-  // Уведомление конкретного клиента
+  // Уведомление конкретного клиента (всем его сокетам)
   async notifyClient(userId: string, event: string, data: any) {
-    this.server.to(`client_${userId}`).emit(event, data);
-    console.log(`📱 Отправлено клиенту ${userId}: ${event}`);
+    const clientSockets = await this.cacheStorageService.getSocketIds(userId);
+    if (clientSockets && clientSockets.length > 0) {
+      console.log(`📱 Отправляем событие ${event} клиенту ${userId} на ${clientSockets.length} сокетов`);
+      
+      let successCount = 0;
+      for (const socketId of clientSockets) {
+        try {
+          const socket = this.server.sockets.sockets.get(socketId);
+          if (socket && socket.connected) {
+            socket.emit(event, data);
+            successCount++;
+          } else {
+            console.log(`⚠️ Сокет ${socketId} клиента ${userId} неактивен, пропускаем`);
+          }
+        } catch (error) {
+          console.error(`❌ Ошибка отправки на сокет ${socketId}:`, error);
+        }
+      }
+      
+      console.log(`📱 Успешно отправлено на ${successCount}/${clientSockets.length} сокетов клиента ${userId}: ${event}`);
+    } else {
+      console.log(`⚠️ Нет активных сокетов для клиента ${userId}`);
+    }
   }
 
-  // Уведомление конкретного водителя
+  // Уведомление конкретного водителя (всем его сокетам)
   async notifyDriver(driverId: string, event: string, data: any) {
-    this.server.to(`driver_${driverId}`).emit(event, data);
-    console.log(`🚗 Отправлено водителю ${driverId}: ${event}`);
+    const driverSockets = await this.cacheStorageService.getSocketIds(driverId);
+    if (driverSockets && driverSockets.length > 0) {
+      console.log(`🚗 Отправляем событие ${event} водителю ${driverId} на ${driverSockets.length} сокетов`);
+      
+      let successCount = 0;
+      for (const socketId of driverSockets) {
+        try {
+          const socket = this.server.sockets.sockets.get(socketId);
+          if (socket && socket.connected) {
+            socket.emit(event, data);
+            successCount++;
+          } else {
+            console.log(`⚠️ Сокет ${socketId} водителя ${driverId} неактивен, пропускаем`);
+          }
+        } catch (error) {
+          console.error(`❌ Ошибка отправки на сокет ${socketId}:`, error);
+        }
+      }
+      
+      console.log(`🚗 Успешно отправлено на ${successCount}/${driverSockets.length} сокетов водителя ${driverId}: ${event}`);
+    } else {
+      console.log(`⚠️ Нет активных сокетов для водителя ${driverId}`);
+    }
   }
 
   // Рассылка всем онлайн водителям
@@ -432,8 +426,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       console.log(`📦 Создан новый заказ ${orderRequest.id.value}, найдено водителей: ${drivers.length}`);
       
       // ДОПОЛНИТЕЛЬНО: Рассылаем всем онлайн водителям для гарантии доставки
-      console.log(`📢 Количество онлайн водителей: ${this.onlineDrivers.size}`);
-      console.log(`📢 Список онлайн водителей: ${Array.from(this.onlineDrivers).join(', ')}`);
+      const onlineDriversList = await this.cacheStorageService.getOnlineDrivers();
+      console.log(`📢 Количество онлайн водителей: ${onlineDriversList.length}`);
+      console.log(`📢 Список онлайн водителей: ${onlineDriversList.join(', ')}`);
       
       // Рассылаем заказ всем онлайн водителям подходящей категории
       await this.broadcastToOnlineDrivers('newOrder', {
@@ -454,13 +449,14 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
           category => category.categoryType === orderType
         );
 
-        console.log(`🔍 Водитель ${driver.id}: категория=${hasMatchingCategory}, онлайн=${this.onlineDrivers.has(driver.id)}, не клиент=${clientId !== driver.id}`);
+        const isDriverOnline = await this.cacheStorageService.isDriverOnline(driver.id);
+        console.log(`🔍 Водитель ${driver.id}: категория=${hasMatchingCategory}, онлайн=${isDriverOnline}, не клиент=${clientId !== driver.id}`);
 
         // Не отправляем заказ самому клиенту если он водитель
         if (hasMatchingCategory && clientId !== driver.id) {
           
           // Отправляем WebSocket уведомление только онлайн водителям
-          if (this.onlineDrivers.has(driver.id)) {
+          if (isDriverOnline) {
             await this.notifyDriver(driver.id, 'newOrder', {
               id: orderRequest.id.value,
               from: orderRequest.getPropsCopy().from,
@@ -724,34 +720,22 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   // Вспомогательные методы для получения статистики
-  getConnectionStats() {
+  async getConnectionStats() {
+    const onlineDriversCount = await this.cacheStorageService.getOnlineDriversCount();
     return {
-      clients: this.clientConnections.size,
-      drivers: this.driverConnections.size,
-      onlineDrivers: this.onlineDrivers.size,
+      onlineDrivers: onlineDriversCount,
       totalSockets: this.server.sockets.sockets.size
     };
   }
 
-  isDriverOnline(driverId: string): boolean {
-    return this.onlineDrivers.has(driverId);
+  async isDriverOnline(driverId: string): Promise<boolean> {
+    return await this.cacheStorageService.isDriverOnline(driverId);
   }
 
-  isClientConnected(userId: string): boolean {
-    return this.clientConnections.has(userId);
+  async isClientConnected(userId: string): Promise<boolean> {
+    return await this.cacheStorageService.hasActiveSockets(userId);
   }
 
-  // Подсчет общего количества соединений
-  private getTotalConnections(): number {
-    let total = 0;
-    for (const connections of this.clientConnections.values()) {
-      total += connections.size;
-    }
-    for (const connections of this.driverConnections.values()) {
-      total += connections.size;
-    }
-    return total;
-  }
 
   async emitEvent(userId: string, event: string, order: OrderRequestEntity, driver: UserEntity) {
     try {

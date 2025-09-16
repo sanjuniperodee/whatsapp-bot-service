@@ -19,13 +19,50 @@ export class CloudCacheStorageService {
   // Удаляем Socket ID из множества для userId
   async removeSocketId(userId: string, socketId: string) {
     const key = `sockets:${userId}`;
-
-    await this.redisService.client.del(key); // Удаляем весь ключ
+    // Удаляем конкретный Socket ID из множества
+    await this.redisService.client.srem(key, socketId);
+    // Если множество пустое, удаляем ключ
+    const remainingSockets = await this.redisService.client.scard(key);
+    if (remainingSockets === 0) {
+      await this.redisService.client.del(key);
+    }
   }
 
   // Получаем все Socket ID для userId
   async getSocketIds(userId: string): Promise<string[]> {
     return await this.redisService.client.smembers(`sockets:${userId}`);
+  }
+
+  // Проверяем есть ли активные сокеты для пользователя
+  async hasActiveSockets(userId: string): Promise<boolean> {
+    const count = await this.redisService.client.scard(`sockets:${userId}`);
+    return count > 0;
+  }
+
+  // Добавляем водителя в онлайн
+  async addOnlineDriver(driverId: string) {
+    await this.redisService.client.sadd('online_drivers', driverId);
+  }
+
+  // Удаляем водителя из онлайн
+  async removeOnlineDriver(driverId: string) {
+    await this.redisService.client.srem('online_drivers', driverId);
+  }
+
+  // Получаем всех онлайн водителей
+  async getOnlineDrivers(): Promise<string[]> {
+    return await this.redisService.client.smembers('online_drivers');
+  }
+
+  // Проверяем онлайн ли водитель
+  async isDriverOnline(driverId: string): Promise<boolean> {
+    const isMember = await this.redisService.client.sismember('online_drivers', driverId);
+    return Boolean(isMember);
+  }
+
+  // Получаем количество онлайн водителей
+  async getOnlineDriversCount(): Promise<number> {
+    return await this.redisService.client.scard('online_drivers');
   }
 
   setValue(key: string, value: Record<string, any>) {
