@@ -511,6 +511,128 @@ export class OrderRequestController {
     return user?.getPropsCopy()
   }
 
+  @Get('driver/stats')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Get driver statistics' })
+  @ApiResponse({ status: 200, description: 'Driver stats retrieved successfully' })
+  async getDriverStats(@IAM() user: UserOrmEntity) {
+    try {
+      // Get today's date range
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Get completed orders for today
+      const todayOrders = await OrderRequestOrmEntity.query()
+        .where('driverId', user.id)
+        .where('orderStatus', OrderStatus.COMPLETED)
+        .where('createdAt', '>=', today)
+        .where('createdAt', '<', tomorrow);
+
+      // Calculate today's earnings
+      const todayEarnings = todayOrders.reduce((sum, order) => sum + (order.price || 0), 0);
+
+      // Get all completed orders for rating calculation
+      const allCompletedOrders = await OrderRequestOrmEntity.query()
+        .where('driverId', user.id)
+        .where('orderStatus', OrderStatus.COMPLETED)
+        .whereNotNull('rating');
+
+      // Calculate average rating
+      const averageRating = allCompletedOrders.length > 0 
+        ? allCompletedOrders.reduce((sum, order) => sum + (order.rating || 0), 0) / allCompletedOrders.length
+        : 5.0;
+
+      // Get total orders count
+      const totalOrders = await OrderRequestOrmEntity.query()
+        .where('driverId', user.id)
+        .where('orderStatus', OrderStatus.COMPLETED)
+        .resultSize();
+
+      // Calculate acceptance rate (simplified - you may want to track this separately)
+      const acceptanceRate = 95; // Placeholder - implement proper tracking
+
+      return {
+        todayEarnings,
+        todayTrips: todayOrders.length,
+        rating: Math.round(averageRating * 10) / 10,
+        acceptance: acceptanceRate,
+        totalTrips: totalOrders,
+      };
+    } catch (error) {
+      console.error('Error getting driver stats:', error);
+      throw error;
+    }
+  }
+
+  @Get('client/saved-places')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Get client saved places' })
+  @ApiResponse({ status: 200, description: 'Saved places retrieved successfully' })
+  async getClientSavedPlaces(@IAM() user: UserOrmEntity) {
+    try {
+      // For now, return hardcoded saved places
+      // In the future, you can implement a SavedPlaces entity
+      return [
+        {
+          id: 'home',
+          icon: 'home',
+          title: 'Дом',
+          address: 'Актау, мкр. 5, дом 20',
+          lat: 43.6532,
+          lng: 51.1694,
+        },
+        {
+          id: 'work',
+          icon: 'work',
+          title: 'Работа',
+          address: 'Актау, ул. Мангистауская 15',
+          lat: 43.6481,
+          lng: 51.1647,
+        },
+      ];
+    } catch (error) {
+      console.error('Error getting saved places:', error);
+      throw error;
+    }
+  }
+
+  @Get('client/recent-addresses')
+  @UseGuards(JwtAuthGuard())
+  @ApiOperation({ summary: 'Get client recent addresses' })
+  @ApiResponse({ status: 200, description: 'Recent addresses retrieved successfully' })
+  async getClientRecentAddresses(@IAM() user: UserOrmEntity) {
+    try {
+      // Get recent destinations from completed orders
+      const recentOrders = await OrderRequestOrmEntity.query()
+        .where('clientId', user.id)
+        .where('orderStatus', OrderStatus.COMPLETED)
+        .orderBy('createdAt', 'desc')
+        .limit(10);
+
+      const uniqueAddresses = [];
+      const seenAddresses = new Set();
+
+      for (const order of recentOrders) {
+        if (!seenAddresses.has(order.to) && order.to) {
+          seenAddresses.add(order.to);
+          uniqueAddresses.push({
+            address: order.to,
+            lat: order.lat,
+            lng: order.lng,
+          });
+        }
+        if (uniqueAddresses.length >= 5) break;
+      }
+
+      return uniqueAddresses;
+    } catch (error) {
+      console.error('Error getting recent addresses:', error);
+      throw error;
+    }
+  }
+
   @UseGuards(JwtAuthGuard())
   @Post('accept')
   @ApiBody({ type: ChangeOrderStatus })
