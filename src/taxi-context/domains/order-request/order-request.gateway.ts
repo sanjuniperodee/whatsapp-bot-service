@@ -116,6 +116,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     await this.cacheStorageService.addSocketId(userId, client.id);
 
     console.log(`📱 Клиент подключен: ${userId}`);
+
+    // Синхронизируем активный заказ клиента
+    await this.syncClientActiveOrder(userId, client);
   }
 
   private async handleDriverConnection(client: Socket, driverId: string, sessionId: string, lat?: string, lng?: string) {
@@ -158,6 +161,9 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     
     console.log(`✅ Водитель ${driverId} успешно подключен (сокет: ${client.id})`);
     console.log(`🟢 Водитель ${driverId} автоматически онлайн (всего онлайн: ${this.onlineDrivers.size})`);
+
+    // Синхронизируем активный заказ водителя
+    await this.syncDriverActiveOrder(driverId, client);
   }
 
   async handleDisconnect(client: Socket) {
@@ -287,6 +293,102 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       
     } catch (error) {
       console.error(`❌ Ошибка обновления позиции водителя ${driverId}:`, error);
+    }
+  }
+
+  // === МЕТОДЫ ДЛЯ СИНХРОНИЗАЦИИ ===
+
+  // Синхронизация активного заказа клиента при подключении
+  private async syncClientActiveOrder(userId: string, client: Socket) {
+    try {
+      console.log(`🔄 Синхронизация активного заказа для клиента ${userId}`);
+      
+      // Находим активный заказ клиента
+      const activeOrder = await this.orderRequestRepository.findActiveByClientId(userId);
+      
+      if (activeOrder) {
+        const orderId = activeOrder.id.value;
+        const orderStatus = activeOrder.getPropsCopy().orderStatus;
+        const driverId = activeOrder.getPropsCopy().driverId?.value;
+        
+        console.log(`📋 Найден активный заказ ${orderId} со статусом ${orderStatus} для клиента ${userId}`);
+        
+        // Отправляем событие синхронизации
+        client.emit('orderSync', {
+          orderId,
+          orderStatus,
+          driverId,
+          order: activeOrder.getPropsCopy(),
+          timestamp: Date.now(),
+          message: 'Активный заказ синхронизирован'
+        });
+        
+        console.log(`📤 Отправлено событие orderSync клиенту ${userId} для заказа ${orderId}`);
+        
+        // Если есть водитель, отправляем его информацию
+        if (driverId) {
+          const driver = await this.userRepository.findOneById(driverId);
+          if (driver) {
+            client.emit('driverInfo', {
+              driverId,
+              driver: driver.getPropsCopy(),
+              timestamp: Date.now()
+            });
+            
+            console.log(`📤 Отправлена информация о водителе ${driverId} клиенту ${userId}`);
+          }
+        }
+      } else {
+        console.log(`ℹ️ Активный заказ не найден для клиента ${userId}`);
+      }
+    } catch (error) {
+      console.error(`❌ Ошибка синхронизации активного заказа для клиента ${userId}:`, error);
+    }
+  }
+
+  // Синхронизация активного заказа водителя при подключении
+  private async syncDriverActiveOrder(driverId: string, client: Socket) {
+    try {
+      console.log(`🔄 Синхронизация активного заказа для водителя ${driverId}`);
+      
+      // Находим активный заказ водителя
+      const activeOrder = await this.orderRequestRepository.findActiveByDriverId(driverId);
+      
+      if (activeOrder) {
+        const orderId = activeOrder.id.value;
+        const orderStatus = activeOrder.getPropsCopy().orderStatus;
+        const clientId = activeOrder.getPropsCopy().clientId.value;
+        
+        console.log(`📋 Найден активный заказ ${orderId} со статусом ${orderStatus} для водителя ${driverId}`);
+        
+        // Отправляем событие синхронизации
+        client.emit('orderSync', {
+          orderId,
+          orderStatus,
+          clientId,
+          order: activeOrder.getPropsCopy(),
+          timestamp: Date.now(),
+          message: 'Активный заказ синхронизирован'
+        });
+        
+        console.log(`📤 Отправлено событие orderSync водителю ${driverId} для заказа ${orderId}`);
+        
+        // Отправляем информацию о клиенте
+        const clientUser = await this.userRepository.findOneById(clientId);
+        if (clientUser) {
+          client.emit('clientInfo', {
+            clientId,
+            client: clientUser.getPropsCopy(),
+            timestamp: Date.now()
+          });
+          
+          console.log(`📤 Отправлена информация о клиенте ${clientId} водителю ${driverId}`);
+        }
+      } else {
+        console.log(`ℹ️ Активный заказ не найден для водителя ${driverId}`);
+      }
+    } catch (error) {
+      console.error(`❌ Ошибка синхронизации активного заказа для водителя ${driverId}:`, error);
     }
   }
 
