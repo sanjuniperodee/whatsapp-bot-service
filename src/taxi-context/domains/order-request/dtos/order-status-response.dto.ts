@@ -1,16 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UserResponseDto } from '@domain/user/dtos/user-response.dto';
-import { CategoryLicenseResponseDto } from '@domain/user/dtos/category-license-response.dto';
 
 export class OrderStatusResponseDto {
   @ApiProperty()
   order: {
-    id: string;
+    id: { props: { value: string } };
     createdAt: Date;
     updatedAt: Date;
-    driverId?: string;
-    clientId: string;
+    driverId?: { props: { value: string } };
+    clientId: { props: { value: string } };
     orderType: OrderType;
     orderStatus: OrderStatus;
     from: string;
@@ -29,25 +28,10 @@ export class OrderStatusResponseDto {
   };
 
   @ApiProperty({ required: false })
-  driver?: {
-    phone: string;
-    firstName: string;
-    lastName: string;
-    middleName?: string;
-    lastSms?: string;
-    deviceToken?: string;
-    isBlocked: boolean;
-    blockedUntil?: Date;
-    blockReason?: string;
-    location?: {
-      latitude: number;
-      longitude: number;
-      timestamp: number;
-    };
-  };
+  driver?: UserResponseDto;
 
   @ApiProperty({ required: false })
-  car?: CategoryLicenseResponseDto;
+  car?: { id: string; props: { SSN?: string; brand?: string; model?: string; color?: string; number?: string } };
 
   @ApiProperty()
   status: OrderStatus;
@@ -63,11 +47,13 @@ export class OrderStatusResponseDto {
     reviewsCount: number = 0
   ) {
     this.order = {
-      id: orderRequest.id?.value || orderRequest._id,
+      id: { props: { value: orderRequest.id?.value || orderRequest._id } },
       createdAt: orderRequest.props?.createdAt || orderRequest.createdAt,
       updatedAt: orderRequest.props?.updatedAt || orderRequest.updatedAt,
-      driverId: orderRequest.props?.driverId?.value || orderRequest.driverId,
-      clientId: orderRequest.props?.clientId?.value || orderRequest.clientId,
+      driverId: orderRequest.props?.driverId?.value || orderRequest.driverId
+        ? { props: { value: orderRequest.props?.driverId?.value || orderRequest.driverId } }
+        : undefined,
+      clientId: { props: { value: orderRequest.props?.clientId?.value || orderRequest.clientId } },
       orderType: orderRequest.props?.orderType || orderRequest.orderType,
       orderStatus: orderRequest.props?.orderStatus || orderRequest.orderStatus,
       from: orderRequest.props?.from || orderRequest.from,
@@ -85,20 +71,20 @@ export class OrderStatusResponseDto {
       endedAt: orderRequest.props?.endedAt || orderRequest.endedAt,
     };
 
-    this.driver = driver ? {
-      phone: driver.props?.phone || driver.phone,
-      firstName: driver.props?.firstName || driver.firstName,
-      lastName: driver.props?.lastName || driver.lastName,
-      middleName: driver.props?.middleName || driver.middleName,
-      lastSms: driver.props?.lastSms || driver.lastSms,
-      deviceToken: driver.props?.deviceToken || driver.deviceToken,
-      isBlocked: driver.props?.isBlocked || driver.isBlocked || false,
-      blockedUntil: driver.props?.blockedUntil || driver.blockedUntil,
-      blockReason: driver.props?.blockReason || driver.blockReason,
-      location: location
-    } : undefined;
+    this.driver = driver ? new UserResponseDto(driver) : undefined;
 
-    this.car = category ? new CategoryLicenseResponseDto(category) : undefined;
+    this.car = category
+      ? {
+          id: category.id?.value || category._id,
+          props: {
+            SSN: category.props?.SSN || category.SSN,
+            brand: category.props?.brand || category.brand,
+            model: category.props?.model || category.model,
+            color: category.props?.color || category.color,
+            number: category.props?.number || category.number,
+          },
+        }
+      : undefined;
     this.status = orderRequest.props?.orderStatus || orderRequest.orderStatus;
     this.reviews = reviewsCount;
   }
