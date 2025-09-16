@@ -2,8 +2,11 @@ import { EntityProps, OrmEntityProps, OrmMapper } from '@libs/ddd/infrastructure
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderRequestEntity, OrderRequestProps } from '@domain/order-request/domain/entities/order-request.entity';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
+import { UserEntity } from '@domain/user/domain/entities/user.entity';
+import { UserOrmMapper } from '../user/user.orm-mapper';
 
 export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRequestOrmEntity> {
+  private userMapper = new UserOrmMapper(UserEntity);
   protected async toOrmProps(entity: OrderRequestEntity): Promise<OrmEntityProps<OrderRequestOrmEntity>> {
     const props = entity.getPropsCopy();
 
@@ -30,6 +33,16 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
   protected async toDomainProps(ormEntity: OrderRequestOrmEntity): Promise<EntityProps<OrderRequestProps>> {
     const id = new UUID(ormEntity.id);
 
+    let client: UserEntity | undefined;
+    if (ormEntity.client) {
+      client = await this.userMapper.toDomainEntity(ormEntity.client);
+    }
+
+    let driver: UserEntity | undefined;
+    if (ormEntity.driver) {
+      driver = await this.userMapper.toDomainEntity(ormEntity.driver);
+    }
+
     const props: OrderRequestProps = {
       createdAt: ormEntity.createdAt,
       updatedAt: ormEntity.updatedAt,
@@ -48,7 +61,9 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       comment: ormEntity.comment,
       endedAt: ormEntity.endedAt,
       rating: ormEntity.rating,
-      clientId: new UUID(ormEntity.clientId)
+      clientId: new UUID(ormEntity.clientId),
+      client: client, // Добавляем клиента
+      driver: driver // Добавляем водителя
     };
 
     return { id, props };

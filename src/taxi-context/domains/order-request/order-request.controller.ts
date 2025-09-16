@@ -25,9 +25,10 @@ import { CategoryLicenseOrmEntity } from '@infrastructure/database/entities/cate
 import { CategoryLicenseRepository } from '../../domain-repositories/category-license/category-license.repository';
 import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
 import { RejectOrderService } from '@domain/order-request/services/reject-order/reject-order.service';
-import * as stringSimilarity from 'string-similarity';
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { ReccuringProfileCallbackDto } from '@domain/order-request/ReccuringProfileCallbackDto';
+import { OrderRequestResponseDto } from './dtos/order-request-response.dto';
+import { UserResponseDto } from '@domain/user/dtos/user-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Webhook. Order Requests')
@@ -224,7 +225,7 @@ export class OrderRequestController {
   @UseGuards(JwtAuthGuard())
   @ApiOperation({ summary: 'Info about registration by category' })
   async categoryInfo(@IAM() user: UserOrmEntity) {
-    return await CategoryLicenseOrmEntity.query().where({ 'driverId': user.id });
+    return await this.categoryLicenseRepository.findAllByDriverId(user.id);
   }
 
   @Post('create-order')
@@ -303,16 +304,16 @@ export class OrderRequestController {
   @Get('my-active-order')
   @ApiOperation({ summary: 'Get my current order' })
   async getMyActiveOrder(@IAM() user?: UserOrmEntity) {
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(user?.id || '')})
-    for (const orderRequest of orderRequests)
-    {
-      const { orderStatus } = orderRequest.getPropsCopy()
-      if(orderRequest && (orderStatus != OrderStatus.REJECTED && orderStatus != OrderStatus.COMPLETED && orderStatus != OrderStatus.REJECTED_BY_CLIENT && orderStatus != OrderStatus.REJECTED_BY_DRIVER)){
-        const whatsappUser = await this.userRepository.findOneById(orderRequest.getPropsCopy().clientId.value);
-        return { whatsappUser, orderRequest }
-      }
-    }
+    const orderRequest = await this.orderRequestRepository.findActiveByDriverId(user.id);
 
+    if (orderRequest) {
+      // Возвращаем данные в правильном формате для фронтенда
+      return new OrderRequestResponseDto(
+        orderRequest,
+        orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
+        undefined
+      );
+    }
 
     throw new NotFoundException('Order not found');
   }
@@ -321,49 +322,34 @@ export class OrderRequestController {
   @Get('history/:type')
   @ApiOperation({ summary: 'Get my order history' })
   async getMyOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
-    // Получаем завершенные и отмененные заказы с JOIN для клиента
-    const orderRequestsOrm = await OrderRequestOrmEntity.query()
-      .where('driverId', user.id)
-      .where('orderType', type)
-      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
-      .withGraphFetched('client') // JOIN с таблицей клиентов
-      .orderBy('createdAt', 'desc');
+    // Используем метод репозитория для получения истории заказов водителя
+    const orderRequests = await this.orderRequestRepository.findHistoryByDriverId(user.id, type);
 
-    return orderRequestsOrm.map((orderRequestOrm) => {
-      if (orderRequestOrm && orderRequestOrm.client) {
-        // Возвращаем данные напрямую из ORM без дополнительных запросов
-        return {
-          whatsappUser: orderRequestOrm.client,
-          orderRequest: orderRequestOrm
-        };
-      }
-      return null;
-    }).filter(result => result !== null);
+    return orderRequests.map((orderRequest) => {
+      // Возвращаем данные в правильном формате для фронтенда
+      return new OrderRequestResponseDto(
+        orderRequest,
+        orderRequest.client ? new UserResponseDto(orderRequest.client) : undefined,
+        undefined
+      );
+    });
   }
 
   @UseGuards(JwtAuthGuard())
   @Get('client-history/:type')
   @ApiOperation({ summary: 'Get my order history' })
   async getCilentOrderHistoryByType(@IAM() user: UserOrmEntity, @Param('type') type: OrderType) {
-    // Получаем завершенные и отмененные заказы с JOIN для водителя
-    const orderRequestsOrm = await OrderRequestOrmEntity.query()
-      .where('clientId', user.id)
-      .where('orderType', type)
-      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
-      .whereNotNull('driverId') // Только заказы с водителем
-      .withGraphFetched('driver') // JOIN с таблицей водителей
-      .orderBy('createdAt', 'desc');
+    // Используем метод репозитория для получения истории заказов клиента
+    const orderRequests = await this.orderRequestRepository.findHistoryByClientId(user.id, type);
 
-    return orderRequestsOrm.map((orderRequestOrm) => {
-      if (orderRequestOrm && orderRequestOrm.driver) {
-        // Возвращаем данные напрямую из ORM без дополнительных запросов
-        return { 
-          driver: orderRequestOrm.driver,
-          orderRequest: orderRequestOrm 
-        };
-      }
-      return null;
-    }).filter(result => result !== null);
+    return orderRequests.map((orderRequest) => {
+      // Возвращаем данные в правильном формате для фронтенда
+      return new OrderRequestResponseDto(
+        orderRequest,
+        undefined,
+        orderRequest.driver ? new UserResponseDto(orderRequest.driver) : undefined
+      );
+    });
   }
 
   @Post('cancel/:orderId')

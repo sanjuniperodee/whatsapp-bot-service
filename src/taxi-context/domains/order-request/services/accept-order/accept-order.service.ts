@@ -24,20 +24,19 @@ export class AcceptOrderService{
   async handle(input: ChangeOrderStatus, driver: UserOrmEntity) {
     const { orderId } = input;
     const driverId = driver.id
-    const orderRequests = await this.orderRequestRepository.findMany({ driverId: new UUID(driverId) })
+    const orderRequest = await this.orderRequestRepository.findActiveByDriverId(driverId)
 
-    for (const orderRequest of orderRequests)
-      if (orderRequest && (orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED && orderRequest.getPropsCopy().orderStatus != OrderStatus.COMPLETED && orderRequest.getPropsCopy().orderStatus != OrderStatus.REJECTED_BY_CLIENT))
-        return 'You already have active order'
+    if (orderRequest)
+      return 'You already have active order'
 
     const order = await this.orderRequestRepository.findOneById(orderId);
 
     if (order && order.getPropsCopy().orderStatus == OrderStatus.CREATED) {
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
 
-      if(!category){
+      if(!category)
         throw new BadRequestException("You can not accept orders before registering into category");
-      }
+
       order.accept(new UUID(driverId));
       await this.orderRequestRepository.save(order);
 

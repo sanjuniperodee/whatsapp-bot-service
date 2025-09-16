@@ -79,6 +79,11 @@ export class CategoryLicenseRepository
       throw err;
     }
   }
+
+  async findAllByDriverId(driverId: string): Promise<CategoryLicenseEntity[]> {
+    const found = await CategoryLicenseOrmEntity.query().where({ 'driverId': driverId });
+    return found.length ? Promise.all(found.map(async (i) => await this.mapper.toDomainEntity(i))) : [];
+  }
   async save(entity: CategoryLicenseEntity, trxId?: TransactionId): Promise<UUID> {
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]

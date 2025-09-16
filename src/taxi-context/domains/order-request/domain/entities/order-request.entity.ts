@@ -2,6 +2,7 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base';
 import { ArgumentInvalidException } from '@libs/exceptions';
 import { OrderStatus, OrderType } from '@infrastructure/enums';
+import { UserEntity } from '@domain/user/domain/entities/user.entity';
 
 export interface CreateOrderRequestProps {
   driverId?: UUID;
@@ -26,6 +27,8 @@ export type OrderRequestProps = CreateOrderRequestProps & {
   createdAt: Date;
   updatedAt: Date;
   endedAt?: Date;
+  client?: UserEntity;
+  driver?: UserEntity;
 };
 
 export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
@@ -77,6 +80,14 @@ export class OrderRequestEntity extends AggregateRoot<OrderRequestProps> {
 
   get comment() {
     return this.props.comment;
+  }
+
+  get client() {
+    return this.props.client;
+  }
+
+  get driver() {
+    return this.props.driver;
   }
 
   reject(reason: string) {

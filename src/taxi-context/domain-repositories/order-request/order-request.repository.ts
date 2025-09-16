@@ -32,7 +32,10 @@ export class OrderRequestRepository
   async findActiveByDriverId(driverId: string) {
     // const where = this.prepareQuery(params);
 
-    const found = await OrderRequestOrmEntity.query().where({driverId}).whereIn('orderStatus', [OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING]).first()
+    const found = await OrderRequestOrmEntity.query()
+      .where({driverId})
+      .whereIn('orderStatus', [OrderStatus.STARTED, OrderStatus.WAITING ,OrderStatus.ONGOING])
+      .withGraphFetched('client').first()
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
   }
@@ -52,6 +55,29 @@ export class OrderRequestRepository
       .first();
 
     return found ? this.mapper.toDomainEntity(found) : undefined;
+  }
+
+  async findHistoryByDriverId(driverId: string, orderType: OrderType): Promise<OrderRequestEntity[]> {
+    const found = await OrderRequestOrmEntity.query()
+      .where('driverId', driverId)
+      .where('orderType', orderType)
+      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
+      .withGraphFetched('client') // JOIN с таблицей клиентов
+      .orderBy('createdAt', 'desc');
+
+    return found.length ? Promise.all(found.map(async (i) => await this.mapper.toDomainEntity(i))) : [];
+  }
+
+  async findHistoryByClientId(clientId: string, orderType: OrderType): Promise<OrderRequestEntity[]> {
+    const found = await OrderRequestOrmEntity.query()
+      .where('clientId', clientId)
+      .where('orderType', orderType)
+      .whereIn('orderStatus', [OrderStatus.COMPLETED, OrderStatus.REJECTED_BY_CLIENT, OrderStatus.REJECTED_BY_DRIVER])
+      .whereNotNull('driverId') // Только заказы с водителем
+      .withGraphFetched('driver') // JOIN с таблицей водителей
+      .orderBy('createdAt', 'desc');
+
+    return found.length ? Promise.all(found.map(async (i) => await this.mapper.toDomainEntity(i))) : [];
   }
 
   async findMany(params: QueryParams<OrderRequestProps> = {}): Promise<OrderRequestEntity[]> {
