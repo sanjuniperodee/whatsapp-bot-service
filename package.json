@@ -13,6 +13,16 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:unit": "jest test/unit/",
+    "test:integration": "jest test/integration/",
+    "test:e2e-full": "jest test/e2e/",
+    "test:all": "node test/run-tests.js",
+    "test:comprehensive": "node test/run-tests.js --coverage",
+    "test:unit-only": "node test/run-tests.js --unit",
+    "test:integration-only": "node test/run-tests.js --integration",
+    "test:e2e-only": "node test/run-tests.js --e2e",
+    "test:coverage": "jest --coverage --coverageReporters=text-lcov | coveralls",
+    "test:ci": "npm run test:all && npm run test:coverage",
     "_smart-knex": "ts-node -r tsconfig-paths/register node_modules/.bin/knex --knexfile knexfile.ts",
     "migration:make": "yarn _smart-knex migrate:make -- -x ts",
     "migration:up": "yarn _smart-knex migrate:up",
@@ -71,44 +81,20 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
+    "@nestjs/testing": "^10.4.20",
     "@types/bcrypt": "^5.0.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.11.6",
+    "@types/supertest": "^6.0.3",
     "@types/uuid": "^10.0.0",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "moduleDirectories": [
-      "node_modules",
-      "src"
-    ],
-    "moduleNameMapper": {
-      "@libs/(.*)": "<rootDir>/libs/$1",
-      "@modules/(.*)": "<rootDir>/modules/$1",
-      "@infrastructure/(.*)": "<rootDir>/infrastructure/$1",
-      "@domains/(.*)": "<rootDir>/taxi-context/domains/$1",
-      "@domain-value-objects/(.*)": "<rootDir>/taxi-context/domain-value-objects/$1",
-      "@third-parties/(.*)": "<rootDir>/third-parties/$1",
-      "src/(.*)": "<rootDir>/$1"
-    },
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   },
   "importSort": {
     ".js, .ts": {

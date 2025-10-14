@@ -1,4 +1,4 @@
-import { ArgumentNotProvidedException } from 'src/libs/exceptions/argument-not-provided.exception';
+import { ArgumentNotProvidedException } from '@libs/exceptions/argument-not-provided.exception';
 
 import { Guard } from '../guard';
 import { convertPropsToObject } from '../utils';
