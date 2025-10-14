@@ -60,6 +60,90 @@ export class CloudCacheStorageService {
     return Boolean(isMember);
   }
 
+  async setDriverOnline(driverId: string): Promise<void> {
+    await this.redisService.client.sadd('online_drivers', driverId);
+  }
+
+  async setDriverOffline(driverId: string): Promise<void> {
+    await this.redisService.client.srem('online_drivers', driverId);
+  }
+
+  async getOnlineClients(): Promise<string[]> {
+    return await this.redisService.client.smembers('online_clients');
+  }
+
+  async setUserSocket(userId: string, socketId: string): Promise<void> {
+    const key = `user:socket:${userId}`;
+    await this.redisService.client.set(key, socketId, 'EX', 3600); // 1 hour TTL
+  }
+
+  async getUserSocket(userId: string): Promise<string | null> {
+    const key = `user:socket:${userId}`;
+    return await this.redisService.client.get(key);
+  }
+
+  async removeUserSocket(userId: string): Promise<void> {
+    const key = `user:socket:${userId}`;
+    await this.redisService.client.del(key);
+  }
+
+  async setSocketUser(socketId: string, userId: string): Promise<void> {
+    const key = `socket:user:${socketId}`;
+    await this.redisService.client.set(key, userId, 'EX', 3600); // 1 hour TTL
+  }
+
+  async getSocketUser(socketId: string): Promise<string | null> {
+    const key = `socket:user:${socketId}`;
+    return await this.redisService.client.get(key);
+  }
+
+  async removeSocketUser(socketId: string): Promise<void> {
+    const key = `socket:user:${socketId}`;
+    await this.redisService.client.del(key);
+  }
+
+  async setSocketClientId(orderId: string, socketId: string): Promise<void> {
+    const key = `order:client:socket:${orderId}`;
+    await this.redisService.client.set(key, socketId, 'EX', 3600); // 1 hour TTL
+  }
+
+  async isSocketActive(socketId: string): Promise<boolean> {
+    const key = `socket:user:${socketId}`;
+    return (await this.redisService.client.exists(key)) === 1;
+  }
+
+  async getAllUsersWithSockets(): Promise<string[]> {
+    const pattern = 'user:socket:*';
+    const keys = await this.redisService.client.keys(pattern);
+    return keys.map(key => key.replace('user:socket:', ''));
+  }
+
+  async cleanupExpiredOrders(): Promise<void> {
+    // Cleanup expired orders (older than 24 hours)
+    const pattern = 'order:*';
+    const keys = await this.redisService.client.keys(pattern);
+    
+    for (const key of keys) {
+      const ttl = await this.redisService.client.ttl(key);
+      if (ttl === -1) { // No expiration set
+        await this.redisService.client.del(key);
+      }
+    }
+  }
+
+  async cleanupOldLocations(): Promise<void> {
+    // Cleanup old location data (older than 1 hour)
+    const pattern = 'driver:*:location';
+    const keys = await this.redisService.client.keys(pattern);
+    
+    for (const key of keys) {
+      const ttl = await this.redisService.client.ttl(key);
+      if (ttl === -1) { // No expiration set
+        await this.redisService.client.del(key);
+      }
+    }
+  }
+
   // Получаем количество онлайн водителей
   async getOnlineDriversCount(): Promise<number> {
     return await this.redisService.client.scard('online_drivers');

@@ -4,6 +4,8 @@ import { OrderRequestEntity, OrderRequestProps } from '@domain/order-request/dom
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { UserOrmMapper } from '../user/user.orm-mapper';
+import { Price } from '@domain/shared/value-objects/price.value-object';
+import { Address } from '@domain/shared/value-objects/address.value-object';
 
 export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRequestOrmEntity> {
   private userMapper = new UserOrmMapper(UserEntity);
@@ -23,7 +25,7 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       arrivalTime: props.arrivalTime,
       lat: props.lat,
       lng: props.lng,
-      price: props.price,
+      price: props.price.value,
       rating: props.rating,
       comment: props.comment,
       endedAt: props.endedAt,
@@ -57,7 +59,8 @@ export class OrderRequestOrmMapper extends OrmMapper<OrderRequestEntity, OrderRe
       arrivalTime: ormEntity.arrivalTime,
       lat: ormEntity.lat,
       lng: ormEntity.lng,
-      price: ormEntity.price,
+      address: new Address({ from: ormEntity.from, to: ormEntity.to }),
+      price: new Price({ value: ormEntity.price }),
       comment: ormEntity.comment,
       endedAt: ormEntity.endedAt,
       rating: ormEntity.rating,

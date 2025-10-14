@@ -12,6 +12,8 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderRequestOrmEntity } from '@infrastructure/database/entities/order-request.orm-entity';
 import { UserBlockingService } from '@domain/user/services/user-blocking.service';
 import { UserBlockedException } from '@domain/user/errors/user-blocked.exception';
+import { Price } from '@domain/shared/value-objects/price.value-object';
+import { Address } from '@domain/shared/value-objects/address.value-object';
 
 @Injectable()
 export class CreateOrderService {
@@ -52,7 +54,8 @@ export class CreateOrderService {
       to,
       lat,
       lng,
-      price,
+      price: new Price({ value: price }),
+      address: new Address({ from, to }),
       comment: comment,
     });
 

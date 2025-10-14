@@ -2,6 +2,7 @@ import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity
 import { EntityProps, OrmEntityProps, OrmMapper } from '../../../libs/ddd/infrastructure/database/orm-mapper.base';
 import { UserEntity, UserProps } from '../../domains/user/domain/entities/user.entity';
 import { UUID } from '../../../libs/ddd/domain/value-objects/uuid.value-object';
+import { Phone } from '@domain/shared/value-objects/phone.value-object';
 
 export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
   protected async toOrmProps(entity: UserEntity): Promise<OrmEntityProps<UserOrmEntity>> {
@@ -11,7 +12,7 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
       firstName: props.firstName,
       lastName: props.lastName,
       middleName: props.middleName,
-      phone: props.phone,
+      phone: props.phone.value,
       lastSms: props.lastSms,
       deviceToken: props.deviceToken,
       isBlocked: props.isBlocked || false,
@@ -24,7 +25,7 @@ export class UserOrmMapper extends OrmMapper<UserEntity, UserOrmEntity> {
     const id = new UUID(ormEntity.id);
 
     const props: UserProps = {
-      phone: ormEntity.phone,
+      phone: new Phone({ value: ormEntity.phone }),
       firstName: ormEntity.firstName,
       lastName: ormEntity.lastName,
       middleName: ormEntity.middleName,

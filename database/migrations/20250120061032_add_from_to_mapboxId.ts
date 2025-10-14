@@ -1,17 +1,11 @@
 import type { Knex } from 'knex';
 
-const tableName = 'order_requests';
-
 export async function up(knex: Knex) {
-  return knex.schema.alterTable(tableName, (t) => {
-    t.string('fromMapboxId').nullable();
-    t.string('toMapboxId').nullable();
-  });
+  // This migration was merged into the main order_request table migration
+  // No changes needed
 }
 
 export async function down(knex: Knex) {
-  return knex.schema.alterTable(tableName, (t) => {
-    t.dropColumn('fromMapboxId');
-    t.dropColumn('toMapboxId');
-  });
-} 
+  // This migration was merged into the main order_request table migration
+  // No changes needed
+}

@@ -1,22 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { Model, Transaction } from 'objection';
 import { v4 as uuid } from 'uuid';
+import { AsyncLocalStorage } from 'async_hooks';
 
 export type TransactionId = string;
+
+interface TransactionContext {
+  transactionId: TransactionId;
+  transaction: Transaction;
+}
 
 @Injectable()
 export class UnitOfWork {
   private transactions: Map<TransactionId, Transaction> = new Map<TransactionId, Transaction>();
+  private asyncLocalStorage = new AsyncLocalStorage<TransactionContext>();
 
   async start(): Promise<TransactionId> {
     const id: TransactionId = uuid();
     if (!this.transactions.has(id)) {
       const trx = await Model.startTransaction();
-
       this.transactions.set(id, trx);
     }
 
     return id;
+  }
+
+  async runInTransaction<T>(fn: () => Promise<T>): Promise<T> {
+    const id = await this.start();
+    const trx = this.getTrx(id);
+    
+    return this.asyncLocalStorage.run({ transactionId: id, transaction: trx }, fn);
+  }
+
+  getCurrentTransaction(): Transaction | null {
+    const context = this.asyncLocalStorage.getStore();
+    return context?.transaction || null;
+  }
+
+  getCurrentTransactionId(): TransactionId | null {
+    const context = this.asyncLocalStorage.getStore();
+    return context?.transactionId || null;
   }
 
   async execute(id: TransactionId) {

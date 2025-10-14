@@ -7,6 +7,7 @@ import { SignUpByPhoneCreateUserRequest } from './sign-up-by-phone-create-create
 import { UserRepository } from 'src/taxi-context/domain-repositories/user/user.repository';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { Phone } from '@domain/shared/value-objects/phone.value-object';
 
 type CreateUserResult = {
   userId: UUID;
@@ -35,7 +36,7 @@ export class SignUpByPhoneCreateUserService {
 
 
     const user = UserEntity.create({
-      phone: phone,
+      phone: new Phone({ value: phone }),
       firstName: firstName,
       lastName: lastName,
       deviceToken: dto.device_token?.trim() || undefined,

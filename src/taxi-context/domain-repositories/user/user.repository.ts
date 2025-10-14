@@ -37,9 +37,12 @@ export class UserRepository
   }
 
   async findOneById(id: string, trxId?: TransactionId): Promise<UserEntity | undefined> {
+    const currentTrx = this.unitOfWork.getCurrentTransaction();
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]
-      : [await UserOrmEntity.startTransaction(), true];
+      : currentTrx 
+        ? [currentTrx, false]
+        : [await UserOrmEntity.startTransaction(), true];
 
     try {
       const user = await UserOrmEntity.query(trx).findById(id);
@@ -78,9 +81,12 @@ export class UserRepository
   }
 
   async save(entity: UserEntity, trxId?: TransactionId): Promise<UUID> {
+    const currentTrx = this.unitOfWork.getCurrentTransaction();
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]
-      : [await UserOrmEntity.startTransaction(), true];
+      : currentTrx 
+        ? [currentTrx, false]
+        : [await UserOrmEntity.startTransaction(), true];
 
     try {
       const result = await UserOrmEntity.query(trx).upsertGraph(await this.mapper.toOrmEntity(entity), {
@@ -133,7 +139,7 @@ export class UserRepository
       where.createdAt = params.createdAt.value;
     }
     if (params.phone) {
-      where.phone = params.phone;
+      where.phone = typeof params.phone === 'string' ? params.phone : params.phone.value;
     }
 
     return where;

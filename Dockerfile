@@ -16,6 +16,8 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/tsconfig-paths-bootstrap.cjs ./
 COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/knexfile.ts ./
+COPY --from=builder /app/database ./database
 RUN apk add bash
 EXPOSE 3000
 CMD ["node", "-r", "./tsconfig-paths-bootstrap.cjs", "dist/main.js"]

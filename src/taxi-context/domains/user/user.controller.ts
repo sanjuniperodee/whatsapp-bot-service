@@ -79,7 +79,7 @@ export class UserController {
 
 
   @UseGuards(JwtSignUpAuthGuard)
-  @Post('sing-up-by-phone')
+  @Post('sign-up-by-phone')
   @ApiOperation({
     summary: 'Creating user',
   })
@@ -101,7 +101,7 @@ export class UserController {
       }
   }
 
-  @Post('sing-in-by-phone')
+  @Post('sign-in-by-phone')
   @ApiOperation({
     summary: 'Getting sms code to phone to sign in',
   })
@@ -112,7 +112,7 @@ export class UserController {
     return SignInByPhoneSendCodeResponse.create({ smscode: result });
   }
 
-  @Post('sing-in-by-phone-confirm-code')
+  @Post('sign-in-by-phone-confirm-code')
   @ApiOperation({
     summary: 'Confirming sign-in code and get tokens',
   })

@@ -24,11 +24,11 @@ export class RefreshTokenService {
 
     const token = await this.authService.createToken(TokenType.USER, {
       id: user.id.value,
-      phone: user.phone,
+      phone: user.phone.value,
     });
     const refreshToken = await this.authService.createToken(TokenType.REFRESH, {
       id: user.id.value,
-      phone: user.phone,
+      phone: user.phone.value,
     });
 
     return {

@@ -1,9 +1,10 @@
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base';
 import { UserHasEmptyFieldsError } from '../errors/user.errors';
+import { Phone } from '@domain/shared/value-objects/phone.value-object';
 
 export interface CreateUserProps {
-  phone: string;
+  phone: Phone;
   firstName: string;
   lastName: string;
   deviceToken?: string;

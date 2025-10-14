@@ -4,7 +4,7 @@ const tableName = 'category_license';
 const orderType = ['TAXI', 'DELIVERY', 'INTERCITY_TAXI', 'CARGO'];
 
 export async function up(knex: Knex) {
-  return knex.schema.createTableIfNotExists(tableName, (t) => {
+  return knex.schema.createTable(tableName, (t) => {
     t.uuid('id').defaultTo(knex.raw('uuid_generate_v4()')).primary();
     t.uuid('driverId').index().notNullable().references('id').inTable('users').onDelete('cascade').onUpdate('cascade');
     t.enum('categoryType', orderType).notNullable()
