@@ -13,11 +13,30 @@ import { Inject } from '@nestjs/common';
 import { ConnectionManagerService } from './connection-manager.service';
 import { NotificationService } from './notification.service';
 import { LocationTrackingService } from './location-tracking.service';
+import { OrderRequestRepository } from '../../../domain-repositories/order-request/order-request.repository';
+import { UserRepository } from '../../../domain-repositories/user/user.repository';
+import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
+import { OrderRequestEntity } from '@domain/order-request/domain/entities/order-request.entity';
+import { UserEntity } from '@domain/user/domain/entities/user.entity';
+import { OrderType } from '@infrastructure/enums';
+import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
+import { NotificationService as FirebaseNotificationService } from '@modules/firebase/notification.service';
 
 @WebSocketGateway({
+  path: '/socket.io/',
   cors: {
     origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
+  // Оптимизированные настройки для стабильности
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000, // 60 секунд - оптимальное время для мобильных устройств
+  pingInterval: 25000, // 25 секунд - более частые проверки
+  upgradeTimeout: 10000, // 10 секунд - уменьшаем для быстрого апгрейда
+  maxHttpBufferSize: 1e6, // 1MB
+  allowEIO3: true, // Поддержка старых версий
+  connectTimeout: 20000, // 20 секунд на подключение
 })
 export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -27,6 +46,10 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
     private readonly connectionManager: ConnectionManagerService,
     private readonly notificationService: NotificationService,
     private readonly locationTracking: LocationTrackingService,
+    private readonly orderRequestRepository: OrderRequestRepository,
+    private readonly userRepository: UserRepository,
+    private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly firebaseNotificationService: FirebaseNotificationService,
     @Inject('Logger') private readonly logger: Logger,
   ) {}
 
@@ -63,7 +86,7 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   ) {
     try {
       const { lng, lat, orderId } = data;
-      const userId = await this.connectionManager.getUserSocket(client.id);
+      const userId = await this.connectionManager.getSocketUser(client.id);
       
       if (userId) {
         await this.locationTracking.handleDriverLocationUpdate(userId, lng, lat, orderId, this.server);
@@ -87,9 +110,4 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
   async broadcastToOnlineDrivers(event: string, data: any): Promise<void> {
     await this.notificationService.broadcastToOnlineDrivers(event, data, this.server);
   }
-
-  async broadcastToOnlineClients(event: string, data: any): Promise<void> {
-    await this.notificationService.broadcastToOnlineClients(event, data, this.server);
-  }
-
 }

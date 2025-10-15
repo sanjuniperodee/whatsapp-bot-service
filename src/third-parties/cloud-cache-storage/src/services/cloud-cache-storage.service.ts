@@ -39,16 +39,6 @@ export class CloudCacheStorageService {
     return count > 0;
   }
 
-  // Устанавливаем связь socketId -> userId
-  async setSocketUser(socketId: string, userId: string) {
-    await this.redisService.client.set(`socket_user:${socketId}`, userId);
-  }
-
-  // Получаем userId по socketId
-  async getSocketUser(socketId: string): Promise<string | null> {
-    return await this.redisService.client.get(`socket_user:${socketId}`);
-  }
-
   // Устанавливаем связь userId -> socketId (основной сокет)
   async setUserSocket(userId: string, socketId: string) {
     await this.redisService.client.set(`user_socket:${userId}`, socketId);
@@ -116,6 +106,18 @@ export class CloudCacheStorageService {
   async isClientOnline(clientId: string): Promise<boolean> {
     const isMember = await this.redisService.client.sismember('online_clients', clientId);
     return Boolean(isMember);
+  }
+
+  // Устанавливаем связь socketId -> userId
+  async setSocketUser(socketId: string, userId: string): Promise<void> {
+    const key = `socket_user:${socketId}`;
+    await this.redisService.client.set(key, userId, 'EX', 3600); // 1 hour TTL
+  }
+
+  // Получаем userId по socketId
+  async getSocketUser(socketId: string): Promise<string | null> {
+    const key = `socket_user:${socketId}`;
+    return await this.redisService.client.get(key);
   }
 
   async setSocketClientId(orderId: string, socketId: string): Promise<void> {

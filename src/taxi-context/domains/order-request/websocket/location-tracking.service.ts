@@ -3,11 +3,13 @@ import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { Inject } from '@nestjs/common';
 import { Server } from 'socket.io';
+import { OrderRequestRepository } from '../../../domain-repositories/order-request/order-request.repository';
 
 @Injectable()
 export class LocationTrackingService {
   constructor(
     private readonly cacheStorageService: CloudCacheStorageService,
+    private readonly orderRequestRepository: OrderRequestRepository,
     @Inject('Logger') private readonly logger: Logger,
   ) {}
 
@@ -23,78 +25,48 @@ export class LocationTrackingService {
       await this.cacheStorageService.updateDriverLocation(driverId, lng.toString(), lat.toString());
       
       if (orderId) {
-        // Если есть активный заказ, уведомляем клиента
-        const clientSocketId = await this.cacheStorageService.getSocketClientId(orderId);
-        if (clientSocketId && server) {
-          server.to(clientSocketId).emit('driverLocationUpdate', {
-            driverId,
-            lng,
-            lat,
-            orderId,
-            timestamp: Date.now()
-          });
-          this.logger.debug(`Driver location update sent to client for order ${orderId}`);
+        // Если есть активный заказ, находим клиента и уведомляем его
+        try {
+          // Находим активный заказ
+          const orderRequest = await this.orderRequestRepository.findOneById(orderId);
+          if (orderRequest) {
+            const clientId = orderRequest.getPropsCopy().clientId.value;
+            
+            // Получаем все сокеты клиента
+            const clientSocketIds = await this.cacheStorageService.getSocketIds(clientId);
+            
+            if (clientSocketIds && clientSocketIds.length > 0 && server) {
+              for (const socketId of clientSocketIds) {
+                try {
+                  const socket = server.sockets.sockets.get(socketId);
+                  if (socket && socket.connected) {
+                    socket.emit('driverLocationUpdate', {
+                      driverId,
+                      lng,
+                      lat,
+                      orderId,
+                      timestamp: Date.now()
+                    });
+                  } else {
+                    // Удаляем неактивный сокет
+                    await this.cacheStorageService.removeSocketId(clientId, socketId);
+                  }
+                } catch (error) {
+                  console.error(`❌ [LOCATION] Ошибка отправки на сокет ${socketId}:`, error);
+                  await this.cacheStorageService.removeSocketId(clientId, socketId);
+                }
+              }
+              this.logger.debug(`Driver location update sent to client ${clientId} for order ${orderId}`);
+            }
+          }
+        } catch (error) {
+          console.error(`❌ [LOCATION] Ошибка при поиске заказа ${orderId}:`, error);
         }
       }
 
       this.logger.debug(`Driver ${driverId} location updated: ${lat}, ${lng}`);
     } catch (error) {
       this.logger.error(`Failed to handle driver location update for ${driverId}:`, error);
-    }
-  }
-
-  async broadcastDriversLocationToClients(server?: Server): Promise<void> {
-    try {
-      if (!server) {
-        this.logger.warn('Server not available for location broadcast');
-        return;
-      }
-
-      // Получаем всех онлайн водителей с их геолокацией
-      const onlineDrivers = await this.cacheStorageService.getOnlineDrivers();
-      
-      for (const driverId of onlineDrivers) {
-        const location = await this.cacheStorageService.getDriverLocation(driverId);
-        if (location) {
-          const socketId = await this.cacheStorageService.getUserSocket(driverId);
-          if (socketId) {
-            server.to(socketId).emit('driversLocationUpdate', {
-              driverId,
-              location,
-              timestamp: Date.now()
-            });
-          }
-        }
-      }
-
-      this.logger.debug(`Drivers location broadcast sent to ${onlineDrivers.length} drivers`);
-    } catch (error) {
-      this.logger.error(`Failed to broadcast drivers location:`, error);
-    }
-  }
-
-  async getDriverLocation(driverId: string): Promise<{ lng: number; lat: number } | null> {
-    try {
-      const location = await this.cacheStorageService.getDriverLocation(driverId);
-      if (location) {
-        return {
-          lng: location.longitude,
-          lat: location.latitude
-        };
-      }
-      return null;
-    } catch (error) {
-      this.logger.error(`Failed to get driver location for ${driverId}:`, error);
-      return null;
-    }
-  }
-
-  async getNearbyDrivers(lat: number, lng: number, radius: number = 5): Promise<string[]> {
-    try {
-      return await this.cacheStorageService.findNearestDrivers(lat, lng, radius);
-    } catch (error) {
-      this.logger.error(`Failed to get nearby drivers:`, error);
-      return [];
     }
   }
 }
