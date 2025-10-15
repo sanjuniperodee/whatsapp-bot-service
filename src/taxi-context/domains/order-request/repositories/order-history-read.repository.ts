@@ -14,11 +14,7 @@ export class OrderHistoryReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .offset(offset);
@@ -35,11 +31,7 @@ export class OrderHistoryReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .offset(offset);
@@ -57,11 +49,7 @@ export class OrderHistoryReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .offset(offset);
@@ -79,11 +67,7 @@ export class OrderHistoryReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .offset(offset);
@@ -127,13 +111,13 @@ export class OrderHistoryReadRepository {
         lastName: order.driver.lastName,
         middleName: order.driver.middleName,
       } : undefined,
-      car: order.driverCategories?.[0] ? {
-        id: order.driverCategories[0].id,
-        SSN: order.driverCategories[0].SSN,
-        brand: order.driverCategories[0].brand,
-        model: order.driverCategories[0].model,
-        color: order.driverCategories[0].color,
-        number: order.driverCategories[0].number,
+      car: order.driver?.categoryLicenses?.[0] ? {
+        id: order.driver.categoryLicenses[0].id,
+        SSN: order.driver.categoryLicenses[0].SSN,
+        brand: order.driver.categoryLicenses[0].brand,
+        model: order.driver.categoryLicenses[0].model,
+        color: order.driver.categoryLicenses[0].color,
+        number: order.driver.categoryLicenses[0].number,
       } : undefined,
     };
   }

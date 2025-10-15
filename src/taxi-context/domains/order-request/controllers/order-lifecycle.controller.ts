@@ -70,19 +70,8 @@ export class OrderLifecycleController {
   @ApiBody({ type: DriverArrivedDto })
   @ApiResponse({ status: 200, description: 'Driver arrived status updated successfully' })
   async driverArrived(@Body() dto: DriverArrivedDto) {
-    console.log('🔍 [DRIVER ARRIVED CONTROLLER] Starting driver arrived controller');
-    console.log('🔍 [DRIVER ARRIVED CONTROLLER] DTO:', JSON.stringify(dto, null, 2));
-    
-    try {
-      const command = new DriverArrivedCommand(new UUID(dto.orderId));
-      console.log('🔍 [DRIVER ARRIVED CONTROLLER] Command created, executing...');
-      const result = await this.commandBus.execute(command);
-      console.log('🔍 [DRIVER ARRIVED CONTROLLER] Command executed successfully');
-      return result;
-    } catch (error) {
-      console.error('❌ [DRIVER ARRIVED CONTROLLER] Error:', error);
-      throw error;
-    }
+    const command = new DriverArrivedCommand(new UUID(dto.orderId));
+    return await this.commandBus.execute(command);
   }
 
   @Post('start')

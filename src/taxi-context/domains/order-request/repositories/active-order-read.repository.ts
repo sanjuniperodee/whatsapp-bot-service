@@ -16,11 +16,7 @@ export class ActiveOrderReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .first();
 
     if (!order) {
@@ -39,11 +35,7 @@ export class ActiveOrderReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      })
+      .withGraphFetched('[client, driver.categoryLicenses]')
       .first();
 
     if (!order) {
@@ -62,11 +54,7 @@ export class ActiveOrderReadRepository {
         OrderStatus.REJECTED_BY_CLIENT,
         OrderStatus.REJECTED_BY_DRIVER
       ])
-      .withGraphFetched({
-        client: true,
-        driver: true,
-        driverCategories: true
-      });
+      .withGraphFetched('[client, driver.categoryLicenses]');
 
     return orders.map(order => this.mapToReadModel(order));
   }
@@ -107,13 +95,13 @@ export class ActiveOrderReadRepository {
         middleName: order.driver.middleName,
         deviceToken: order.driver.deviceToken,
       } : undefined,
-      car: order.driverCategories?.[0] ? {
-        id: order.driverCategories[0].id,
-        SSN: order.driverCategories[0].SSN,
-        brand: order.driverCategories[0].brand,
-        model: order.driverCategories[0].model,
-        color: order.driverCategories[0].color,
-        number: order.driverCategories[0].number,
+      car: order.driver?.categoryLicenses?.[0] ? {
+        id: order.driver.categoryLicenses[0].id,
+        SSN: order.driver.categoryLicenses[0].SSN,
+        brand: order.driver.categoryLicenses[0].brand,
+        model: order.driver.categoryLicenses[0].model,
+        color: order.driver.categoryLicenses[0].color,
+        number: order.driver.categoryLicenses[0].number,
       } : undefined,
     };
   }
