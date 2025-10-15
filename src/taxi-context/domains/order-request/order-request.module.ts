@@ -26,6 +26,10 @@ import { CompleteOrderHandler } from './commands/complete-order/complete-order.h
 import { CancelOrderHandler } from './commands/cancel-order/cancel-order.handler';
 import { GetClientActiveOrderHandler } from './queries/get-client-active-order/get-client-active-order.handler';
 import { GetDriverActiveOrderHandler } from './queries/get-driver-active-order/get-driver-active-order.handler';
+import { GetOrderStatusHandler } from './queries/get-order-status/get-order-status.handler';
+import { GetActiveOrdersByTypeHandler } from './queries/get-active-orders-by-type/get-active-orders-by-type.handler';
+import { GetOrderHistoryHandler } from './queries/get-order-history/get-order-history.handler';
+import { GetClientOrderHistoryHandler } from './queries/get-client-order-history/get-client-order-history.handler';
 import { OrderCreatedHandler } from './event-handlers/order-created.handler';
 import { OrderAcceptedHandler } from './event-handlers/order-accepted.handler';
 import { DriverArrivedHandler } from './event-handlers/driver-arrived.handler';
@@ -77,6 +81,10 @@ const controllers = [
     CancelOrderHandler,
     GetClientActiveOrderHandler,
     GetDriverActiveOrderHandler,
+    GetOrderStatusHandler,
+    GetActiveOrdersByTypeHandler,
+    GetOrderHistoryHandler,
+    GetClientOrderHistoryHandler,
     // Event Handlers
     OrderCreatedHandler,
     OrderAcceptedHandler,
