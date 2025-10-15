@@ -71,7 +71,7 @@ export class OrderLifecycleController {
   @ApiResponse({ status: 200, description: 'Driver arrived status updated successfully' })
   async driverArrived(@Body() dto: DriverArrivedDto) {
     const command = new DriverArrivedCommand(new UUID(dto.orderId));
-    return this.commandBus.execute(command);
+    return await this.commandBus.execute(command);
   }
 
   @Post('start')
