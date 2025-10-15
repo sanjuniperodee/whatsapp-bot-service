@@ -20,18 +20,33 @@ export class DriverArrivedService {
   ) {}
 
   async handle(input: ChangeOrderStatus) {
+    console.log('🔍 [DRIVER ARRIVED SERVICE] Starting driver arrived service');
     const { driverId, orderId } = input;
+    console.log('🔍 [DRIVER ARRIVED SERVICE] OrderId:', orderId);
+    console.log('🔍 [DRIVER ARRIVED SERVICE] DriverId:', driverId);
+    
     const order = await this.orderRequestRepository.findOneById(orderId);
+    console.log('🔍 [DRIVER ARRIVED SERVICE] Found order:', order ? 'YES' : 'NO');
+    if (order) {
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Order driverId:', order.getPropsCopy().driverId?.value);
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Order status:', order.getPropsCopy().orderStatus);
+    }
 
     if (order && order.getPropsCopy().driverId?.value == driverId && order.getPropsCopy().orderStatus == OrderStatus.STARTED) {
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Order conditions met, proceeding with driver arrived');
       const category = await this.categoryLicenseRepository.findOne({driverId: new UUID(driverId), categoryType: order.getPropsCopy().orderType})
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Category found:', category ? 'YES' : 'NO');
 
       if(!category){
+        console.log('❌ [DRIVER ARRIVED SERVICE] No category found for driver');
         throw new BadRequestException("You can not accept orders before registering into category");
       }
 
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Setting driver arrived...');
       order.driverArrived();
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Driver arrived set, saving...');
       await this.orderRequestRepository.save(order);
+      console.log('🔍 [DRIVER ARRIVED SERVICE] Order saved successfully');
 
       const driver = await this.userRepository.findOneById(driverId)
 
@@ -58,7 +73,13 @@ export class DriverArrivedService {
         //   userPhone + "@c.us",
         //   `Вас ожидает ${category.getPropsCopy().brand} ${category.getPropsCopy().model}.\nЦвет: ${category.getPropsCopy().color}.\nГос номер: ${category.getPropsCopy().number}`
         // )
+        console.log('🔍 [DRIVER ARRIVED SERVICE] Notifications sent successfully');
+      } else {
+        console.log('❌ [DRIVER ARRIVED SERVICE] User or driver not found');
       }
+    } else {
+      console.log('❌ [DRIVER ARRIVED SERVICE] Order conditions not met');
     }
+    console.log('🔍 [DRIVER ARRIVED SERVICE] Driver arrived service completed');
   }
 }

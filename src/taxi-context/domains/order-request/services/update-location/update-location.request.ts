@@ -2,16 +2,15 @@ import {
   IsDefined,
   IsLatitude,
   IsLongitude,
-  IsNotEmpty, IsUUID,
+  IsNotEmpty, IsUUID, IsOptional,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateLocationRequest {
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsDefined()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsUUID('4')
-  readonly orderId: string;
+  readonly orderId?: string;
 
   @ApiProperty()
   @IsNotEmpty()
