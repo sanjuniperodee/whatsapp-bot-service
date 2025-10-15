@@ -4,9 +4,8 @@ import { TokenType } from '@modules/auth/types';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { SignUpByPhoneCreateUserRequest } from './sign-up-by-phone-create-create-user.request.dto';
-import { UserRepository } from 'src/taxi-context/domain-repositories/user/user.repository';
+import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { UserEntity } from '@domain/user/domain/entities/user.entity';
-import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { Phone } from '@domain/shared/value-objects/phone.value-object';
 
 type CreateUserResult = {

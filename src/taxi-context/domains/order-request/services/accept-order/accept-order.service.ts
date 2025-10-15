@@ -4,7 +4,7 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { OrderStatus } from '@infrastructure/enums';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { CategoryLicenseRepository } from '../../../../domain-repositories/category-license/category-license.repository';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';

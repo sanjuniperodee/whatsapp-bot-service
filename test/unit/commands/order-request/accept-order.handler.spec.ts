@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { AcceptOrderHandler } from '@domain/order-request/commands/accept-order/accept-order.handler';
 import { AcceptOrderCommand } from '@domain/order-request/commands/accept-order/accept-order.command';
-import { OrderRequestRepository } from '@domain/order-request/domain-repositories/order-request/order-request.repository';
-import { UserRepository } from '@domain/user/domain-repositories/user/user.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+// Using string tokens for providers
 import { OrderFactory } from '../../../helpers/factories/order.factory';
 import { UserFactory } from '../../../helpers/factories/user.factory';
 import { OrderStatus } from '@infrastructure/enums';
@@ -12,29 +10,29 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 
 describe('AcceptOrderHandler', () => {
   let handler: AcceptOrderHandler;
-  let orderRepository: jest.Mocked<OrderRequestRepository>;
-  let userRepository: jest.Mocked<UserRepository>;
-  let orderGateway: jest.Mocked<OrderRequestGateway>;
+  let orderRepository: any;
+  let userRepository: any;
+  let orderGateway: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AcceptOrderHandler,
         {
-          provide: OrderRequestRepository,
+          provide: 'OrderRequestRepository',
           useValue: {
             findOneById: jest.fn(),
             save: jest.fn(),
           },
         },
         {
-          provide: UserRepository,
+          provide: 'UserRepository',
           useValue: {
             findOneById: jest.fn(),
           },
         },
         {
-          provide: OrderRequestGateway,
+          provide: 'OrderRequestGateway',
           useValue: {
             handleOrderAccepted: jest.fn(),
           },
@@ -43,16 +41,17 @@ describe('AcceptOrderHandler', () => {
     }).compile();
 
     handler = module.get<AcceptOrderHandler>(AcceptOrderHandler);
-    orderRepository = module.get(OrderRequestRepository);
-    userRepository = module.get(UserRepository);
-    orderGateway = module.get(OrderRequestGateway);
+    orderRepository = module.get('OrderRequestRepository');
+    userRepository = module.get('UserRepository');
+    orderGateway = module.get('OrderRequestGateway');
   });
 
+  const validCommand = new AcceptOrderCommand(
+    new UUID(global.testUtils.generateTestUUID()),
+    new UUID(global.testUtils.generateTestUUID()),
+  );
+
   describe('execute', () => {
-    const validCommand = new AcceptOrderCommand({
-      orderId: new UUID(global.testUtils.generateTestUUID()),
-      driverId: new UUID(global.testUtils.generateTestUUID()),
-    });
 
     it('should accept order successfully', async () => {
       const order = OrderFactory.createCreatedOrder();
@@ -91,7 +90,7 @@ describe('AcceptOrderHandler', () => {
     it('should throw ConflictException when order already has driver', async () => {
       const order = OrderFactory.createCreatedOrder();
       const existingDriverId = new UUID(global.testUtils.generateTestUUID());
-      order.assignDriver(existingDriverId);
+      order.accept(existingDriverId);
       
       orderRepository.findOneById.mockResolvedValue(order);
 
@@ -161,15 +160,15 @@ describe('AcceptOrderHandler', () => {
       orderRepository.save.mockResolvedValue(undefined);
       orderGateway.handleOrderAccepted.mockResolvedValue(undefined);
 
-      const command1 = new AcceptOrderCommand({
-        orderId: validCommand.orderId,
-        driverId: new UUID(global.testUtils.generateTestUUID()),
-      });
+      const command1 = new AcceptOrderCommand(
+        validCommand.orderId,
+        new UUID(global.testUtils.generateTestUUID()),
+      );
       
-      const command2 = new AcceptOrderCommand({
-        orderId: validCommand.orderId,
-        driverId: new UUID(global.testUtils.generateTestUUID()),
-      });
+      const command2 = new AcceptOrderCommand(
+        validCommand.orderId,
+        new UUID(global.testUtils.generateTestUUID()),
+      );
 
       // First acceptance should succeed
       await handler.execute(command1);
@@ -187,10 +186,10 @@ describe('AcceptOrderHandler', () => {
       orderRepository.save.mockResolvedValue(undefined);
       orderGateway.handleOrderAccepted.mockResolvedValue(undefined);
 
-      const command = new AcceptOrderCommand({
-        orderId: order.id,
-        driverId: new UUID(driver.id.value),
-      });
+      const command = new AcceptOrderCommand(
+        order.id,
+        new UUID(driver.id.value),
+      );
 
       await handler.execute(command);
 

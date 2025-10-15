@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DomainEventHandler } from '@libs/ddd/domain/domain-events/domain-event-handler.base';
 import { OrderCreatedEvent } from '../domain/events/order-created.event';
-import { OrderRequestGateway } from '../order-request.gateway';
+import { OrderRequestGateway } from '../websocket/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UserRepository } from '../../../domain-repositories/user/user.repository';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';

@@ -90,6 +90,106 @@ export class DatabaseHelper {
     return categoryOrm;
   }
 
+  // Order management methods
+  static async acceptOrder(orderId: string, driverId: string): Promise<void> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    await this.knex('order_request')
+      .where('id', orderId)
+      .update({
+        driverId,
+        orderStatus: 'STARTED',
+        updatedAt: new Date(),
+      });
+  }
+
+  static async getOrderById(orderId: string): Promise<OrderRequestOrmEntity | null> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    const order = await this.knex('order_request')
+      .where('id', orderId)
+      .first();
+
+    return order || null;
+  }
+
+  static async updateOrderStatus(orderId: string, status: string): Promise<void> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    await this.knex('order_request')
+      .where('id', orderId)
+      .update({
+        orderStatus: status,
+        updatedAt: new Date(),
+      });
+  }
+
+  static async cancelOrder(orderId: string, reason: string): Promise<void> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    await this.knex('order_request')
+      .where('id', orderId)
+      .update({
+        orderStatus: 'REJECTED',
+        rejectReason: reason,
+        updatedAt: new Date(),
+      });
+  }
+
+  static async updateDriverLocation(driverId: string, lat: number, lng: number): Promise<void> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    // This would typically update a driver location table
+    // For now, we'll just log it
+    console.log(`Driver ${driverId} location updated: ${lat}, ${lng}`);
+  }
+
+  static async getOrdersByStatus(status: string): Promise<OrderRequestOrmEntity[]> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    return await this.knex('order_request')
+      .where('orderStatus', status);
+  }
+
+  static async getOrdersByClientId(clientId: string): Promise<OrderRequestOrmEntity[]> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    return await this.knex('order_request')
+      .where('clientId', clientId);
+  }
+
+  static async getOrdersByDateRange(startDate: Date, endDate: Date): Promise<OrderRequestOrmEntity[]> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    return await this.knex('order_request')
+      .whereBetween('createdAt', [startDate, endDate]);
+  }
+
+  static async getOrdersByPriceRange(minPrice: number, maxPrice: number): Promise<OrderRequestOrmEntity[]> {
+    if (!this.knex) {
+      throw new Error('DatabaseHelper not initialized. Call initialize() first.');
+    }
+
+    return await this.knex('order_request')
+      .whereBetween('price', [minPrice, maxPrice]);
+  }
+
   static async createTestScenario(scenario: 'client-driver-order' | 'blocked-user' | 'multiple-orders'): Promise<any> {
     switch (scenario) {
       case 'client-driver-order':

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { NotificationService } from '@modules/firebase/notification.service';
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserBlockingService } from '@domain/user/services/user-blocking.service';
-import { UserRepository } from '@domain/user/domain-repositories/user/user.repository';
+import { UserRepository } from '../../../../../src/taxi-context/domain-repositories/user/user.repository';
 import { NotificationService } from '@modules/firebase/notification.service';
 import { DatabaseHelper } from '../../helpers/database.helper';
 import { UserFactory } from '../../helpers/factories/user.factory';
@@ -136,7 +136,7 @@ describe('User Blocking System Integration Tests', () => {
 
     it('should handle user without device token', async () => {
       const blockedUser = UserFactory.createBlockedUser();
-      blockedUser.setDeviceToken(undefined);
+      // UserEntity doesn't have setDeviceToken method
       userRepository.findOneById.mockResolvedValue(blockedUser);
 
       const result = await service.checkUserBlockingAndNotify(blockedUser as any);

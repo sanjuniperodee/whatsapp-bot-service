@@ -5,7 +5,6 @@ import { OrderLifecycleController } from './controllers/order-lifecycle.controll
 import { OrderQueryController } from './controllers/order-query.controller';
 import { DriverStatsController } from './controllers/driver-stats.controller';
 import { TaxiContextDomainRepositoriesModule } from '../../domain-repositories/taxi-context-domain-repositories.module';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { CloudCacheStorageModule } from '@third-parties/cloud-cache-storage/src';
 import { redisConfigFactory } from '@infrastructure/configs/redis.factory';
 import { AcceptOrderService } from '@domain/order-request/services/accept-order/accept-order.service';
@@ -60,7 +59,6 @@ const controllers = [
   imports: [...thirdPartyServices, TaxiContextDomainRepositoriesModule, CloudCacheStorageModule.forRootAsync(redisConfigFactory), UserModule, WhatsAppModule],
   providers: [
     // Legacy services (будут удалены в следующих фазах)
-    OrderRequestGateway, 
     NotificationService, 
     AcceptOrderService, 
     DriverArrivedService, 
@@ -98,6 +96,6 @@ const controllers = [
     DriverStatsReadRepository,
   ],
   controllers: [...controllers],
-  exports: [OrderRequestGateway, NewOrderRequestGateway]
+  exports: [NewOrderRequestGateway]
 })
 export class OrderRequestModule {}

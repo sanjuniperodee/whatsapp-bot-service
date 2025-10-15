@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderRequestRepository } from '@domain/order-request/domain-repositories/order-request/order-request.repository';
+import { OrderRequestRepository } from '../../../../../src/taxi-context/domain-repositories/order-request/order-request.repository';
 import { DatabaseHelper } from '../../../helpers/database.helper';
 import { OrderFactory } from '../../../helpers/factories/order.factory';
 import { UserFactory } from '../../../helpers/factories/user.factory';

@@ -1,33 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException } from '@nestjs/common';
-import { SignInByPhoneSendCodeHandler } from '@domain/user/commands/sign-in-by-phone-send-code/sign-in-by-phone-send-code.handler';
-import { SignInByPhoneSendCodeCommand } from '@domain/user/commands/sign-in-by-phone-send-code/sign-in-by-phone-send-code.command';
-import { UserRepository } from '@domain/user/domain-repositories/user/user.repository';
-import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/cloud-cache-storage.service';
+import { SignInByPhoneSendCodeService } from '@domain/user/commands/sign-in-by-phone-send-code/sign-in-by-phone-send-code.service';
+import { SignInByPhoneSendCodeRequest } from '@domain/user/commands/sign-in-by-phone-send-code/sign-in-by-phone-send-code.request.dto';
+// Using string tokens for providers
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { UserFactory } from '../../../helpers/factories/user.factory';
 import { MockRedisService } from '../../../helpers/mocks/redis.service.mock';
 import { MockWhatsAppService } from '../../../helpers/mocks/whatsapp.service.mock';
 
-describe('SignInByPhoneSendCodeHandler', () => {
-  let handler: SignInByPhoneSendCodeHandler;
-  let userRepository: jest.Mocked<UserRepository>;
-  let cacheStorageService: jest.Mocked<CloudCacheStorageService>;
+describe('SignInByPhoneSendCodeService', () => {
+  let service: SignInByPhoneSendCodeService;
+  let userRepository: any;
+  let cacheStorageService: any;
   let whatsAppService: jest.Mocked<WhatsAppService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        SignInByPhoneSendCodeHandler,
+        SignInByPhoneSendCodeService,
         {
-          provide: UserRepository,
+          provide: 'UserRepository',
           useValue: {
             findOneByPhone: jest.fn(),
             save: jest.fn(),
           },
         },
         {
-          provide: CloudCacheStorageService,
+          provide: 'CloudCacheStorageService',
           useValue: {
             getSMSCode: jest.fn(),
             saveSMSCode: jest.fn(),
@@ -42,16 +41,15 @@ describe('SignInByPhoneSendCodeHandler', () => {
       ],
     }).compile();
 
-    handler = module.get<SignInByPhoneSendCodeHandler>(SignInByPhoneSendCodeHandler);
-    userRepository = module.get(UserRepository);
-    cacheStorageService = module.get(CloudCacheStorageService);
+    service = module.get<SignInByPhoneSendCodeService>(SignInByPhoneSendCodeService);
+    userRepository = module.get('UserRepository');
+    cacheStorageService = module.get('CloudCacheStorageService');
     whatsAppService = module.get(WhatsAppService);
   });
 
+  const validRequest = { phone: '+77771234567' } as SignInByPhoneSendCodeRequest;
+
   describe('execute', () => {
-    const validCommand = new SignInByPhoneSendCodeCommand({
-      phone: '+77771234567',
-    });
 
     it('should send code successfully for existing user', async () => {
       const user = UserFactory.create({ phone: '+77771234567' });
@@ -60,7 +58,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-      const result = await handler.execute(validCommand);
+      const result = await service.handle(validRequest);
 
       expect(result).toBeDefined();
       expect(result.length).toBe(4); // SMS code length
@@ -79,7 +77,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-      const result = await handler.execute(validCommand);
+      const result = await service.handle(validRequest);
 
       expect(result).toBeDefined();
       expect(result.length).toBe(4);
@@ -96,8 +94,8 @@ describe('SignInByPhoneSendCodeHandler', () => {
       
       cacheStorageService.getSMSCode.mockResolvedValue(existingCode);
 
-      await expect(handler.execute(validCommand)).rejects.toThrow(ConflictException);
-      await expect(handler.execute(validCommand)).rejects.toThrow('Код можно отправить раз в 60 секунд');
+      await expect(service.handle(validRequest)).rejects.toThrow(ConflictException);
+      await expect(service.handle(validRequest)).rejects.toThrow('Код можно отправить раз в 60 секунд');
     });
 
     it('should handle WhatsApp service error gracefully', async () => {
@@ -107,7 +105,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockRejectedValue(new Error('WhatsApp API Error'));
 
-      const result = await handler.execute(validCommand);
+      const result = await service.handle(validRequest);
 
       expect(result).toBeDefined();
       expect(result.length).toBe(4);
@@ -115,15 +113,13 @@ describe('SignInByPhoneSendCodeHandler', () => {
     });
 
     it('should handle special test phone number', async () => {
-      const testCommand = new SignInByPhoneSendCodeCommand({
-        phone: '77051479003',
-      });
+      const testCommand = { phone: '77051479003' } as SignInByPhoneSendCodeRequest;
 
       userRepository.findOneByPhone.mockResolvedValue(null);
       cacheStorageService.getSMSCode.mockResolvedValue(null);
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
 
-      const result = await handler.execute(testCommand);
+      const result = await service.handle(testCommand);
 
       expect(result).toBeDefined();
       expect(whatsAppService.sendMessage).not.toHaveBeenCalled();
@@ -135,7 +131,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-      const result = await handler.execute(validCommand);
+      const result = await service.handle(validRequest);
 
       expect(result).toBeDefined();
       expect(result.length).toBe(4);
@@ -146,7 +142,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       userRepository.findOneByPhone.mockResolvedValue(null);
       cacheStorageService.getSMSCode.mockRejectedValue(new Error('Cache error'));
 
-      await expect(handler.execute(validCommand)).rejects.toThrow('Cache error');
+      await expect(service.handle(validRequest)).rejects.toThrow('Cache error');
     });
 
     it('should handle cache save error', async () => {
@@ -154,20 +150,18 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.getSMSCode.mockResolvedValue(null);
       cacheStorageService.saveSMSCode.mockRejectedValue(new Error('Cache save error'));
 
-      await expect(handler.execute(validCommand)).rejects.toThrow('Cache save error');
+      await expect(service.handle(validRequest)).rejects.toThrow('Cache save error');
     });
 
     it('should handle phone number normalization', async () => {
-      const commandWithSpaces = new SignInByPhoneSendCodeCommand({
-        phone: '+7 777 123 45 67',
-      });
+      const commandWithSpaces = { phone: '+7 777 123 45 67' } as SignInByPhoneSendCodeRequest;
 
       userRepository.findOneByPhone.mockResolvedValue(null);
       cacheStorageService.getSMSCode.mockResolvedValue(null);
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-      const result = await handler.execute(commandWithSpaces);
+      const result = await service.handle(commandWithSpaces);
 
       expect(result).toBeDefined();
       expect(userRepository.findOneByPhone).toHaveBeenCalledWith('+77771234567');
@@ -182,8 +176,8 @@ describe('SignInByPhoneSendCodeHandler', () => {
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
       const promises = [
-        handler.execute(validCommand),
-        handler.execute(validCommand),
+        service.handle(validRequest),
+        service.handle(validRequest),
       ];
 
       // Should handle race condition gracefully
@@ -202,7 +196,7 @@ describe('SignInByPhoneSendCodeHandler', () => {
       cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
       whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-      const result = await handler.execute(validCommand);
+      const result = await service.handle(validRequest);
 
       expect(result).toBeDefined();
       expect(result.length).toBe(4);
@@ -217,14 +211,14 @@ describe('SignInByPhoneSendCodeHandler', () => {
       ];
 
       for (const phone of phoneFormats) {
-        const command = new SignInByPhoneSendCodeCommand({ phone });
+        const command = { phone } as SignInByPhoneSendCodeRequest;
         
         userRepository.findOneByPhone.mockResolvedValue(null);
         cacheStorageService.getSMSCode.mockResolvedValue(null);
         cacheStorageService.saveSMSCode.mockResolvedValue(undefined);
         whatsAppService.sendMessage.mockResolvedValue(undefined);
 
-        const result = await handler.execute(command);
+        const result = await service.handle(command);
 
         expect(result).toBeDefined();
         expect(result.length).toBe(4);

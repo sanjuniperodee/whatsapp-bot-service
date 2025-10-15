@@ -3,7 +3,7 @@ import { ICommandHandler } from '@libs/cqrs';
 import { StartOrderCommand } from './start-order.command';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
-import { OrderRequestGateway } from '../../order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { OrderStatus } from '@infrastructure/enums';
 
 @Injectable()

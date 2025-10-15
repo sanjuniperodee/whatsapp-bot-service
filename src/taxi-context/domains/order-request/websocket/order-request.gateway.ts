@@ -161,4 +161,13 @@ export class OrderRequestGateway implements OnGatewayConnection, OnGatewayDiscon
       timestamp: Date.now()
     });
   }
+
+  async handleOrderCancelledByDriver(orderRequest: any, driver: any, reason?: string): Promise<void> {
+    await this.notifyClient(orderRequest.getPropsCopy().clientId.value, 'orderCancelled', {
+      orderId: orderRequest.id.value,
+      driver: driver.getPropsCopy(),
+      reason: reason || 'cancelled by driver',
+      timestamp: Date.now()
+    });
+  }
 }

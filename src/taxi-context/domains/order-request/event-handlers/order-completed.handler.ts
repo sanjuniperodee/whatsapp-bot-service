@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DomainEventHandler } from '@libs/ddd/domain/domain-events/domain-event-handler.base';
 import { OrderCompletedEvent } from '../domain/events/order-completed.event';
-import { OrderRequestGateway } from '../order-request.gateway';
+import { OrderRequestGateway } from '../websocket/order-request.gateway';
 import { UserRepository } from '../../../domain-repositories/user/user.repository';
 
 @Injectable()

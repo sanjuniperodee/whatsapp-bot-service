@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Logger, NotFoundException, Param, Post, Put, Query, UseGuards, ConflictException } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { OrderRequestGateway } from './websocket/order-request.gateway';
 import { OrderRequestRepository } from '../../domain-repositories/order-request/order-request.repository';
 import { CreateOrderRequest } from '@domain/order-request/services/create-order/create-order-request';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';

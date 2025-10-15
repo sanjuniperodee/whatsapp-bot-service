@@ -2,11 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException } from '@nestjs/common';
 import { CreateOrderHandler } from '@domain/order-request/commands/create-order/create-order.handler';
 import { CreateOrderCommand } from '@domain/order-request/commands/create-order/create-order.command';
-import { OrderRequestRepository } from '@domain/order-request/domain-repositories/order-request/order-request.repository';
-import { UserRepository } from '@domain/user/domain-repositories/user/user.repository';
 import { UserBlockingService } from '@domain/user/services/user-blocking.service';
-import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/cloud-cache-storage.service';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
 import { OrderFactory } from '../../../helpers/factories/order.factory';
 import { UserFactory } from '../../../helpers/factories/user.factory';
 import { MockRedisService } from '../../../helpers/mocks/redis.service.mock';
@@ -14,21 +10,22 @@ import { MockWhatsAppService } from '../../../helpers/mocks/whatsapp.service.moc
 import { MockFirebaseService } from '../../../helpers/mocks/firebase.service.mock';
 import { OrderStatus, OrderType } from '@infrastructure/enums';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { OrderRequestRepository } from '../../../helpers/mocks/order-request.repository.mock';
 
 describe('CreateOrderHandler', () => {
   let handler: CreateOrderHandler;
-  let orderRepository: jest.Mocked<OrderRequestRepository>;
-  let userRepository: jest.Mocked<UserRepository>;
-  let userBlockingService: jest.Mocked<UserBlockingService>;
-  let cacheStorageService: jest.Mocked<CloudCacheStorageService>;
-  let orderGateway: jest.Mocked<OrderRequestGateway>;
+  let orderRepository: any;
+  let userRepository: any;
+  let userBlockingService: any;
+  let cacheStorageService: any;
+  let orderGateway: any;        
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderHandler,
         {
-          provide: OrderRequestRepository,
+          provide: 'OrderRequestRepository',
           useValue: {
             findOneById: jest.fn(),
             findMany: jest.fn(),
@@ -36,7 +33,7 @@ describe('CreateOrderHandler', () => {
           },
         },
         {
-          provide: UserRepository,
+          provide: 'UserRepository',
           useValue: {
             findOneById: jest.fn(),
             save: jest.fn(),
@@ -49,13 +46,13 @@ describe('CreateOrderHandler', () => {
           },
         },
         {
-          provide: CloudCacheStorageService,
+          provide: 'CloudCacheStorageService',
           useValue: {
             updateOrderLocation: jest.fn(),
           },
         },
         {
-          provide: OrderRequestGateway,
+          provide: 'OrderRequestGateway',
           useValue: {
             handleOrderCreated: jest.fn(),
           },
@@ -71,19 +68,20 @@ describe('CreateOrderHandler', () => {
     orderGateway = module.get(OrderRequestGateway);
   });
 
+  const validCommand = new CreateOrderCommand(
+    new UUID(global.testUtils.generateTestUUID()),
+    OrderType.TAXI,
+    'Test From Address',
+    'Test To Address',
+    'test-from-mapbox-id',
+    'test-to-mapbox-id',
+    43.585472,
+    51.236168,
+    1000,
+    'Test comment',
+  );
+
   describe('execute', () => {
-    const validCommand = new CreateOrderCommand({
-      clientId: new UUID(global.testUtils.generateTestUUID()),
-      orderType: OrderType.TAXI,
-      from: 'Test From Address',
-      to: 'Test To Address',
-      fromMapboxId: 'test-from-mapbox-id',
-      toMapboxId: 'test-to-mapbox-id',
-      lat: 43.585472,
-      lng: 51.236168,
-      price: 1000,
-      comment: 'Test comment',
-    });
 
     it('should create order successfully', async () => {
       const user = UserFactory.create();
@@ -151,10 +149,18 @@ describe('CreateOrderHandler', () => {
       const orderTypes = [OrderType.TAXI, OrderType.DELIVERY, OrderType.CARGO, OrderType.INTERCITY_TAXI];
       
       for (const orderType of orderTypes) {
-        const command = new CreateOrderCommand({
-          ...validCommand,
+        const command = new CreateOrderCommand(
+          validCommand.clientId,
           orderType,
-        });
+          validCommand.from,
+          validCommand.to,
+          validCommand.fromMapboxId,
+          validCommand.toMapboxId,
+          validCommand.lat,
+          validCommand.lng,
+          validCommand.price,
+          validCommand.comment,
+        );
 
         const result = await handler.execute(command);
         

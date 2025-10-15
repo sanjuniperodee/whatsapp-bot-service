@@ -5,7 +5,7 @@ import { OrderRequestRepository } from '../../../../domain-repositories/order-re
 import { OrderRequestEntity } from '../../domain/entities/order-request.entity';
 import { OrderStatus } from '@infrastructure/enums';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
-import { OrderRequestGateway } from '../../order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { UserBlockingService } from '@domain/user/services/user-blocking.service';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { UserBlockedException } from '@domain/user/errors/user-blocked.exception';

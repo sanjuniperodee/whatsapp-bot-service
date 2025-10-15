@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ChangeOrderStatus } from '@domain/order-request/services/accept-order/accept-order.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 // import { WhatsAppService } from '@modules/whatsapp/whatsapp.service';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { OrderStatus } from '@infrastructure/enums';

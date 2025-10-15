@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CompleteOrderHandler } from '@domain/order-request/commands/complete-order/complete-order.handler';
 import { CompleteOrderCommand } from '@domain/order-request/commands/complete-order/complete-order.command';
-import { OrderRequestRepository } from '@domain/order-request/domain-repositories/order-request/order-request.repository';
-import { UserRepository } from '@domain/user/domain-repositories/user/user.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+// Using string tokens for providers
 import { OrderFactory } from '../../../helpers/factories/order.factory';
 import { UserFactory } from '../../../helpers/factories/user.factory';
 import { OrderStatus } from '@infrastructure/enums';
@@ -12,29 +10,29 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 
 describe('CompleteOrderHandler', () => {
   let handler: CompleteOrderHandler;
-  let orderRepository: jest.Mocked<OrderRequestRepository>;
-  let userRepository: jest.Mocked<UserRepository>;
-  let orderGateway: jest.Mocked<OrderRequestGateway>;
+  let orderRepository: any;
+  let userRepository: any;
+  let orderGateway: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompleteOrderHandler,
         {
-          provide: OrderRequestRepository,
+          provide: 'OrderRequestRepository',
           useValue: {
             findOneById: jest.fn(),
             save: jest.fn(),
           },
         },
         {
-          provide: UserRepository,
+          provide: 'UserRepository',
           useValue: {
             findOneById: jest.fn(),
           },
         },
         {
-          provide: OrderRequestGateway,
+          provide: 'OrderRequestGateway',
           useValue: {
             handleRideEnded: jest.fn(),
           },
@@ -43,15 +41,16 @@ describe('CompleteOrderHandler', () => {
     }).compile();
 
     handler = module.get<CompleteOrderHandler>(CompleteOrderHandler);
-    orderRepository = module.get(OrderRequestRepository);
-    userRepository = module.get(UserRepository);
-    orderGateway = module.get(OrderRequestGateway);
+    orderRepository = module.get('OrderRequestRepository');
+    userRepository = module.get('UserRepository');
+    orderGateway = module.get('OrderRequestGateway');
   });
 
+  const validCommand = new CompleteOrderCommand(
+    new UUID(global.testUtils.generateTestUUID()),
+  );
+
   describe('execute', () => {
-    const validCommand = new CompleteOrderCommand({
-      orderId: new UUID(global.testUtils.generateTestUUID()),
-    });
 
     it('should complete order successfully', async () => {
       const order = OrderFactory.createOngoingOrder();

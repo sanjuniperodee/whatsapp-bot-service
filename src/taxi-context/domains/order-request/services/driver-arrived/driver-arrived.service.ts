@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException } from '@
 import { ChangeOrderStatus } from '@domain/order-request/services/driver-arrived/driver-arrived.request';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestGateway } from '@domain/order-request/order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { CategoryLicenseRepository, } from '../../../../domain-repositories/category-license/category-license.repository';

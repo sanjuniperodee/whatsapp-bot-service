@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
-import { OrderRequestGateway } from '../../order-request.gateway';
+import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { CloudCacheStorageService } from '@third-parties/cloud-cache-storage/src';
 import { CreateOrderRequest } from './create-order-request';
 import { OrderRequestEntity } from '../../domain/entities/order-request.entity';
