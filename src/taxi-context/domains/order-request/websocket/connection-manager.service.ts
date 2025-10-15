@@ -12,7 +12,6 @@ export class ConnectionManagerService {
 
   async handleConnection(socketId: string, userId: string, userType: 'client' | 'driver'): Promise<void> {
     try {
-      // TODO: Добавить методы в CloudCacheStorageService
       await this.cacheStorageService.setSocketUser(socketId, userId);
       await this.cacheStorageService.setUserSocket(userId, socketId);
       
@@ -20,6 +19,7 @@ export class ConnectionManagerService {
         await this.cacheStorageService.setDriverOnline(userId);
         this.logger.debug(`Driver ${userId} connected with socket ${socketId}`);
       } else {
+        await this.cacheStorageService.addOnlineClient(userId);
         this.logger.debug(`Client ${userId} connected with socket ${socketId}`);
       }
     } catch (error) {
@@ -30,10 +30,19 @@ export class ConnectionManagerService {
 
   async handleDisconnection(socketId: string): Promise<void> {
     try {
-      // TODO: Добавить методы в CloudCacheStorageService
       const userId = await this.cacheStorageService.getSocketUser(socketId);
       if (userId) {
-        await this.cacheStorageService.setDriverOffline(userId);
+        // Проверяем, был ли это водитель или клиент
+        const isDriver = await this.cacheStorageService.isDriverOnline(userId);
+        const isClient = await this.cacheStorageService.isClientOnline(userId);
+        
+        if (isDriver) {
+          await this.cacheStorageService.setDriverOffline(userId);
+        }
+        if (isClient) {
+          await this.cacheStorageService.removeOnlineClient(userId);
+        }
+        
         await this.cacheStorageService.removeUserSocket(userId);
         await this.cacheStorageService.removeSocketUser(socketId);
         this.logger.debug(`User ${userId} disconnected from socket ${socketId}`);

@@ -39,6 +39,36 @@ export class CloudCacheStorageService {
     return count > 0;
   }
 
+  // Устанавливаем связь socketId -> userId
+  async setSocketUser(socketId: string, userId: string) {
+    await this.redisService.client.set(`socket_user:${socketId}`, userId);
+  }
+
+  // Получаем userId по socketId
+  async getSocketUser(socketId: string): Promise<string | null> {
+    return await this.redisService.client.get(`socket_user:${socketId}`);
+  }
+
+  // Устанавливаем связь userId -> socketId (основной сокет)
+  async setUserSocket(userId: string, socketId: string) {
+    await this.redisService.client.set(`user_socket:${userId}`, socketId);
+  }
+
+  // Получаем socketId по userId
+  async getUserSocket(userId: string): Promise<string | null> {
+    return await this.redisService.client.get(`user_socket:${userId}`);
+  }
+
+  // Удаляем связь userId -> socketId
+  async removeUserSocket(userId: string) {
+    await this.redisService.client.del(`user_socket:${userId}`);
+  }
+
+  // Удаляем связь socketId -> userId
+  async removeSocketUser(socketId: string) {
+    await this.redisService.client.del(`socket_user:${socketId}`);
+  }
+
   // Добавляем водителя в онлайн
   async addOnlineDriver(driverId: string) {
     await this.redisService.client.sadd('online_drivers', driverId);
@@ -72,34 +102,20 @@ export class CloudCacheStorageService {
     return await this.redisService.client.smembers('online_clients');
   }
 
-  async setUserSocket(userId: string, socketId: string): Promise<void> {
-    const key = `user:socket:${userId}`;
-    await this.redisService.client.set(key, socketId, 'EX', 3600); // 1 hour TTL
+  // Добавляем клиента в онлайн
+  async addOnlineClient(clientId: string) {
+    await this.redisService.client.sadd('online_clients', clientId);
   }
 
-  async getUserSocket(userId: string): Promise<string | null> {
-    const key = `user:socket:${userId}`;
-    return await this.redisService.client.get(key);
+  // Удаляем клиента из онлайн
+  async removeOnlineClient(clientId: string) {
+    await this.redisService.client.srem('online_clients', clientId);
   }
 
-  async removeUserSocket(userId: string): Promise<void> {
-    const key = `user:socket:${userId}`;
-    await this.redisService.client.del(key);
-  }
-
-  async setSocketUser(socketId: string, userId: string): Promise<void> {
-    const key = `socket:user:${socketId}`;
-    await this.redisService.client.set(key, userId, 'EX', 3600); // 1 hour TTL
-  }
-
-  async getSocketUser(socketId: string): Promise<string | null> {
-    const key = `socket:user:${socketId}`;
-    return await this.redisService.client.get(key);
-  }
-
-  async removeSocketUser(socketId: string): Promise<void> {
-    const key = `socket:user:${socketId}`;
-    await this.redisService.client.del(key);
+  // Проверяем онлайн ли клиент
+  async isClientOnline(clientId: string): Promise<boolean> {
+    const isMember = await this.redisService.client.sismember('online_clients', clientId);
+    return Boolean(isMember);
   }
 
   async setSocketClientId(orderId: string, socketId: string): Promise<void> {
