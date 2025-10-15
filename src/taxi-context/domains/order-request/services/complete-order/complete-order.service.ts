@@ -32,7 +32,14 @@ export class CompleteOrderService {
 
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
       if (client && driver) {
-        await this.orderRequestGateway.handleRideEnded(order, driver)
+        await this.orderRequestGateway.notifyClient(order.getPropsCopy().clientId.value, 'rideEnded', {
+          orderId: order.id.value,
+          driverId: order.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          price: order.getPropsCopy().price?.value || 0,
+          message: 'Поездка завершена',
+          timestamp: Date.now()
+        });
 
         await this.notificationService.sendNotificationByUserId(
           'Заказ завершен',

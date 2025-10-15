@@ -41,6 +41,17 @@ export class AcceptOrderHandler implements ICommandHandler<AcceptOrderCommand, v
     await this.orderRequestRepository.save(orderRequest);
 
     // Уведомляем через WebSocket
-    await this.orderRequestGateway.handleOrderAccepted(orderRequest, driver);
+    await this.orderRequestGateway.notifyClient(orderRequest.getPropsCopy().clientId.value, 'orderAccepted', {
+      orderId: orderRequest.id.value,
+      driverId: orderRequest.getPropsCopy().driverId?.value,
+      driver: driver.getPropsCopy(),
+      timestamp: Date.now()
+    });
+
+    await this.orderRequestGateway.broadcastToOnlineDrivers('orderTaken', {
+      orderId: orderRequest.id.value,
+      takenBy: orderRequest.getPropsCopy().driverId?.value,
+      timestamp: Date.now()
+    });
   }
 }

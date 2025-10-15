@@ -39,7 +39,14 @@ export class CompleteOrderHandler implements ICommandHandler<CompleteOrderComman
     if (driverId) {
       const driver = await this.userRepository.findOneById(driverId.value);
       if (driver) {
-        await this.orderRequestGateway.handleRideEnded(orderRequest, driver);
+        await this.orderRequestGateway.notifyClient(orderRequest.getPropsCopy().clientId.value, 'rideEnded', {
+          orderId: orderRequest.id.value,
+          driverId: orderRequest.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          price: orderRequest.getPropsCopy().price.value,
+          message: 'Поездка завершена',
+          timestamp: Date.now()
+        });
       }
     }
   }

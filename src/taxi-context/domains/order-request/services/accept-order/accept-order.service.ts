@@ -45,7 +45,18 @@ export class AcceptOrderService{
       const client = await this.userRepository.findOneById(order.getPropsCopy().clientId.value)
 
       if (client && driver) {
-        await this.orderRequestGateway.handleOrderAccepted(order, driver)
+        await this.orderRequestGateway.notifyClient(order.getPropsCopy().clientId.value, 'orderAccepted', {
+          orderId: order.id.value,
+          driverId: order.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          timestamp: Date.now()
+        });
+
+        await this.orderRequestGateway.broadcastToOnlineDrivers('orderTaken', {
+          orderId: order.id.value,
+          takenBy: order.getPropsCopy().driverId?.value,
+          timestamp: Date.now()
+        });
 
         await this.notificationService.sendNotificationByUserId(
           'Водитель принял ваш заказ',

@@ -47,7 +47,12 @@ export class RejectOrderService {
       orderRequest.rejectByDriver();
       await this.orderRequestRepository.save(orderRequest);
 
-      await this.orderRequestGateway.handleOrderCancelledByDriver(orderRequest, driver, reason);
+      await this.orderRequestGateway.notifyClient(orderRequest.getPropsCopy().clientId.value, 'orderCancelled', {
+        orderId: orderRequest.id.value,
+        driver: driver.getPropsCopy(),
+        reason: reason || 'cancelled by driver',
+        timestamp: Date.now()
+      });
 
       await this.notificationService.sendNotificationByUserId(
         'Водитель отменил заказ',

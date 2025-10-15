@@ -31,7 +31,13 @@ export class StartOrderService {
       if (client && driver) {
         const driverEntity = await this.userRepository.findOneById(driver.id)
         if(driverEntity)
-          await this.orderRequestGateway.handleRideStarted(order, driverEntity)
+          await this.orderRequestGateway.notifyClient(order.getPropsCopy().clientId.value, 'rideStarted', {
+            orderId: order.id.value,
+            driverId: order.getPropsCopy().driverId?.value,
+            driver: driverEntity.getPropsCopy(),
+            message: 'Поездка началась',
+            timestamp: Date.now()
+          });
         await this.notificationService.sendNotificationByUserId(
           'Водитель начал поездку',
           'Поездка началась',

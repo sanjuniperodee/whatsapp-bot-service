@@ -34,6 +34,10 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand, v
     await this.orderRequestRepository.save(orderRequest);
 
     // Уведомляем через WebSocket
-    await this.orderRequestGateway.handleOrderCancelledByClient(orderRequest, reason);
+    await this.orderRequestGateway.broadcastToOnlineDrivers('orderDeleted', {
+      orderId: orderRequest.id.value,
+      reason: reason || 'cancelled',
+      timestamp: Date.now()
+    });
   }
 }

@@ -63,7 +63,17 @@ export class CreateOrderService {
 
     await this.cacheStorageService.updateOrderLocation(orderRequest.id.value, lat, lng, orderType);
 
-    await this.orderRequestGateway.handleOrderCreated(orderRequest);
+    await this.orderRequestGateway.broadcastToOnlineDrivers('newOrder', {
+      id: orderRequest.id.value,
+      from: orderRequest.getPropsCopy().address?.from || 'Не указан',
+      to: orderRequest.getPropsCopy().address?.to || 'Не указан',
+      price: orderRequest.getPropsCopy().price.value,
+      orderType: orderRequest.getPropsCopy().orderType,
+      clientId: orderRequest.getPropsCopy().clientId.value,
+      lat: orderRequest.getPropsCopy().lat,
+      lng: orderRequest.getPropsCopy().lng,
+      timestamp: Date.now()
+    });
 
     return orderRequest.getPropsCopy();
   }

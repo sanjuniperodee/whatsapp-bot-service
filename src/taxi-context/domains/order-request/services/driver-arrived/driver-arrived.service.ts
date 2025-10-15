@@ -41,7 +41,13 @@ export class DriverArrivedService {
         if (!user) {
           throw new InternalServerErrorException("SOMETHING WENT WRONG");
         }
-        await this.orderRequestGateway.handleDriverArrived(order, driver)
+        await this.orderRequestGateway.notifyClient(order.getPropsCopy().clientId.value, 'driverArrived', {
+          orderId: order.id.value,
+          driverId: order.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          message: 'Водитель прибыл и ждет вас',
+          timestamp: Date.now()
+        });
 
         await this.notificationService.sendNotificationByUserId(
           'Водитель на месте',

@@ -39,7 +39,13 @@ export class DriverArrivedCommandHandler implements ICommandHandler<DriverArrive
     if (driverId) {
       const driver = await this.userRepository.findOneById(driverId.value);
       if (driver) {
-        await this.orderRequestGateway.handleDriverArrived(orderRequest, driver);
+        await this.orderRequestGateway.notifyClient(orderRequest.getPropsCopy().clientId.value, 'driverArrived', {
+          orderId: orderRequest.id.value,
+          driverId: orderRequest.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          message: 'Водитель прибыл и ждет вас',
+          timestamp: Date.now()
+        });
       }
     }
   }

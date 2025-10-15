@@ -39,7 +39,13 @@ export class StartOrderHandler implements ICommandHandler<StartOrderCommand, voi
     if (driverId) {
       const driver = await this.userRepository.findOneById(driverId.value);
       if (driver) {
-        await this.orderRequestGateway.handleRideStarted(orderRequest, driver);
+        await this.orderRequestGateway.notifyClient(orderRequest.getPropsCopy().clientId.value, 'rideStarted', {
+          orderId: orderRequest.id.value,
+          driverId: orderRequest.getPropsCopy().driverId?.value,
+          driver: driver.getPropsCopy(),
+          message: 'Поездка началась',
+          timestamp: Date.now()
+        });
       }
     }
   }
