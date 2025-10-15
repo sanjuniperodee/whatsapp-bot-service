@@ -5,7 +5,9 @@ import { OrderRequestRepository } from '../../../../domain-repositories/order-re
 import { UserRepository } from '../../../../domain-repositories/user/user.repository';
 import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { OrderStatus } from '@infrastructure/enums';
+import { CommandHandler } from '@nestjs/cqrs';
 
+@CommandHandler(CompleteOrderCommand)
 @Injectable()
 export class CompleteOrderHandler implements ICommandHandler<CompleteOrderCommand, void> {
   constructor(

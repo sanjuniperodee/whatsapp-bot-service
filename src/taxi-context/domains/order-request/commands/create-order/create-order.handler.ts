@@ -13,7 +13,9 @@ import { ConflictException } from '@nestjs/common';
 import { Price } from '@domain/shared/value-objects/price.value-object';
 import { UserOrmEntity } from '@infrastructure/database/entities/user.orm-entity';
 import { Address } from '@domain/shared/value-objects/address.value-object';
+import { CommandHandler } from '@nestjs/cqrs';
 
+@CommandHandler(CreateOrderCommand)
 @Injectable()
 export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand, OrderRequestEntity> {
   constructor(

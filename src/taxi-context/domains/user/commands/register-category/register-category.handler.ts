@@ -4,7 +4,9 @@ import { RegisterCategoryCommand } from './register-category.command';
 import { CategoryLicenseRepository } from '../../../../domain-repositories/category-license/category-license.repository';
 import { CategoryLicenseEntity } from '@domain/user/domain/entities/category-license.entity';
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { CommandHandler } from '@nestjs/cqrs';
 
+@CommandHandler(RegisterCategoryCommand)
 @Injectable()
 export class RegisterCategoryHandler implements ICommandHandler<RegisterCategoryCommand, void> {
   constructor(

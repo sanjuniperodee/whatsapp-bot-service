@@ -4,7 +4,9 @@ import { CancelOrderCommand } from './cancel-order.command';
 import { OrderRequestRepository } from '../../../../domain-repositories/order-request/order-request.repository';
 import { OrderRequestGateway } from '../../websocket/order-request.gateway';
 import { OrderStatus } from '@infrastructure/enums';
+import { CommandHandler } from '@nestjs/cqrs';
 
+@CommandHandler(CancelOrderCommand)
 @Injectable()
 export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand, void> {
   constructor(
