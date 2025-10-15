@@ -36,7 +36,7 @@ export class UserRepository
     return found.length ? Promise.all(found.map(async (i) => await this.mapper.toDomainEntity(i))) : [];
   }
 
-  async findOneById(id: string, trxId?: TransactionId): Promise<UserEntity | undefined> {
+  async findOneById(id: string | UUID, trxId?: TransactionId): Promise<UserEntity | undefined> {
     const currentTrx = this.unitOfWork.getCurrentTransaction();
     const [trx, isOwnTrx] = trxId
       ? [this.unitOfWork.getTrx(trxId), false]
@@ -45,7 +45,8 @@ export class UserRepository
         : [await UserOrmEntity.startTransaction(), true];
 
     try {
-      const user = await UserOrmEntity.query(trx).findById(id);
+      const userId = typeof id === 'string' ? id : id.value;
+      const user = await UserOrmEntity.query(trx).findById(userId);
 
       if (isOwnTrx) {
         await trx.commit();
