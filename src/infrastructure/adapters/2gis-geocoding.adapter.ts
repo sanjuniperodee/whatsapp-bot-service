@@ -12,7 +12,7 @@ export class TwoGisGeocodingAdapter implements GeocodingPort {
   async getAddressByCoordinates(lat: number, lng: number, radius: number = 15): Promise<string> {
     try {
       const response = await fetch(
-        `https://platform.2gis.ru/api/services/geocoder?type=street%2Cbuilding%2Cattraction%2Cstation_platform%2Cadm_div.place%2Cadm_div.city%2Cadm_div.district&fields=items.point%2Citems.region_id%2Citems.segment_id&lon=${lng}&lat=${lat}`,
+        `https://platform.2gis.ru/api/services/geocoder?type=street%2Cbuilding%2Cattraction%2Cstation_platform&fields=items.point%2Citems.region_id%2Citems.segment_id%2Citems.name%2Citems.full_name&lon=${lng}&lat=${lat}`,
         {
           method: 'GET',
           headers: { 'User-Agent': 'MyApp/1.0' }
@@ -29,8 +29,21 @@ export class TwoGisGeocodingAdapter implements GeocodingPort {
         return 'Адрес не найден';
       }
 
-      const bestMatch = data.result.items[0];
-      return bestMatch.full_name || bestMatch.name;
+      // Ищем лучшее совпадение - приоритет зданиям, затем улицам
+      let bestMatch = data.result.items[0];
+      
+      // Предпочитаем здания и объекты, а не административные единицы
+      for (const item of data.result.items) {
+        if (item.type === 'building' || item.type === 'attraction') {
+          bestMatch = item;
+          break;
+        } else if (item.type === 'street' && bestMatch.type !== 'building' && bestMatch.type !== 'attraction') {
+          bestMatch = item;
+        }
+      }
+
+      // Возвращаем только название объекта без города
+      return bestMatch.name || bestMatch.full_name || 'Адрес не найден';
     } catch (error) {
       this.logger.error(`Failed to get address by coordinates:`, error);
       throw error;
@@ -62,10 +75,10 @@ export class TwoGisGeocodingAdapter implements GeocodingPort {
       }
 
       return data.result.items.map((item: any) => ({
-        name: item.full_name || item.name || 'Неизвестный адрес',
+        name: item.name || item.full_name || 'Неизвестный адрес',
         lat: item.point.lat,
         lng: item.point.lon,
-        address: item.full_name
+        address: item.name || item.full_name
       }));
     } catch (error) {
       this.logger.error(`Failed to search places:`, error);
